@@ -1,7 +1,7 @@
 from pymongo import Connection
 from pymongo.son_manipulator import SONManipulator
 from django.utils.importlib import import_module
-
+from pymongo.objectid import ObjectId
 #TODO Add content type cache
 
 class TransformDjango(SONManipulator):

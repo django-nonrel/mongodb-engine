@@ -99,6 +99,7 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'django.contrib.messages',
     'testproj.myapp',
+    'testproj.mixed',
     'south',
     # Uncomment the next line to enable the admin:
     'django.contrib.admin',
@@ -106,5 +107,6 @@ INSTALLED_APPS = (
 
 DATABASE_ROUTERS = ['django_mongodb_engine.mongodb.router.MongoDBRouter']
 MONGODB_MANAGED_APPS = ['testproj.myapp', ]
+MONGODB_MANAGED_MODELS = ['mixed.record', ]
 
 SOUTH_DATABASE_ADAPTERS = { "mongodb" : "django_mongodb_engine.mongodb.south"}

@@ -46,10 +46,10 @@ class MongoDBRouter(object):
 
     def allow_syncdb(self, db, model):
         "Make sure that a mongodb model appears on a mongodb database"
-        # TOFIX
+        key = "%s.%s"%(model._meta.app_label, model._meta.module_name)
         if db in self.mongodb_databases:
-            return model._meta.app_label  in self.managed_apps
-        elif model._meta.app_label in self.managed_apps:
+            return model._meta.app_label  in self.managed_apps or key in self.managed_models
+        elif model._meta.app_label in self.managed_apps or key in self.managed_models:
             return False
         return None
 
@@ -60,6 +60,7 @@ class MongoDBRouter(object):
         if model._meta.app_label in self.managed_apps:
             return True
         key = "%s.%s"%(model._meta.app_label, model._meta.module_name)
+        print key
         if key in self.managed_models:
             return True
         return None
