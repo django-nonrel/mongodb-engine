@@ -4,7 +4,6 @@ from django.db.models.fields import FieldDoesNotExist
 from django.utils.translation import ugettext_lazy as _
 from django.core import serializers
 from pymongo.objectid import ObjectId
-from django.db.models import signals
 from django.db.models.fields import AutoField as DJAutoField
 from .manager import Manager
 
@@ -72,4 +71,3 @@ def add_mongodb_manager(sender, **kwargs):
                 pass
             setattr(cls, 'mongodb', Manager())
 
-signals.class_prepared.connect(add_mongodb_manager)
