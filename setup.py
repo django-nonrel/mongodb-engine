@@ -18,7 +18,7 @@ def get_version(version_tuple):
 # Dirty hack to get version number from mondodj/__init__.py - we can't 
 # import it as it depends on PyMongo and PyMongo isn't installed until this
 # file is read
-init = os.path.join(os.path.dirname(__file__), 'django_mongodb_driver', '__init__.py')
+init = os.path.join(os.path.dirname(__file__), 'django_mongodb_engine', '__init__.py')
 version_line = filter(lambda l: l.startswith('VERSION'), open(init))[0]
 VERSION = get_version(eval(version_line.split('=')[-1]))
 print VERSION
