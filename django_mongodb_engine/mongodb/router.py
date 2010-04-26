@@ -8,7 +8,7 @@ class MongoDBRouter(object):
         self.mongodb_database = None
         self.mongodb_databases = []
         for name, databaseopt in settings.DATABASES.items():
-            if databaseopt["ENGINE"]=='django.db.backends.mongodb':
+            if databaseopt["ENGINE"]=='django_mongodb_engine.mongodb':
                 self.mongodb_database = name
                 self.mongodb_databases.append(name)
         if self.mongodb_database is None:
