@@ -1,0 +1,4 @@
+*.pyc
+*~
+.hg*
+django_mongodb_engine.egg-info
