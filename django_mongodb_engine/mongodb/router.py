@@ -60,7 +60,6 @@ class MongoDBRouter(object):
         if model._meta.app_label in self.managed_apps:
             return True
         key = "%s.%s"%(model._meta.app_label, model._meta.module_name)
-        print key
         if key in self.managed_models:
             return True
         return None
