@@ -8,7 +8,7 @@ from django.db.backends import BaseDatabaseFeatures, \
 from django.core.exceptions import ImproperlyConfigured
 
 from .creation import DatabaseCreation
-from django.db.backends.mongodb.operations import DatabaseOperations
+from django_mongodb_engine.mongodb.operations import DatabaseOperations
 from .manager import Manager
 
 class DatabaseFeatures(BaseDatabaseFeatures):

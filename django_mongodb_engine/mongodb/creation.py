@@ -38,8 +38,9 @@ class DatabaseCreation(BaseDatabaseCreation):
     def sql_indexes_for_field(self, model, f, style):
         opts = model._meta
         col = getattr(self.connection.db_connection, opts.db_table)
+        descending = getattr(model._mongo_meta, "descending_indexes", [])
         if f.db_index:
-            direction = (getattr(f, "index_descending") and -1) or 1
+            direction =  (f.attname in descending and -1) or 1
             col.ensure_index([(f.name, direction)], unique=f.unique)
         return []
 
@@ -78,7 +79,7 @@ class DatabaseCreation(BaseDatabaseCreation):
         print "Installing index for %s.%s model" % (model._meta.app_label, model._meta.object_name)
         for f in model._meta.local_fields:
             self.sql_indexes_for_field(model, f, style)
-        for group in getattr(model._meta, "index_together", []):
+        for group in getattr(model._mongo_meta, "index_together", []):
             self.index_fields_group(model, group, style)
         return []
 
