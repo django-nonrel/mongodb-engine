@@ -66,7 +66,7 @@ class TransformDjango(SONManipulator):
         from django.contrib.contenttypes.models import ContentType
         if data['_type']=="django":
             model = ContentType.objects.get(app_label=data['_app'], model=data['_model'])
-            return model.get_object_for_this_type(pk=data['pk'])
+            return model.model_class().objects.get(pk=data['pk'])
         elif data['_type']=="emb":
             try:
                 model = ContentType.objects.get(app_label=data['_app'], model=data['_model']).model_class()
