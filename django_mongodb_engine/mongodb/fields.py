@@ -49,6 +49,9 @@ def autofield_get_prep_value(value):
         return None
     return ObjectId(value)
 
+class MongoMeta(object):
+    pass
+
 def add_mongodb_manager(sender, **kwargs):
     """
     Fix autofield
@@ -71,5 +74,14 @@ def add_mongodb_manager(sender, **kwargs):
             except FieldDoesNotExist:
                 pass
             setattr(cls, 'mongodb', Manager())
+
+            mongo_meta = getattr(cls, "MongoMeta", MongoMeta).__dict__.copy()
+            setattr(cls, "_mongo_meta", MongoMeta())
+            for attr in mongo_meta:
+                if attr.startswith("_"):
+                    continue
+                setattr(cls._mongo_meta, attr, mongo_meta[attr])
+               
+
 
 signals.class_prepared.connect(add_mongodb_manager)

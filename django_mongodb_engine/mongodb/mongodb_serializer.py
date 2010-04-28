@@ -2,6 +2,7 @@ from pymongo import Connection
 from pymongo.son_manipulator import SONManipulator
 from django.utils.importlib import import_module
 from pymongo.objectid import ObjectId
+from datetime import datetime, date
 #TODO Add content type cache
 
 class TransformDjango(SONManipulator):
@@ -10,7 +11,7 @@ class TransformDjango(SONManipulator):
         """
         Encode ricorsive embedded models and django models
         """
-        from django.db.backends.mongodb.fields import EmbeddedModel
+        from django_mongodb_engine.mongodb.fields import EmbeddedModel
         if isinstance(model, EmbeddedModel):
             if model.pk is None:
                 model.pk = unicode(ObjectId())
@@ -38,12 +39,14 @@ class TransformDjango(SONManipulator):
     
     def transform_incoming(self, son, collection):
         from django.db.models import Model
-        from django.db.backends.mongodb.fields import EmbeddedModel
+        from django_mongodb_engine.mongodb.fields import EmbeddedModel
         if isinstance(son, dict):
             for (key, value) in son.items():
                 if isinstance(value, (str, unicode)):
                     continue
-                if isinstance(value, (Model, EmbeddedModel)):
+                if isinstance(value, date):
+                    son[key] = datetime(value.year, value.month, value.day)
+                elif isinstance(value, (Model, EmbeddedModel)):
                     son[key] = self.encode_django(value, collection)
                 elif isinstance(value, dict): # Make sure we recurse into sub-docs
                     son[key] = self.transform_incoming(value, collection)
@@ -55,6 +58,8 @@ class TransformDjango(SONManipulator):
             son = [self.transform_incoming(item, collection) for item in son]
         elif isinstance(son, (Model, EmbeddedModel)):
             son = self.encode_django(son, collection)
+        elif isinstance(son, date):
+            son = datetime(son.year, son.month, son.day)
         return son
 
     def decode_django(self, data, collection):
