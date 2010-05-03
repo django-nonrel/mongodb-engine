@@ -112,7 +112,7 @@ class SQLCompiler(SQLCompiler):
         elif result_type is MULTI:
             return [[count]]
     
-    def _get_query(self, query=None, where=None):
+    def _get_query(self, query=None, where=None, negated=False):
         query = query or {}
         where = where or self.query.where
         if where.connector == OR:
@@ -127,13 +127,13 @@ class SQLCompiler(SQLCompiler):
                     elif lookup_type=="in":
                         query["_id"] = {"$in":value}
                 else:
-                    if where.negate:
+                    if negated:
                         query[column] = { "$ne" : OPERATORS_MAP[lookup_type](python2db(db_type, value)) }
                     else:
                         query[column] = OPERATORS_MAP[lookup_type](python2db(db_type, value))
                         
             elif isinstance(child, WhereNode):
-                query = self._get_query(query=query, where=child)
+                query = self._get_query(query=query, where=child, negated=where.negated)
         return query
     
     def _get_collection(self):
