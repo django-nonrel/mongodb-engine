@@ -61,7 +61,6 @@ def db2python(db_type, value):
     return _get_mapping(db_type, value)
     
 def _parse_constraint(where_child, connection):
-    import ipdb; ipdb.set_trace()
     _constraint, lookup_type, _annotation, value = where_child
     (table_alias, column, db_type), value = _constraint.process(lookup_type, value, connection)
     if lookup_type not in ('in', 'range') and isinstance(value, (tuple, list)):
