@@ -12,6 +12,17 @@ About MongoDB
 =============
 MongoDB bridges the gap between key-value stores (which are fast and highly scalable) and traditional RDBMS systems (which provide rich queries and deep functionality).
 
+
+Infographics
+============
+::
+    - Django
+    - Manager
+    - Compiler (MongoDB Engine one)
+    - MongoDB
+
+django-mongodb-engine uses the new django1.2 multi-database support and sets to the model the database using the "django_mongodb_engine.mongodb".
+
 Examples
 ========
 For detailed examples see: (http://github.com/FlaPer87/django-mongodb-engine/tree/master/tests/testproj/)
