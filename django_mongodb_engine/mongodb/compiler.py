@@ -154,6 +154,7 @@ class SQLCompiler(SQLCompiler):
         _high_limit = self.query.high_mark or 0
         _low_limit = self.query.low_mark or 0
         query = self._get_query()
+        #fields = [ f.name for f in self.query.select_fields ] or None
         
         results = self._get_collection().find(query).skip(_low_limit).limit(
             _high_limit - _low_limit)
@@ -180,7 +181,7 @@ class SQLCompiler(SQLCompiler):
         """
         for document in self.get_results():
             result = []
-            for field in self.query.get_meta().local_fields:
+            for field in self.query.select_fields:
                 result.append(db2python(field.db_type(
                     connection=self.connection), document.get(field.column, field.default)))
             yield result
