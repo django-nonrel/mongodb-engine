@@ -88,7 +88,7 @@ class DatabaseWrapper(BaseDatabaseWrapper):
 
         USER = settings_dict["USER"]
         PASSWORD = settings_dict["PASSWORD"]
-        conn = pymongo.Connection(HOST, PORT)
+        conn = pymongo.Connection(HOST, PORT, slave_okay=True)
         if USER and PASSWORD:
             auth = conn['admin'].authenticate(USER, PASSWORD)
             if not auth:
