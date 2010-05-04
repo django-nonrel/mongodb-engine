@@ -4,6 +4,7 @@ from django.utils.importlib import import_module
 from pymongo.objectid import ObjectId
 from datetime import datetime, date
 #TODO Add content type cache
+from utils import ModelLazyObject
 
 class TransformDjango(SONManipulator):
 
@@ -66,7 +67,7 @@ class TransformDjango(SONManipulator):
         from django.contrib.contenttypes.models import ContentType
         if data['_type']=="django":
             model = ContentType.objects.get(app_label=data['_app'], model=data['_model'])
-            return model.model_class().objects.get(pk=data['pk'])
+            return ModelLazyObject(model.model_class(), data['pk'])
         elif data['_type']=="emb":
             try:
                 model = ContentType.objects.get(app_label=data['_app'], model=data['_model']).model_class()
