@@ -16,11 +16,12 @@ class ModelLazyObject(SimpleLazyObject):
         callable can be safely run more than once and will return the same
         value.
         """
-        self.model = model
-        self.pk = pk
         # For some reason, we have to inline LazyObject.__init__ here to avoid
         # recursion
         self._wrapped = None
+        self.__dict__['_pk'] = pk
+        self.__dict__['_model'] = model
+        super(ModelLazyObject, self).__init__(self._load_data)
 
-    def _setup(self):
-        self._wrapped = self.model.objects.get(pk=self.pk)
+    def _load_data(self):
+        return self._model.objects.get(pk=self._pk)

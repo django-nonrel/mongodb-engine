@@ -181,7 +181,8 @@ class SQLCompiler(SQLCompiler):
         """
         for document in self.get_results():
             result = []
-            for field in self.query.select_fields:
+            iterator = self.query.select_fields or self.query.get_meta().local_fields
+            for field in iterator:
                 result.append(db2python(field.db_type(
                     connection=self.connection), document.get(field.column, field.default)))
             yield result
