@@ -1,4 +1,3 @@
-import ipdb
 import sys
 import re
 import datetime
@@ -58,7 +57,6 @@ def _get_mapping(db_type, value):
     # TODO - what if the data is represented as list on the python side?
     if isinstance(value, list):
         return map(_func, value)
-    ipdb.set_trace() ############################## Breakpoint ##############################
     return _func(value)
     
 def python2db(db_type, value):
