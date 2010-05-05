@@ -1,21 +1,23 @@
-import datetime
+import ipdb
 import sys
+import re
+import datetime
 
 import pymongo
 from pymongo.objectid import ObjectId
 
 from django.db import models
+from django.conf import settings
 from django.db.models.sql import aggregates as sqlaggregates
 from django.db.models.sql.compiler import SQLCompiler
 from django.db.models.sql import aggregates as sqlaggregates
 from django.db.models.sql.constants import LOOKUP_SEP, MULTI, SINGLE
 from django.db.models.sql.where import AND, OR
 from django.db.utils import DatabaseError, IntegrityError
-from django.utils.tree import Node
 from django.db.models.sql.where import WhereNode
-import re
+from django.db.models.fields import NOT_PROVIDED
 
-from django.conf import settings
+from django.utils.tree import Node
 
 TYPE_MAPPING = {
     'unicode':  lambda val: unicode(val),
@@ -45,6 +47,10 @@ OPERATORS_MAP = {
 
 def _get_mapping(db_type, value):
     # TODO - comments. lotsa comments
+
+    if value == NOT_PROVIDED:
+        return None
+
     if db_type in TYPE_MAPPING:
         _func = TYPE_MAPPING[db_type]
     else:
@@ -52,6 +58,7 @@ def _get_mapping(db_type, value):
     # TODO - what if the data is represented as list on the python side?
     if isinstance(value, list):
         return map(_func, value)
+    ipdb.set_trace() ############################## Breakpoint ##############################
     return _func(value)
     
 def python2db(db_type, value):
