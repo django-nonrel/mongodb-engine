@@ -36,19 +36,6 @@ class EmbeddedModel(models.Model):
 # Fix standard models to work with mongodb
 #
 
-def autofield_to_python(value):
-    if value is None:
-        return value
-    try:
-        return str(value)
-    except (TypeError, ValueError):
-        raise exceptions.ValidationError(self.error_messages['invalid'])
-
-def autofield_get_prep_value(value):
-    if value is None:
-        return None
-    return ObjectId(value)
-
 class MongoMeta(object):
     pass
 
@@ -58,11 +45,6 @@ def add_mongodb_manager(sender, **kwargs):
     """
     cls = sender
     if cls.objects.db =="mongodb":
-        if isinstance(cls._meta.pk, DJAutoField):
-            pk = cls._meta.pk
-            setattr(pk, "to_python", autofield_to_python)
-            setattr(pk, "get_prep_value", autofield_get_prep_value)
-            cls = sender
         if cls._meta.abstract:
             return
             
