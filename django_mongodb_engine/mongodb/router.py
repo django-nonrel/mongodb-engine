@@ -35,13 +35,16 @@ class MongoDBRouter(object):
 
     def allow_relation(self, obj1, obj2, **hints):
         "Allow any relation if a model in myapp is involved"
-        if obj1._meta.app_label in self.managed_apps or obj2._meta.app_label in self.managed_apps:
-            return False
-        key1 = "%s.%s"%(obj1._meta.app_label, obj1._meta.module_name)
+
+        #key1 = "%s.%s"%(obj1._meta.app_label, obj1._meta.module_name)
         key2 = "%s.%s"%(obj2._meta.app_label, obj2._meta.module_name)
-        if key1 in self.managed_models or key1 in self.managed_models:
-            return False
-            
+
+        # obj2 is the model instance so, mongo_serializer should take care
+        # of the related object. We keep trac of the obj1 db so, don't worry
+        # about the multi-database management
+        if obj2._meta.app_label in self.managed_apps or key2 in self.managed_models:
+            return True
+
         return None
 
     def allow_syncdb(self, db, model):
