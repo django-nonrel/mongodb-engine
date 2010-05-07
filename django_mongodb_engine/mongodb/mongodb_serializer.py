@@ -4,7 +4,7 @@ from django.utils.importlib import import_module
 from pymongo.objectid import ObjectId
 from datetime import datetime, date
 #TODO Add content type cache
-from util import ModelLazyObject
+from utils import ModelLazyObject
 
 class TransformDjango(SONManipulator):
 
