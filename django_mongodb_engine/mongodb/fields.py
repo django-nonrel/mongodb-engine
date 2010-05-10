@@ -1,3 +1,4 @@
+import django
 from django.db import models
 from django.db.models import Field
 from django.db.models.fields import FieldDoesNotExist
@@ -58,7 +59,7 @@ def add_mongodb_manager(sender, **kwargs):
     """
     cls = sender
     if cls.objects.db =="mongodb":
-        if isinstance(cls._meta.pk, DJAutoField):
+        if not hasattr(django, 'MODIFIED') and isinstance(cls._meta.pk, DJAutoField):
             pk = cls._meta.pk
             setattr(pk, "to_python", autofield_to_python)
             setattr(pk, "get_prep_value", autofield_get_prep_value)
