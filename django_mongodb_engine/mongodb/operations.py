@@ -41,3 +41,12 @@ class DatabaseOperations(BaseDatabaseOperations):
         support than relational DB
         """
         pass
+
+    def value_to_db_auto(self, value):
+        """
+        Transform a value to an object compatible with the auto field required
+        by the backend driver for auto columns.
+        """
+        if value is None:
+            return None
+        return ObjectId(value)
