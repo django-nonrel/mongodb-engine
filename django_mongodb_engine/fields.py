@@ -270,7 +270,7 @@ class GridFSField(CharField):
             gdfs.delete(oid)
 
         if not self._as_string:
-            value = value.seek(0)
+            value.seek(0)
             value = value.read()
         
         oid = gdfs.put(value)
