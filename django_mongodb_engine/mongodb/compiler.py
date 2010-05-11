@@ -3,6 +3,7 @@ import re
 import datetime
 
 import pymongo
+from gridfs import GridFS
 from pymongo.objectid import ObjectId
 
 from django.db import models
@@ -188,8 +189,13 @@ class SQLCompiler(SQLCompiler):
             result = []
             iterator = self.query.select_fields or self.query.get_meta().local_fields
             for field in iterator:
-                result.append(db2python(field.db_type(
-                    connection=self.connection), document.get(field.column, field.default)))
+                _type = field.db_type(connection=self.connection)
+                val = document.get(field.column, field.default)
+                if not _type == "gridfs":
+                    result.append(db2python(_type, val))
+                else:
+                    #gdfs = GridFS(self.connection.db_connection.db)
+                    result.append(ObjectId(val))
             yield result
             
     def execute_sql(self, result_type=MULTI):
@@ -210,7 +216,10 @@ class SQLInsertCompiler(SQLCompiler):
         """
         dat = {}
         for (field, value), column in zip(self.query.values, self.query.columns):
-            dat[column] = python2db(field.db_type(connection=self.connection), value)
+            if value is None:
+                dat[column] = value
+            else:
+                dat[column] = python2db(field.db_type(connection=self.connection), value)
         # every object should have a unique pk
         pk_field = self.query.model._meta.pk
         pk_name = pk_field.attname

@@ -15,6 +15,8 @@ except ImportError:
     class MultipleObjectsReturned(Exception):
         pass
     
+from django_mongodb_engine.mongodb.mongodb_serializer import TransformDjango
+
 DoesNotExist = ObjectDoesNotExist
 
 __all__ = ['queryset_manager', 'Q', 'InvalidQueryError',
@@ -164,6 +166,7 @@ class QuerySet(object):
         self._where_clause = None
         self._loaded_fields = []
         self._ordering = []
+        self.transform = TransformDjango()
         
         # If inheritance is allowed, only return instances and instances of
         # subclasses of the class being used
@@ -196,6 +199,10 @@ class QuerySet(object):
         """An alias of :meth:`~mongoengine.queryset.QuerySet.__call__`
         """
         return self.__call__(*q_objs, **query)
+
+    def find(self, query):
+        self._query.update(self.transform.transform_incoming(query, self._collection))
+        return self
 
     def exclude(self, *q_objs, **query):
         """An alias of :meth:`~mongoengine.queryset.QuerySet.__call__`
