@@ -206,11 +206,12 @@ class SetListField(Field):
             return set()
         return set(value)
 
-class GridFSField(Field):
+class GridFSField(CharField):
 
     def __init__(self, *args, **kwargs):
         self._as_string = kwargs.pop("as_string", False)
         self._versioning = kwargs.pop("versioning", False)
+        kwargs["max_length"] = 255
         super(GridFSField, self).__init__(*args, **kwargs)
 
 
@@ -221,6 +222,7 @@ class GridFSField(Field):
         att_cache_name = "_%s_cache" % name
         att_val_name = "_%s_val" % name
         as_string = self._as_string
+
         def _get(self):
             from django.db import connections
             gdfs = GridFS(connections[self.__class__.objects.db].db_connection.db)
@@ -254,9 +256,12 @@ class GridFSField(Field):
         oid = getattr(model_instance, "_%s_oid" % self.attname, None)
         value = getattr(model_instance, "_%s_val" % self.attname, None)
 
+        if not getattr(model_instance, "id"):
+            return u''
+
         if value == getattr(model_instance, "_%s_cache" % self.attname, None):
             return oid
-
+        
         from django.db import connections
         gdfs = GridFS(connections[self.model.objects.db].db_connection.db)
         

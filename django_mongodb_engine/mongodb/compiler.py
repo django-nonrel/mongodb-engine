@@ -216,7 +216,10 @@ class SQLInsertCompiler(SQLCompiler):
         """
         dat = {}
         for (field, value), column in zip(self.query.values, self.query.columns):
-            dat[column] = python2db(field.db_type(connection=self.connection), value)
+            if value is None:
+                dat[column] = value
+            else:
+                dat[column] = python2db(field.db_type(connection=self.connection), value)
         # every object should have a unique pk
         pk_field = self.query.model._meta.pk
         pk_name = pk_field.attname
