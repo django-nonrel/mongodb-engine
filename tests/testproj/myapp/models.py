@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 from django_mongodb_engine.mongodb.fields import EmbeddedModel
-from django_mongodb_engine.fields import ListField, SortedListField, DictField, SetListField
+from django_mongodb_engine.fields import ListField, SortedListField, DictField, SetListField, GridFSField
 
 class StringForeignKey(models.ForeignKey):
 
@@ -25,6 +25,13 @@ class StringForeignKey(models.ForeignKey):
     def db_type(self, connection):
         return unicode
 
+
+class GridFSModel(models.Model):
+    title = GridFSField()
+    attr_as_string = GridFSField(as_string=True)
+    
+    def __unicode__(self):
+        return "Blog: %s" % self.title
 
 class Blog(models.Model):
     title = models.CharField(max_length=200, db_index=True)
