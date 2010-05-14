@@ -51,6 +51,9 @@ def _get_mapping(db_type, value):
     if value == NOT_PROVIDED:
         return None
 
+    if value is None:
+        return None
+
     if db_type in TYPE_MAPPING:
         _func = TYPE_MAPPING[db_type]
     else:
@@ -191,7 +194,7 @@ class SQLCompiler(SQLCompiler):
             for field in iterator:
                 _type = field.db_type(connection=self.connection)
                 val = document.get(field.column, field.default)
-                if not _type == "gridfs":
+                if _type != "gridfs":
                     result.append(db2python(_type, val))
                 else:
                     #gdfs = GridFS(self.connection.db_connection.db)

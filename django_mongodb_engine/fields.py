@@ -1,6 +1,16 @@
 from django.db import models
-from django.db.models import Field
+from django.db.models import Field, CharField
 from django.utils.translation import ugettext_lazy as _
+
+from pymongo.objectid import ObjectId
+from gridfs import GridFS, errors
+
+
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
+
 
 __all__ = ["ListField", "DictField", "SetListField", "SortedListField", ]
 __doc__ = "Common module to all nonrel engines"
@@ -196,74 +206,76 @@ class SetListField(Field):
             return set()
         return set(value)
 
-class GridFSField(Field):
-    """
-    Add a gridfs field.
-    """
-
-    description = _("GridFS Field")
-    _internaltype = None
-    default_error_messages = {
-        'invalid': _(u'This value must be a set.'),
-        'invalid_value': _(u'Invalid value in list.'),
-    }
+class GridFSField(CharField):
 
     def __init__(self, *args, **kwargs):
-        kwargs['blank'] = True
-        self.metadata = kwargs.pop('metadata', None)
-        Field.__init__(self, *args, **kwargs)
-
-#    def validate(self, value, model_instance):
-#        """
-#        Validates value and throws ValidationError. 
-#        """
-#        if not isinstance(value, set):
-#            raise exceptions.ValidationError(self.error_messages['invalid'])
-#
-#        if value is None and not self.null:
-#            raise exceptions.ValidationError(self.error_messages['null'])
-#
-#        if not self.blank and value in validators.EMPTY_VALUES:
-#            raise exceptions.ValidationError(self.error_messages['blank'])
-#        if self._internaltype is not None:
-#            for v in value:
-#                if not isinstance(v, self._internaltype):
-#                    raise exceptions.ValidationError(self.error_messages['invalid_value'])
-
-#    def get_default(self):
-#        "Returns the default value for this field."
-#        if self.has_default():
-#            if callable(self.default):
-#                return self.default()
-#            return self.default
-#        return set()
+        self._as_string = kwargs.pop("as_string", False)
+        self._versioning = kwargs.pop("versioning", False)
+        kwargs["max_length"] = 255
+        super(GridFSField, self).__init__(*args, **kwargs)
 
 
-    def get_db_prep_value(self, value, connection, prepared=False):
-        """Returns field's value prepared for interacting with the database
-        backend.
+    def contribute_to_class(self, cls, name):
+        super(GridFSField, self).contribute_to_class(cls, name)
 
-        Used by the default implementations of ``get_db_prep_save``and
-        `get_db_prep_lookup```
-        """
-        if not prepared:
-            value = list(self.get_prep_value(value))
-        return value
+        att_oid_name = "_%s_oid" % name
+        att_cache_name = "_%s_cache" % name
+        att_val_name = "_%s_val" % name
+        as_string = self._as_string
+
+        def _get(self):
+            from django.db import connections
+            print self.__class__.objects.db
+            gdfs = GridFS(connections[self.__class__.objects.db].db_connection.db)
+            if not hasattr(self, att_cache_name) and not getattr(self, att_val_name, None) and getattr(self, att_oid_name, None):
+                val = gdfs.get(getattr(self, att_oid_name))
+                if as_string:
+                    val = val.read()
+                setattr(self, att_cache_name, val)
+                setattr(self, att_val_name, val)
+            return getattr(self, att_val_name, None)
+
+        def _set(self, val):
+            if isinstance(val, ObjectId) and not hasattr(self, att_oid_name):
+                setattr(self, att_oid_name, val)
+            else:
+                if isinstance(val, unicode):
+                    val = val.encode('utf8', 'ignore')
+                
+                if isinstance(val, basestring) and not as_string:
+                    val = StringIO(val)
+
+                setattr(self, att_val_name, val)
+
+        setattr(cls, self.attname, property(_get, _set))
+
     
-    def get_prep_value(self, value):
-        if value is None:
-            return None
-        if not isinstance(value, set):
-            if hasattr(value, "__iter__"):
-                value = set(value)
-        return set(value)
-    
-    def to_python(self, value):
-        """
-        Converts the input value into the expected Python data type, raising
-        django.core.exceptions.ValidationError if the data can't be converted.
-        Returns the converted value.
-        """
-        if value is None:
-            return set()
-        return set(value)
+    def db_type(self, connection):
+        return "gridfs"
+
+    def pre_save(self, model_instance, add):
+        oid = getattr(model_instance, "_%s_oid" % self.attname, None)
+        value = getattr(model_instance, "_%s_val" % self.attname, None)
+
+        if not getattr(model_instance, "id"):
+            return u''
+
+        if value == getattr(model_instance, "_%s_cache" % self.attname, None):
+            return oid
+        
+        from django.db import connections
+        gdfs = GridFS(connections[self.model.objects.db].db_connection.db)
+        
+
+        if not self._versioning and not oid is None:
+            gdfs.delete(oid)
+
+        if not self._as_string:
+            value = value.seek(0)
+            value = value.read()
+        
+        oid = gdfs.put(value)
+        setattr(self, "_%s_oid" % self.attname, oid)
+        setattr(self, "_%s_cache" % self.attname, value)
+
+        return oid
