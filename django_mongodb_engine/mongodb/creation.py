@@ -1,10 +1,9 @@
 from pymongo.collection import Collection
-from django.db.models.fields import FieldDoesNotExist
-from django.db.backends.creation import BaseDatabaseCreation
+from djangotoolbox.db.base import NonrelDatabaseCreation
 
 TEST_DATABASE_PREFIX = 'test_'
 
-class DatabaseCreation(BaseDatabaseCreation):
+class DatabaseCreation(NonrelDatabaseCreation):
     data_types = {
         'DateTimeField':                'datetime',
         'DateField':                    'date',
@@ -29,11 +28,11 @@ class DatabaseCreation(BaseDatabaseCreation):
         'BigIntegerField':              'int',
         'GenericAutoField':             'objectid',
         'StringForeignKey':             'objectid',
-        'AutoField':                    'unicode',
+        'AutoField':                    'objectid',
+        'RelatedAutoField':             'objectid',
         'OneToOneField':                'int',
         'DecimalField':                 'float',
     }
-    
 
     def sql_indexes_for_field(self, model, f, style):
         if f.db_index:
@@ -65,6 +64,7 @@ class DatabaseCreation(BaseDatabaseCreation):
                 field_name = field[0]
                 direction = (field[1] and 1) or -1
             if not field_name in model_fields:
+                from django.db.models.fields import FieldDoesNotExist
                 raise FieldDoesNotExist('%s has no field named %r' % (opts.object_name, field_name))
             checked_fields.append((field_name, direction))
         col.ensure_index(checked_fields, **group)
@@ -91,7 +91,7 @@ class DatabaseCreation(BaseDatabaseCreation):
             kwargs["max"] = opts.collection_max
         if hasattr(opts, "collection_size") and opts.collection_size:
             kwargs["size"] = opts.collection_size
-        col = Collection(self.connection.db_connection.db, model._meta.db_table, **kwargs)
+        col = Collection(self.connection.db_connection, model._meta.db_table, **kwargs)
         return [], {}
 
     def set_autocommit(self):
@@ -142,5 +142,5 @@ class DatabaseCreation(BaseDatabaseCreation):
         self.connection.settings_dict['NAME'] = old_database_name
         
     def _drop_database(self, database_name):
-        self.connection.db_connection.conn.drop_database(database_name)
+        self.connection._connection.drop_database(database_name)
         

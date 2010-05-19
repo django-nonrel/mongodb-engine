@@ -2,7 +2,7 @@ from pymongo import Connection
 from pymongo.son_manipulator import SONManipulator
 from django.utils.importlib import import_module
 from pymongo.objectid import ObjectId
-from datetime import datetime, date
+from datetime import datetime, date, time
 #TODO Add content type cache
 from utils import ModelLazyObject
 
@@ -16,7 +16,6 @@ class TransformDjango(SONManipulator):
         if isinstance(model, EmbeddedModel):
             if model.pk is None:
                 model.pk = unicode(ObjectId())
-                model.id = model.pk
             res = {'_app':model._meta.app_label, 
                    '_model':model._meta.module_name,
                    '_id':model.pk}
@@ -45,9 +44,7 @@ class TransformDjango(SONManipulator):
             for (key, value) in son.items():
                 if isinstance(value, (str, unicode)):
                     continue
-                if isinstance(value, date):
-                    son[key] = datetime(value.year, value.month, value.day)
-                elif isinstance(value, (Model, EmbeddedModel)):
+                if isinstance(value, (Model, EmbeddedModel)):
                     son[key] = self.encode_django(value, collection)
                 elif isinstance(value, dict): # Make sure we recurse into sub-docs
                     son[key] = self.transform_incoming(value, collection)
@@ -59,8 +56,6 @@ class TransformDjango(SONManipulator):
             son = [self.transform_incoming(item, collection) for item in son]
         elif isinstance(son, (Model, EmbeddedModel)):
             son = self.encode_django(son, collection)
-        elif isinstance(son, date):
-            son = datetime(son.year, son.month, son.day)
         return son
 
     def decode_django(self, data, collection):
@@ -86,9 +81,6 @@ class TransformDjango(SONManipulator):
     
     def transform_outgoing(self, son, collection):
         if isinstance(son, dict):
-            if "_id" in son:
-                pk = son.pop('_id')
-                son['id'] = unicode(pk)
             if "_type" in son and son["_type"] in [u"django", u'emb']:
                 son = self.decode_django(son, collection)
             else:

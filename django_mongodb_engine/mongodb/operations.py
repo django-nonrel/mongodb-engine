@@ -1,36 +1,14 @@
-from django.db.backends import BaseDatabaseOperations
-from pymongo.objectid import ObjectId
+from djangotoolbox.db.base import NonrelDatabaseOperations
 
-class DatabaseOperations(BaseDatabaseOperations):
-    compiler_module = 'django_mongodb_engine.mongodb.compiler'
-
-    def __init__(self, database_wrapper):
-        super(DatabaseOperations, self).__init__()
-        self.database = database_wrapper
-
-    def quote_name(self, name):
-        return name
-
-    def value_to_db_date(self, value):
-        # TODO - take a look at date queries
-        # value is a date here, no need to check it
-        return value
+class DatabaseOperations(NonrelDatabaseOperations):
+    compiler_module = __name__.rsplit('.', 1)[0] + '.compiler'
 
     def sql_flush(self, style, tables, sequence_list):
+        tables = self.connection.db_connection.collection_names()
+        tables = [name for name in tables if not name.startswith('system.')]
         for table in tables:
-            self.database.db_connection.drop_collection(table)
-        return tables
-
-    def value_to_db_datetime(self, value):
-        # value is a datetime here, no need to check it
-        return value
-
-    def value_to_db_time(self, value):
-        # value is a time here, no need to check it
-        return value
-
-    def prep_for_like_query(self, value):
-        return value
+            self.connection.db_connection.drop_collection(table)
+        return []
 
     def check_aggregate_support(self, aggregate):
         """
@@ -41,12 +19,3 @@ class DatabaseOperations(BaseDatabaseOperations):
         support than relational DB
         """
         pass
-
-    def value_to_db_auto(self, value):
-        """
-        Transform a value to an object compatible with the auto field required
-        by the backend driver for auto columns.
-        """
-        if value is None:
-            return None
-        return ObjectId(value)
