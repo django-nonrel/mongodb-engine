@@ -725,7 +725,10 @@ class QuerySet(object):
 
     def __iter__(self, *args, **kwargs):
         for obj in self._cursor:
-            yield self._document(**dict_keys_to_str(obj))
+            data = dict_keys_to_str(obj)
+            if '_id' in data:
+                data['id']=data.pop('_id')
+            yield self._document(**data)
 
     def _sub_js_fields(self, code):
         """When fields are specified with [~fieldname] syntax, where 
