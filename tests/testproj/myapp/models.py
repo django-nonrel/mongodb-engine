@@ -3,49 +3,18 @@ from django.utils.translation import ugettext_lazy as _
 from django_mongodb_engine.mongodb.fields import EmbeddedModel
 from django_mongodb_engine.fields import ListField, SortedListField, DictField, SetListField, GridFSField
 
-class StringForeignKey(models.ForeignKey):
-
-    default_error_messages = {
-        'invalid': _(u'This value must be an string.'),
-    }
-
-    def get_prep_value(self, value):
-        if value is None:
-            return None
-        return str(value)
-
-    def to_python(self, value):
-        if value is None:
-            return value
-        try:
-            return str(value)
-        except (TypeError, ValueError):
-            raise exceptions.ValidationError(self.error_messages['invalid'])
-
-    def db_type(self, connection):
-        return unicode
-
-
-class GridFSModel(models.Model):
-    title = GridFSField()
-    attr_as_string = GridFSField(as_string=True)
-    
-    def __unicode__(self):
-        return "Blog: %s" % self.title
-
 class Blog(models.Model):
     title = models.CharField(max_length=200, db_index=True)
     
     def __unicode__(self):
         return "Blog: %s" % self.title
 
-
 class Entry(models.Model):
     title = models.CharField(max_length=200, db_index=True, unique=True)
     content = models.CharField(max_length=1000)
-    date_published = models.DateTimeField()
-    blog = StringForeignKey(Blog, null=True, blank=True)
-    
+    date_published = models.DateTimeField(null=True, blank=True)
+    blog = models.ForeignKey(Blog, null=True, blank=True)
+
     class MongoMeta:
         descending_indexes = ['title']
 
@@ -59,7 +28,6 @@ class Person(models.Model):
     
     def __unicode__(self):
         return u"Person: %s %s" % (self.name, self.surname)
-
 
 class StandardAutoFieldModel(models.Model):
     title = models.CharField(max_length=200)

@@ -4,6 +4,13 @@ Django MongoDB Engine
 :Info: It's a database backend that adds mongodb support to django
 :Author: Flavio [FlaPer87] Percoco Premoli (http://github.com/FlaPer87) and Alberto [aparo] Paro (http://github.com/aparo)
 
+Requirements
+------------
+
+- Django non rel http://github.com/aparo/django or http://bitbucket.org/wkornewald/django-nonrel/wiki/Home
+- Djangotoolbox http://github.com/aparo/djangotoolbox or http://bitbucket.org/wkornewald/djangotoolbox
+
+
 About Django
 ============
 Django is a high-level Python Web framework that encourages rapid development and clean, pragmatic design.
@@ -16,7 +23,7 @@ MongoDB bridges the gap between key-value stores (which are fast and highly scal
 Infographics
 ============
 ::
-    - Django
+    - Django Nonrel branch
     - Manager
     - Compiler (MongoDB Engine one)
     - MongoDB
