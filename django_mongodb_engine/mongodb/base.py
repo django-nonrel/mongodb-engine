@@ -30,6 +30,9 @@ class DatabaseIntrospection(NonrelDatabaseIntrospection):
         pass
 
 class DatabaseWrapper(NonrelDatabaseWrapper):
+    def _cursor(self):
+        return self._connection
+
     def __init__(self, *args, **kwds):
         super(DatabaseWrapper, self).__init__(*args, **kwds)
         settings_dict = self.settings_dict

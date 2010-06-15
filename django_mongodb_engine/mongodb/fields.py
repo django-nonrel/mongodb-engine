@@ -1,4 +1,5 @@
 import django
+from django.conf import settings
 from django.db import models
 from django.db.models import Field
 from django.db.models.fields import FieldDoesNotExist
@@ -14,7 +15,7 @@ __doc__ = "Mongodb special fields"
 
 class EmbeddedModel(models.Model):
     _embedded_in =None
-    
+
     def save(self, *args, **kwargs):
         if self.pk is None:
             self.pk = unicode(ObjectId())
@@ -26,7 +27,7 @@ class EmbeddedModel(models.Model):
         if self.pk is None:
             self.pk = unicode(ObjectId())
             self.id = self.pk
-        result = {'_app':self._meta.app_label, 
+        result = {'_app':self._meta.app_label,
             '_model':self._meta.module_name,
             '_id':self.pk}
         for field in self._meta.fields:
@@ -58,7 +59,8 @@ def add_mongodb_manager(sender, **kwargs):
     Fix autofield
     """
     cls = sender
-    if cls.objects.db =="mongodb":
+    database = settings.DATABASES[cls.objects.db]
+    if 'mongodb' in database['ENGINE']:
         if not hasattr(django, 'MODIFIED') and isinstance(cls._meta.pk, DJAutoField):
             pk = cls._meta.pk
             setattr(pk, "to_python", autofield_to_python)
@@ -66,7 +68,7 @@ def add_mongodb_manager(sender, **kwargs):
             cls = sender
         if cls._meta.abstract:
             return
-            
+
         if getattr(cls, 'mongodb', None) is None:
             # Create the default manager, if needed.
             try:
@@ -82,7 +84,6 @@ def add_mongodb_manager(sender, **kwargs):
                 if attr.startswith("_"):
                     continue
                 setattr(cls._mongo_meta, attr, mongo_meta[attr])
-               
 
 
 signals.class_prepared.connect(add_mongodb_manager)
