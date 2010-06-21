@@ -1,4 +1,5 @@
 from django.db import models
+from django.core import exceptions
 from django.db.models import Field, CharField
 from django.utils.translation import ugettext_lazy as _
 
@@ -15,6 +16,23 @@ except ImportError:
 __all__ = ["ListField", "DictField", "SetListField", "SortedListField", ]
 __doc__ = "Common module to all nonrel engines"
 
+class GenericField(Field):
+    def validate(self, value, model_instance):
+        """
+        Validates value and throws ValidationError. 
+        """
+        if not isinstance(value, object):
+            raise exceptions.ValidationError("Value has to be an instance of object")
+        
+    def get_prep_value(self, value):
+        return value
+
+    def to_python(self, value):
+        return value
+
+    def get_default(self):
+        "Returns the default value for this field."
+        return None
     
 class ListField(Field):
     """A list field that wraps a standard field, allowing multiple instances
