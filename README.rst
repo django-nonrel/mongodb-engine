@@ -7,7 +7,7 @@ Django MongoDB Engine
 Requirements
 ------------
 
-- Django non rel http://github.com/aparo/django or http://bitbucket.org/wkornewald/django-nonrel/wiki/Home
+- Django non rel http://github.com/aparo/django-nonrel
 - Djangotoolbox http://github.com/aparo/djangotoolbox or http://bitbucket.org/wkornewald/djangotoolbox
 
 
