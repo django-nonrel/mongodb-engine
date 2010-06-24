@@ -3,7 +3,7 @@ Test suite for mangodj.
 """
 
 from django.test import TestCase
-from testproj.myapp.models import Entry, Blog, StandardAutoFieldModel, Person, TestFieldModel, EModel
+from testproj.myapp.models import Entry, Blog, StandardAutoFieldModel, Person, TestFieldModel, EModel, DynamicModel
 import datetime
 
 class MongoDjTest(TestCase):
@@ -259,3 +259,34 @@ class MongoDjTest(TestCase):
 
         sam1_query = StandardAutoFieldModel.objects.get(pk=sam1.pk)
         
+        
+    def test_generic_field(self):
+
+        dyn = DynamicModel(gen=u"title 1")
+        dyn.save()
+        
+        dyn = DynamicModel.objects.get(gen=u"title 1")
+       
+       
+        self.assertTrue(isinstance(
+            dyn.gen,
+            unicode
+        ))
+        
+        dyn.gen = 1
+        dyn.save()
+        dyn = DynamicModel.objects.get(gen=1)
+
+        self.assertTrue(isinstance(
+            dyn.gen,
+            int
+        ))
+
+        dyn.gen = { "type" : "This is a dict"}
+        dyn.save()
+        dyn = DynamicModel.objects.get(gen={ "type" : "This is a dict"})
+
+        self.assertTrue(isinstance(
+            dyn.gen,
+            dict
+        ))

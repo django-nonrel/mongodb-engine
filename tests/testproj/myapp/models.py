@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 from django_mongodb_engine.mongodb.fields import EmbeddedModel
-from django_mongodb_engine.fields import ListField, SortedListField, DictField, SetListField
+from django_mongodb_engine.fields import ListField, SortedListField, DictField, SetListField, GridFSField, GenericField
 
 class Blog(models.Model):
     title = models.CharField(max_length=200, db_index=True)
@@ -41,6 +41,12 @@ class EModel(EmbeddedModel):
 
     def test_func(self):
         return self.pos
+    
+class DynamicModel(models.Model):
+    gen = GenericField()
+    
+    def __unicode__(self):
+        return "Test special field model: %s" % (self.gen)
 
 class TestFieldModel(models.Model):
     title = models.CharField(max_length=200)

@@ -605,9 +605,9 @@ class QuerySet(object):
             prefixed with **+** or **-** to determine the ordering direction
         """
         
-        self._ordering = {}
+        self._ordering = []
         for col in args:
-            self._ordering.update({ (col.startswith("-") and col[1:]) or col : (col.startswith("-") and -1) or 1 })
+            self._ordering.append(( (col.startswith("-") and col[1:]) or col, (col.startswith("-") and -1) or 1 ))
             
         self._cursor.sort(self._ordering)
         return self
@@ -865,6 +865,9 @@ class QuerySet(object):
         if len(data) > REPR_OUTPUT_SIZE:
             data[-1] = "...(remaining elements truncated)..."
         return repr(data)
+
+    def _clone(self):
+        return self
 
 
 class Manager(DJManager):

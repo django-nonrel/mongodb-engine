@@ -1,4 +1,5 @@
 from django.db import models
+from django.core import exceptions
 from django.db.models import Field, CharField
 from django.utils.translation import ugettext_lazy as _
 
@@ -15,6 +16,23 @@ except ImportError:
 __all__ = ["ListField", "DictField", "SetListField", "SortedListField", ]
 __doc__ = "Common module to all nonrel engines"
 
+class GenericField(Field):
+    def validate(self, value, model_instance):
+        """
+        Validates value and throws ValidationError. 
+        """
+        if not isinstance(value, object):
+            raise exceptions.ValidationError("Value has to be an instance of object")
+        
+    def get_prep_value(self, value):
+        return value
+
+    def to_python(self, value):
+        return value
+
+    def get_default(self):
+        "Returns the default value for this field."
+        return None
     
 class ListField(Field):
     """A list field that wraps a standard field, allowing multiple instances
@@ -225,7 +243,6 @@ class GridFSField(CharField):
 
         def _get(self):
             from django.db import connections
-            print self.__class__.objects.db
             gdfs = GridFS(connections[self.__class__.objects.db].db_connection.db)
             if not hasattr(self, att_cache_name) and not getattr(self, att_val_name, None) and getattr(self, att_oid_name, None):
                 val = gdfs.get(getattr(self, att_oid_name))
@@ -271,7 +288,7 @@ class GridFSField(CharField):
             gdfs.delete(oid)
 
         if not self._as_string:
-            value = value.seek(0)
+            value.seek(0)
             value = value.read()
         
         oid = gdfs.put(value)

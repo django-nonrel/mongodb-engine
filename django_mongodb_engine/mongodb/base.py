@@ -1,13 +1,12 @@
+from django.core.exceptions import ImproperlyConfigured
+
 import pymongo
+from .creation import DatabaseCreation
+from .operations import DatabaseOperations
 
 from djangotoolbox.db.base import NonrelDatabaseFeatures, \
     NonrelDatabaseWrapper, NonrelDatabaseClient, \
     NonrelDatabaseValidation, NonrelDatabaseIntrospection
-
-from django.core.exceptions import ImproperlyConfigured
-
-from .creation import DatabaseCreation
-from django_mongodb_engine.mongodb.operations import DatabaseOperations
 
 class DatabaseFeatures(NonrelDatabaseFeatures):
     string_based_auto_field = True
@@ -35,33 +34,44 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
 
     def __init__(self, *args, **kwds):
         super(DatabaseWrapper, self).__init__(*args, **kwds)
-        settings_dict = self.settings_dict
-        NAME = settings_dict["NAME"]
-        HOST = settings_dict["HOST"]
-        try:
-            PORT = int(settings_dict["PORT"])
-        except ValueError:
-            raise ImproperlyConfigured("PORT must be an integer, or a string "
-                                       "which is easily convertable to an "
-                                       "integer")
-
-        USER = settings_dict["USER"]
-        PASSWORD = settings_dict["PASSWORD"]
-        connection = pymongo.Connection(HOST, PORT, slave_okay=True)
-        if USER and PASSWORD:
-            auth = connection['admin'].authenticate(USER, PASSWORD)
-            if not auth:
-                raise ImproperlyConfigured("Username and/or password for \
-the mongoDB are not correct")
-        from .mongodb_serializer import TransformDjango
-        self._connection = connection
-        self.db_name = NAME
-        self.db_connection = connection[NAME]
-        self.db_connection.add_son_manipulator(TransformDjango())
-
         self.features = DatabaseFeatures(self)
         self.ops = DatabaseOperations(self)
         self.client = DatabaseClient(self)
         self.creation = DatabaseCreation(self)
         self.validation = DatabaseValidation(self)
         self.introspection = DatabaseIntrospection(self)
+        self._is_connected = False
+
+    @property
+    def db_connection(self):
+        self._ensure_is_connected()
+        return self._db_connection
+
+    def _ensure_is_connected(self):
+        if not self._is_connected:
+            try:
+                port = int(self.settings_dict['PORT'])
+            except ValueError:
+                raise ImproperlyConfigured("PORT must be an integer")
+
+            user = self.settings_dict['USER']
+            password = self.settings_dict['PASSWORD']
+            if user and password:
+                auth = connection['admin'].authenticate(user, password)
+                if not auth:
+                    raise ImproperlyConfigured("Username and/or password for "
+                                               "the MongoDB are not correct")
+
+            self._connection = pymongo.Connection(
+                self.settings_dict['HOST'],
+                port,
+                slave_okay=True
+            )
+            self.db_name = self.settings_dict['NAME']
+            self._db_connection = self._connection[self.db_name]
+
+            from .mongodb_serializer import TransformDjango
+            self._db_connection.add_son_manipulator(TransformDjango())
+
+            # We're done!
+            self._is_connected = True
