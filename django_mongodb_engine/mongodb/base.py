@@ -30,6 +30,7 @@ class DatabaseIntrospection(NonrelDatabaseIntrospection):
 
 class DatabaseWrapper(NonrelDatabaseWrapper):
     def _cursor(self):
+        self._ensure_is_connected()
         return self._connection
 
     def __init__(self, *args, **kwds):
@@ -56,17 +57,19 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
 
             user = self.settings_dict['USER']
             password = self.settings_dict['PASSWORD']
-            if user and password:
-                auth = connection['admin'].authenticate(user, password)
-                if not auth:
-                    raise ImproperlyConfigured("Username and/or password for "
-                                               "the MongoDB are not correct")
 
             self._connection = pymongo.Connection(
                 self.settings_dict['HOST'],
                 port,
                 slave_okay=True
             )
+            
+            if user and password:
+                auth = self._connection['admin'].authenticate(user, password)
+                if not auth:
+                    raise ImproperlyConfigured("Username and/or password for "
+                                               "the MongoDB are not correct")
+                    
             self.db_name = self.settings_dict['NAME']
             self._db_connection = self._connection[self.db_name]
 
