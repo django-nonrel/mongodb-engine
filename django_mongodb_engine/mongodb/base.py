@@ -64,14 +64,14 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
                 slave_okay=True
             )
             
-            self.db_name = self.settings_dict['NAME']
-            self._db_connection = self._connection[self.db_name]
-            
             if user and password:
-                auth = self._connection[self.db_name].authenticate(user, password)
+                auth = self._connection['admin'].authenticate(user, password)
                 if not auth:
                     raise ImproperlyConfigured("Username and/or password for "
                                                "the MongoDB are not correct")
+                    
+            self.db_name = self.settings_dict['NAME']
+            self._db_connection = self._connection[self.db_name]
 
             from .mongodb_serializer import TransformDjango
             self._db_connection.add_son_manipulator(TransformDjango())
