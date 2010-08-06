@@ -7,7 +7,12 @@ from .operations import DatabaseOperations
 from djangotoolbox.db.base import NonrelDatabaseFeatures, \
     NonrelDatabaseWrapper, NonrelDatabaseClient, \
     NonrelDatabaseValidation, NonrelDatabaseIntrospection
+  
+from django.db.models import signals
+from .fields import add_mongodb_manager
 
+signals.class_prepared.connect(add_mongodb_manager)
+  
 class DatabaseFeatures(NonrelDatabaseFeatures):
     string_based_auto_field = True
 
