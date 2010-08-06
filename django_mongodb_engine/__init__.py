@@ -1,12 +1,13 @@
-__author__ = 'Flavio Percoco Premoli - Alberto Paro'
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 
-VERSION = (0, 0, 1)
+import logging
+logger = logging.getLogger(__name__)
 
-def get_version():
-    version = '%s.%s' % (VERSION[0], VERSION[1])
-    if VERSION[2]:
-        version = '%s.%s' % (version, VERSION[2])
-    return version
+VERSION = (0, 1, 0)
 
-__version__ = get_version()
-
+__version__ = ".".join(map(str, VERSION[0:3])) + "".join(VERSION[3:])
+__author__ = "Flavio Percoco Premoli"
+__contact__ = "flaper87@flaper87.org"
+__homepage__ = "http://github.com/FlaPer87/django-mongodb/"
+__docformat__ = "restructuredtext"

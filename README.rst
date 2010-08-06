@@ -19,9 +19,16 @@ About MongoDB
 =============
 MongoDB bridges the gap between key-value stores (which are fast and highly scalable) and traditional RDBMS systems (which provide rich queries and deep functionality).
 
+Installation
+============
+::
 
+    pip install django_mongodb_engine
+    
+    
 Infographics
 ============
+::
     - Django Nonrel branch
     - Manager
     - Compiler (MongoDB Engine one)
