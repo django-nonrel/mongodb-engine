@@ -22,7 +22,6 @@ MongoDB bridges the gap between key-value stores (which are fast and highly scal
 
 Infographics
 ============
-::
     - Django Nonrel branch
     - Manager
     - Compiler (MongoDB Engine one)

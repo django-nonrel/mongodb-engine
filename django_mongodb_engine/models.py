@@ -1,1 +1,0 @@
-from django_mongodb_engine.mongodb.fields import add_mongodb_manager

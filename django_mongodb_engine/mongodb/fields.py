@@ -58,6 +58,7 @@ def add_mongodb_manager(sender, **kwargs):
     """
     Fix autofield
     """
+    print sender
     cls = sender
     database = settings.DATABASES[cls.objects.db]
     if 'mongodb' in database['ENGINE']:
@@ -86,4 +87,4 @@ def add_mongodb_manager(sender, **kwargs):
                 setattr(cls._mongo_meta, attr, mongo_meta[attr])
 
 
-signals.class_prepared.connect(add_mongodb_manager)
+#signals.class_prepared.connect(add_mongodb_manager)
