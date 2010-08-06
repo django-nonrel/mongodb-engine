@@ -22,7 +22,6 @@ from django.utils.tree import Node
 
 from djangotoolbox.db.basecompiler import NonrelQuery, NonrelCompiler, \
     NonrelInsertCompiler, NonrelUpdateCompiler, NonrelDeleteCompiler
-from _pydev_inspect import func
 
 TYPE_MAPPING_FROM_DB = {
     'unicode':  lambda val: unicode(val),

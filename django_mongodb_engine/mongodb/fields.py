@@ -8,8 +8,6 @@ from pymongo.objectid import ObjectId
 from django.db.models.fields import AutoField as DJAutoField
 from .manager import Manager
 
-from django.db.models import signals
-
 __all__ = ["EmbeddedModel"]
 __doc__ = "Mongodb special fields"
 
@@ -87,5 +85,3 @@ def add_mongodb_manager(sender, **kwargs):
                     continue
                 setattr(cls._mongo_meta, attr, mongo_meta[attr])
                 
-#signals.class_prepared.connect(add_mongodb_manager)
-
