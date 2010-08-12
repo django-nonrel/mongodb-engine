@@ -3,7 +3,7 @@ from django.db import models
 from django.db.models import Field
 from django.db.models.fields import FieldDoesNotExist
 from django.utils.translation import ugettext_lazy as _
-from django.core import serializers
+from django.core import serializers, exceptions
 from pymongo.objectid import ObjectId
 from django.db.models.fields import AutoField as DJAutoField
 from .manager import Manager
@@ -42,7 +42,7 @@ def autofield_to_python(value):
     try:
         return str(value)
     except (TypeError, ValueError):
-        raise exceptions.ValidationError(self.error_messages['invalid'])
+        raise exceptions.ValidationError("Invalid autofield value")
 
 def autofield_get_prep_value(value):
     if value is None:
