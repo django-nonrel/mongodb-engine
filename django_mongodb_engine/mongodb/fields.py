@@ -79,9 +79,9 @@ def add_mongodb_manager(sender, **kwargs):
             setattr(cls, 'mongodb', Manager())
 
             mongo_meta = getattr(cls, "MongoMeta", MongoMeta).__dict__.copy()
-            setattr(cls, "_mongo_meta", MongoMeta())
+#            setattr(cls, "_meta", MongoMeta())
             for attr in mongo_meta:
                 if attr.startswith("_"):
                     continue
-                setattr(cls._mongo_meta, attr, mongo_meta[attr])
+                setattr(cls._meta, attr, mongo_meta[attr])
                 

@@ -38,7 +38,7 @@ class DatabaseCreation(NonrelDatabaseCreation):
         if f.db_index:
             opts = model._meta
             col = getattr(self.connection.db_connection, opts.db_table)
-            descending = getattr(model._mongo_meta, "descending_indexes", [])
+            descending = getattr(model._meta, "descending_indexes", [])
             direction =  (f.attname in descending and -1) or 1
             col.ensure_index([(f.name, direction)], unique=f.unique)
         return []
@@ -74,17 +74,17 @@ class DatabaseCreation(NonrelDatabaseCreation):
         if not model._meta.managed or model._meta.proxy:
             return []
         fields = [ f for f in model._meta.local_fields if f.db_index]
-        if not fields and not hasattr(model._mongo_meta, "index_together"):
+        if not fields and not hasattr(model._meta, "index_together"):
             return []
         print "Installing index for %s.%s model" % (model._meta.app_label, model._meta.object_name)
         for f in fields:
             self.sql_indexes_for_field(model, f, style)
-        for group in getattr(model._mongo_meta, "index_together", []):
+        for group in getattr(model._meta, "index_together", []):
             self.index_fields_group(model, group, style)
         return []
 
     def sql_create_model(self, model, style, known_models=set()):
-        opts = model._mongo_meta
+        opts = model._meta
         kwargs = {}
         kwargs["capped"] = getattr(opts, "capped", False)
         if hasattr(opts, "collection_max") and opts.collection_max:
