@@ -169,6 +169,7 @@ class DBQuery(NonrelQuery):
             negated = False
         else:
             op = OPERATORS_MAP[lookup_type]
+            
         value = op(self.convert_value_for_db(db_type, value))
 
         if negated:

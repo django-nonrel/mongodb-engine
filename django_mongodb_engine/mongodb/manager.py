@@ -1,12 +1,14 @@
+import re
+import copy
+
 from django.db import connections
 from django.db.models.manager import Manager as DJManager
 
 import pymongo
 from pymongo.objectid import ObjectId
 
-import re
-import copy
 from .utils import dict_keys_to_str
+
 try:
     from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
 except ImportError:
@@ -296,7 +298,6 @@ class QuerySet(object):
         exclude = parameters.pop("not", False)
         
         for key, value in parameters.items():
-            
             
             parts  = key.split("__")
             lookup_type = (len(parts)>=2) and ( parts[-1] in operators + match_operators and parts.pop()) or ""
@@ -911,16 +912,16 @@ class Manager(DJManager):
         return queryset
 
 
-def queryset_manager(func):
-    """Decorator that allows you to define custom QuerySet managers on
-    :class:`~mongoengine.Document` classes. The manager must be a function that
-    accepts a :class:`~mongoengine.Document` class as its first argument, and a
-    :class:`~mongoengine.queryset.QuerySet` as its second argument. The method
-    function should return a :class:`~mongoengine.queryset.QuerySet`, probably
-    the same one that was passed in, but modified in some way.
-    """
-    if func.func_code.co_argcount == 1:
-        import warnings
-        msg = 'Methods decorated with queryset_manager should take 2 arguments'
-        warnings.warn(msg, DeprecationWarning)
-    return QuerySetManager(func)
+#def queryset_manager(func):
+#    """Decorator that allows you to define custom QuerySet managers on
+#    :class:`~mongoengine.Document` classes. The manager must be a function that
+#    accepts a :class:`~mongoengine.Document` class as its first argument, and a
+#    :class:`~mongoengine.queryset.QuerySet` as its second argument. The method
+#    function should return a :class:`~mongoengine.queryset.QuerySet`, probably
+#    the same one that was passed in, but modified in some way.
+#    """
+#    if func.func_code.co_argcount == 1:
+#        import warnings
+#        msg = 'Methods decorated with queryset_manager should take 2 arguments'
+#        warnings.warn(msg, DeprecationWarning)
+#    return QuerySetManager(func)

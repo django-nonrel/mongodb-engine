@@ -1,10 +1,13 @@
 from pymongo import Connection
-from pymongo.son_manipulator import SONManipulator
-from django.utils.importlib import import_module
 from pymongo.objectid import ObjectId
+from pymongo.son_manipulator import SONManipulator
+
+from django.utils.importlib import import_module
+
 from datetime import datetime, date, time
+
 #TODO Add content type cache
-from utils import ModelLazyObject
+from .utils import ModelLazyObject
 
 class TransformDjango(SONManipulator):
 

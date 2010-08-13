@@ -6,7 +6,7 @@ distname = 'django_mongodb_engine'
 numversion = (0, 1, 0)
 version = '.'.join([str(num) for num in numversion])
 
-install_requires = ['pymongo', 'django']
+install_requires = ['pymongo', 'django>=1.2', 'djangotoolbox']
 
 pyversions = ["2.5", '2.6', '2.7']
 
