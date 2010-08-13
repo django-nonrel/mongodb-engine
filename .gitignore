@@ -1,4 +1,5 @@
 *.pyc
 *~
 .hg*
+.db*
 django_mongodb_engine.egg-info
