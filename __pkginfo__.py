@@ -15,7 +15,7 @@ pyversions = ["2", "2.4", "2.5", '2.6', '2.7']
 
 license = 'GPLv2'
 
-author = distmenta.__author__ 
+author = distmeta.__author__ 
 author_email = distmeta.__contact__
 web = distmeta.__homepage__
 docformat = distmeta.__docformat__ 
