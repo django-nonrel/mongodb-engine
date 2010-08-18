@@ -2,10 +2,10 @@
 import os, sys
 from django.core.management import execute_manager
 # dirty hack to get the backend working.
-sys.path.insert(0, os.path.abspath('./..'))
-sys.path.insert(0, os.path.abspath('./../..'))
-example_dir = os.path.dirname(__file__)
-sys.path.insert(0, os.path.join(example_dir, '..'))
+#sys.path.insert(0, os.path.abspath('./..'))
+#sys.path.insert(0, os.path.abspath('./../..'))
+#example_dir = os.path.dirname(__file__)
+#sys.path.insert(0, os.path.join(example_dir, '..'))
 
 try:
     import settings # Assumed to be in the same directory.

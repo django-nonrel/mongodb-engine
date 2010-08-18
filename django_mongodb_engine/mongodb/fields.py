@@ -1,6 +1,6 @@
 import django
 from django.db import models
-from django.db.models import Field
+from django.db.models import signals, Field
 from django.db.models.fields import FieldDoesNotExist
 from django.utils.translation import ugettext_lazy as _
 from django.core import serializers, exceptions
@@ -49,9 +49,21 @@ def autofield_get_prep_value(value):
         return None
     return ObjectId(value)
 
+def pre_init_mongodb_signal(sender, args, **kwargs):
+    from django.conf import settings
+    
+    database = settings.DATABASES[sender.objects.db]
+    if not 'mongodb' in database['ENGINE']:
+        return
+    
+    if not hasattr(django, 'MODIFIED') and isinstance(sender._meta.pk, DJAutoField):
+        pk = sender._meta.pk
+        setattr(pk, "to_python", autofield_to_python)
+        setattr(pk, "get_prep_value", autofield_get_prep_value)
+
 class MongoMeta(object):
     pass
-
+  
 def add_mongodb_manager(sender, **kwargs):
     """
     Fix autofield
@@ -61,11 +73,6 @@ def add_mongodb_manager(sender, **kwargs):
     cls = sender
     database = settings.DATABASES[cls.objects.db]
     if 'mongodb' in database['ENGINE']:
-        if not hasattr(django, 'MODIFIED') and isinstance(cls._meta.pk, DJAutoField):
-            pk = cls._meta.pk
-            setattr(pk, "to_python", autofield_to_python)
-            setattr(pk, "get_prep_value", autofield_get_prep_value)
-            cls = sender
         if cls._meta.abstract:
             return
 
