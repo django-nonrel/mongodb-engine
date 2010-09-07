@@ -75,5 +75,3 @@ class SetWidget(widgets.Textarea):
                listStr += '%s\n' % key
 
         return super(SetWidget, self).render(name, listStr, attrs)
-#        return mark_safe(htmlval)
-
