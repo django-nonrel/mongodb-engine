@@ -1,7 +1,9 @@
 from django.db import models
-from django.core import exceptions
+from django.core import exceptions, validators
 from django.db.models import Field, CharField
 from django.utils.translation import ugettext_lazy as _
+from django.utils.encoding import smart_unicode
+from django import forms
 
 from pymongo.objectid import ObjectId
 from gridfs import GridFS, errors
@@ -13,7 +15,7 @@ except ImportError:
     from StringIO import StringIO
 
 
-__all__ = ["ListField", "DictField", "SetListField", "SortedListField", "GenericField"]
+__all__ = ["ListField", "DictField", "SetListField", "SortedListField", ]
 __doc__ = "Common module to all nonrel engines"
 
 class GenericField(Field):
@@ -150,6 +152,12 @@ class DictField(Field):
             return self.default
         return {}
 
+    def formfield(self, form_class=forms.Field, **kwargs):
+        "Returns a django.forms.Field instance for this database Field."
+        defaults={}
+        defaults.update(kwargs)
+        return form_class(**defaults)
+
 class SetListField(Field):
     """A list field that allows only one instance for item.
     """
@@ -222,7 +230,15 @@ class SetListField(Field):
         """
         if value is None:
             return set()
+        if isinstance( value, set):
+            return value
         return set(value)
+
+    def formfield(self, form_class=forms.Field, **kwargs):
+        "Returns a django.forms.Field instance for this database Field."
+        defaults={}
+        defaults.update(kwargs)
+        return form_class(**defaults)
 
 class GridFSField(CharField):
 
