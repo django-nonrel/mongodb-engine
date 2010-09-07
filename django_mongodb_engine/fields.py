@@ -13,7 +13,7 @@ except ImportError:
     from StringIO import StringIO
 
 
-__all__ = ["ListField", "DictField", "SetListField", "SortedListField", ]
+__all__ = ["ListField", "DictField", "SetListField", "SortedListField", "GenericField"]
 __doc__ = "Common module to all nonrel engines"
 
 class GenericField(Field):

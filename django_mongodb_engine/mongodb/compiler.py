@@ -45,7 +45,7 @@ TYPE_MAPPING_TO_DB = {
 OPERATORS_MAP = {
     'exact':    lambda val: val,
     'iexact':    lambda val: re.compile(r'^%s$' % val, re.IGNORECASE),
-    'startswith':    lambda val: re.compile(r'%s' % val),
+    'startswith':    lambda val: re.compile(r'^%s' % val),
     'istartswith':    lambda val: re.compile(r'^%s' % val, re.IGNORECASE),
     'endswith':    lambda val: re.compile(r'%s$' % val),
     'iendswith':    lambda val: re.compile(r'%s$' % val, re.IGNORECASE),
