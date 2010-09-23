@@ -98,6 +98,18 @@ def python2db(db_type, value):
 def db2python(db_type, value):
     return _get_mapping(db_type, value, TYPE_MAPPING_FROM_DB)
 
+def safe_gen(func):
+    @wraps(func)
+    def _func(*args, **kwargs):
+        try:
+            ret = func(*args, **kwargs)
+            for i in ret:
+                yield i
+        except pymongo.errors.PyMongoError, e:
+            raise DatabaseError, DatabaseError(str(e)), sys.exc_info()[2]
+
+    return _func
+
 def safe_call(func):
     @wraps(func)
     def _func(*args, **kwargs):
@@ -122,7 +134,7 @@ class DBQuery(NonrelQuery):
     def __repr__(self):
         return '<DBQuery: %r ORDER %r>' % (self.db_query, self._ordering)
 
-    @safe_call
+    @safe_gen
     def fetch(self, low_mark, high_mark):
         results = self._get_results()
         if low_mark > 0:
