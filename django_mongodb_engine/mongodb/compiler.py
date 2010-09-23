@@ -123,7 +123,8 @@ def retry(times, interval):
                 except pymongo.errors.PyMongoError:
                     if not cnt:
                         raise
-                    time.sleep(interval)
+                    if cnt < times - 1:
+                        time.sleep(interval)
                 else:
                     break
         return _inner
@@ -179,7 +180,8 @@ class DBQuery(NonrelQuery):
             except pymongo.errors.PyMongoError:
                 if iterating:
                     raise
-                time.sleep(6)
+                if cnt < 9:
+                    time.sleep(6)
 
             else:
                 break
