@@ -41,6 +41,8 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
         self.creation = DatabaseCreation(self)
         self.validation = DatabaseValidation(self)
         self.introspection = DatabaseIntrospection(self)
+        self.safe_inserts = False
+        self.w = 0
         self._is_connected = False
 
     @property
@@ -50,19 +52,37 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
 
     def _ensure_is_connected(self):
         if not self._is_connected:
+            host = self.settings_dict['HOST'] or None
+            port = self.settings_dict['PORT'] or None
+            safe = self.settings_dict.get('SAFE_INSERTS', False)
+            wait = self.settings_dict.get('WAIT_FOR_SLAVES', 0)
+
             try:
-                port = int(self.settings_dict['PORT'])
-            except ValueError:
-                raise ImproperlyConfigured("PORT must be an integer")
+                if pymongo.version >= '1.8':
+                    assert host is None or isinstance(host, (basestring, list)), 'If set, HOST must be a string or a list of strings'
+                else:
+                    assert host is None or isinstance(host, basestring), 'If set, HOST must be a string'
 
-            user = self.settings_dict['USER']
-            password = self.settings_dict['PASSWORD']
+                if isinstance(host, basestring) and host.startswith('mongodb://'):
+                    assert port is None, 'If the host is a mongodb:// URL, setting the port is useless'
 
-            self._connection = pymongo.Connection(
-                self.settings_dict['HOST'],
-                port,
-                slave_okay=True
-            )
+                assert port is None or isinstance(port, int), 'If set, PORT must be an integer'
+
+                assert isinstance(safe, bool), 'If set, SAFE_INSERTS must be True or False'
+                assert isinstance(wait, int), 'If set, WAIT_FOR_SLAVES must be an integer'
+
+            except AssertionError, e:
+                raise ImproperlyConfigured(e)
+
+            self.safe_inserts = safe
+            self.w = wait
+            
+            user = self.settings_dict.get('USER', None)
+            password = self.settings_dict.get('PASSWORD', None)
+
+            slave_okay = self.settings_dict.get('SLAVE_OKAY', False) 
+
+            self._connection = pymongo.Connection(host=host, port=port, slave_okay=slave_okay)
             
             self.db_name = self.settings_dict['NAME']
             
@@ -71,7 +91,6 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
                 if not auth:
                     raise ImproperlyConfigured("Username and/or password for "
                                                "the MongoDB are not correct")
-                    
             
             self._db_connection = self._connection[self.db_name]
 

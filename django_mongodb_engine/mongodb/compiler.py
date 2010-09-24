@@ -1,5 +1,6 @@
 import sys
 import re
+import time
 
 from datetime import datetime
 from functools import wraps
@@ -98,6 +99,38 @@ def python2db(db_type, value):
 def db2python(db_type, value):
     return _get_mapping(db_type, value, TYPE_MAPPING_FROM_DB)
 
+def safe_gen(func):
+    @wraps(func)
+    def _func(*args, **kwargs):
+        try:
+            ret = func(*args, **kwargs)
+            for i in ret:
+                yield i
+        except pymongo.errors.PyMongoError, e:
+            raise DatabaseError, DatabaseError(str(e)), sys.exc_info()[2]
+
+    return _func
+
+def retry(times, interval):
+    def decor(func):
+        @wraps(func)
+        def _inner(*args, **kwargs):
+            cnt = times
+            while cnt:
+                cnt -= 1
+                try:
+                    return func(*args, **kwargs)
+                except pymongo.errors.PyMongoError:
+                    if not cnt:
+                        raise
+                    if cnt < times - 1:
+                        time.sleep(interval)
+                else:
+                    break
+        return _inner
+    return decor
+
+
 def safe_call(func):
     @wraps(func)
     def _func(*args, **kwargs):
@@ -122,7 +155,7 @@ class DBQuery(NonrelQuery):
     def __repr__(self):
         return '<DBQuery: %r ORDER %r>' % (self.db_query, self._ordering)
 
-    @safe_call
+    @safe_gen
     def fetch(self, low_mark, high_mark):
         results = self._get_results()
         if low_mark > 0:
@@ -130,10 +163,28 @@ class DBQuery(NonrelQuery):
         if high_mark is not None:
             results = results.limit(high_mark - low_mark)
 
-        for entity in results:
-            entity[self.query.get_meta().pk.column] = entity['_id']
-            del entity['_id']
-            yield entity
+        def _prepare(e):
+            e[self.query.get_meta().pk.column] = e['_id']
+            del e['_id']
+            return e
+
+        iterating = False
+        cnt = 10
+        while cnt:
+            cnt -= 1
+            try:
+                for entity in results:
+                    iterating = True
+                    yield _prepare(entity)
+
+            except pymongo.errors.PyMongoError:
+                if iterating:
+                    raise
+                if cnt < 9:
+                    time.sleep(6)
+
+            else:
+                break
 
     @safe_call
     def count(self, limit=None):
@@ -254,21 +305,41 @@ class SQLCompiler(NonrelCompiler):
             value = python2db(db_type, value)
         return value
 
+    def insert_params(self):
+        conn = self.connection
+        
+        params = {
+            'safe': conn.safe_inserts,
+        }
+
+        if conn.w:
+            params['w'] = conn.w
+
+        return params
+
+
 class SQLInsertCompiler(NonrelInsertCompiler, SQLCompiler):
     @safe_call
+    @retry(10, 6)
     def insert(self, data, return_id=False):
         pk_column = self.query.get_meta().pk.column
         if pk_column in data:
             data['_id'] = data[pk_column]
             del data[pk_column]
 
+        conn = self.connection.db_connection
         db_table = self.query.get_meta().db_table
-        pk = self.connection.db_connection[db_table].save(data)
+        params = self.insert_params()
+
+        pk = conn[db_table].save(data, **params)
+
         return unicode(pk)
 
 # TODO: Define a common nonrel API for updates and add it to the nonrel
 # backend base classes and port this code to that API
 class SQLUpdateCompiler(SQLCompiler):
+    @safe_call
+    @retry(10, 6)
     def execute_sql(self, return_id=False):
         """
         self.query - the data that should be inserted
@@ -280,8 +351,12 @@ class SQLUpdateCompiler(SQLCompiler):
         pk_field = self.query.model._meta.pk
         pk_name = pk_field.attname
 
+        conn = self.connection.db_connection
         db_table = self.query.get_meta().db_table
-        res = self.connection.db_connection[db_table].save(dat)
+        params = self.insert_params()
+
+        res = conn[db_table].save(dat, **params)
+
         return unicode(res)
 
 class SQLDeleteCompiler(NonrelDeleteCompiler, SQLCompiler):
