@@ -50,6 +50,9 @@ def autofield_get_prep_value(value):
     return ObjectId(value)
 
 def pre_init_mongodb_signal(sender, args, **kwargs):
+    if sender._meta.abstract:
+        return
+
     from django.conf import settings
     
     database = settings.DATABASES[sender.objects.db]
