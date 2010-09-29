@@ -67,10 +67,14 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
 
                 if isinstance(host, basestring) and host.startswith('mongodb://'):
                     if port:
+                        # If host starts with mongodb:// the port will be 
+                        # ignored so lets make sure it is None
+                        port = None
                         warnings.warn("If the host is a mongodb:// URL, setting the port is useless. I'll ignore it", RuntimeWarning)
-                    
+
                 try:
-                    port = int(port)
+                    #If not port then port will be None else will be converted to int.
+                    port = (port and int(port)) or None
                 except ValueError:
                     raise ImproperlyConfigured, 'If set, PORT must be an integer'
 
