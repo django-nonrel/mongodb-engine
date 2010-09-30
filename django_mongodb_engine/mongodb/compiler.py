@@ -59,7 +59,7 @@ OPERATORS_MAP = {
     'lt':       lambda val: {'$lt': val},
     'lte':      lambda val: {'$lte': val},
     'range':    lambda val: {'$gte': val[0], '$lte': val[1]},
-    'year':     lambda val: {'$gte': val[0], '$lt': val[1]},
+#    'year':     lambda val: {'$gte': val[0], '$lt': val[1]},
     'isnull':   lambda val: None if val else {'$ne': None},
     'in':       lambda val: {'$in': val},
 }

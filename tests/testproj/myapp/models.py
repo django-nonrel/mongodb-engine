@@ -26,6 +26,9 @@ class Person(models.Model):
     surname = models.CharField(max_length=20)
     age = models.IntegerField(null=True, blank=True)
     
+    class Meta:
+        unique_together = ("name", "surname")
+    
     def __unicode__(self):
         return u"Person: %s %s" % (self.name, self.surname)
 
