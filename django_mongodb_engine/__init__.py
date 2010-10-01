@@ -3,7 +3,7 @@
 
 __version__     = (0, 1, 2)
 __author__      = "Flavio Percoco Premoli, Alberto Paro and contributors"
-__contact__     = "django-mongodb-engine@lophus.org"
+__contact__     = "django-mongodb-engine-users@googlegroups.com"
 __homepage__    = "http://github.com/django-mongodb-engine/mongodb-engine"
 __docformat__   = "restructuredtext"
 

@@ -1,12 +1,22 @@
 =========================================
  Django MongoDB Engine for django-nonrel
 =========================================
-:Django-nonrel: http://bitbucket.org/wkornewald/django-nonrel
 :Web: http://github.com/django-mongodb-engine/mongodb-engine/
-:Download: http://pypi.python.org/pypi/django_mongodb_engine/
+:Mailing List: django-mongodb-engine-users@googlegroups.com
 :Bug tracker: http://github.com/django-mongodb-engine/mongodb-engine/issues/
 :License: 2-clause BSD
+:Download: http://pypi.python.org/pypi/django_mongodb_engine/
 :Keywords: django, mongodb, orm, nosql, database, python
+
+Requirements
+============
+* MongoDB of course ;-)
+* PyMongo (PyPI)
+* `Django-nonrel`
+* `djangotoolbox`
+
+.. _Django-nonrel: http://bitbucket.org/wkornewald/django-nonrel
+.. _djangotoolbox: http://bitbucket.org/wkornedwald/djangotoolbox
 
 Contributing
 ============
