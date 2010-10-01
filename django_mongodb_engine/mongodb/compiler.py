@@ -307,14 +307,9 @@ class SQLCompiler(NonrelCompiler):
 
     def insert_params(self):
         conn = self.connection
-        
-        params = {
-            'safe': conn.safe_inserts,
-        }
-
-        if conn.w:
-            params['w'] = conn.w
-
+        params = {'safe': conn.safe_inserts}
+        if conn.wait_for_slaves:
+            params['w'] = conn.wait_for_slaves
         return params
 
 
