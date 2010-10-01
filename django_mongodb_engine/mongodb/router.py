@@ -8,16 +8,16 @@ class MongoDBRouter(object):
         self.managed_models = getattr(settings, "MONGODB_MANAGED_MODELS", [])
         self.mongodb_database = None
         self.mongodb_databases = []
-        
+
         for name, databaseopt in settings.DATABASES.items():
             if databaseopt["ENGINE"]=='django_mongodb_engine.mongodb':
                 if databaseopt.get("IS_DEFAULT", False) and not self.mongodb_database:
                     self.mongodb_database = name
                 elif databaseopt.get("IS_DEFAULT", False) and self.mongodb_database:
                     raise RuntimeError("There can be just one mongodb default db")
-                
+
                 self.mongodb_databases.append(name)
-                
+
         if self.mongodb_database is None and not self.mongodb_databases:
             raise RuntimeError("A mongodb database must be set")
         self.mongodb_database = self.mongodb_databases[0]
@@ -76,4 +76,4 @@ class MongoDBRouter(object):
         if key in self.managed_models:
             return True
         return None
-        
+

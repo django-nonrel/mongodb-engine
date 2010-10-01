@@ -54,11 +54,11 @@ def pre_init_mongodb_signal(sender, args, **kwargs):
         return
 
     from django.conf import settings
-    
+
     database = settings.DATABASES[sender.objects.db]
     if not 'mongodb' in database['ENGINE']:
         return
-    
+
     if not hasattr(django, 'MODIFIED') and isinstance(sender._meta.pk, DJAutoField):
         pk = sender._meta.pk
         setattr(pk, "to_python", autofield_to_python)
@@ -66,13 +66,13 @@ def pre_init_mongodb_signal(sender, args, **kwargs):
 
 class MongoMeta(object):
     pass
-  
+
 def add_mongodb_manager(sender, **kwargs):
     """
     Fix autofield
     """
     from django.conf import settings
-    
+
     cls = sender
     database = settings.DATABASES[cls.objects.db]
     if 'mongodb' in database['ENGINE']:
@@ -94,4 +94,4 @@ def add_mongodb_manager(sender, **kwargs):
                 if attr.startswith("_"):
                     continue
                 setattr(cls._meta, attr, mongo_meta[attr])
-                
+

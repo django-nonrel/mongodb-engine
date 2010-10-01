@@ -99,6 +99,6 @@ INSTALLED_APPS = MONGODB_MANAGED_APPS = (
 #MONGODB_MANAGED_MODELS = ['mixed.record', ]
 
 DATABASE_ROUTERS = ['django_mongodb_engine.mongodb.router.MongoDBRouter']
-SOUTH_DATABASE_ADAPTERS = { 
+SOUTH_DATABASE_ADAPTERS = {
                            "default" : "django_mongodb_engine.mongodb.south"
                            }

@@ -105,13 +105,13 @@ class MongoDjTest(TestCase):
     def test_dates_ordering(self):
         now = datetime.datetime.now()
         before = now - datetime.timedelta(days=1)
-        
+
         entry1 = Entry(title="entry 1", date_published=now)
         entry1.save()
 
         entry2 = Entry(title="entry 2", date_published=before)
         entry2.save()
-    
+
         self.assertEqual(
             list(Entry.objects.order_by('-date_published')),
             [entry1, entry2]
@@ -127,7 +127,7 @@ class MongoDjTest(TestCase):
         now = datetime.datetime.now()
         before = now + datetime.timedelta(days=1)
         after = now - datetime.timedelta(days=1)
-        
+
         entry1 = Entry(title="entry 1", date_published=now)
         entry1.save()
 
@@ -165,14 +165,14 @@ class MongoDjTest(TestCase):
         )
 
     def test_fields(self):
-        t1 = TestFieldModel(title="p1", 
+        t1 = TestFieldModel(title="p1",
                             mlist=["ab", "bc"],
                             slist=["bc", "ab"],
                             mdict = {'a':23, "b":True  },
                             mset=["a", 'b', "b"]
                             )
         t1.save()
-        
+
         t = TestFieldModel.objects.get(id=t1.id)
         self.assertEqual(t.mlist, ["ab", "bc"])
         self.assertEqual(t.mlist_default, ["a", "b"])
@@ -187,14 +187,14 @@ class MongoDjTest(TestCase):
     def test_embedded_model(self):
         em = EModel(title="1", pos = 1)
         em2 = EModel(title="2", pos = 2)
-        t1 = TestFieldModel(title="p1", 
+        t1 = TestFieldModel(title="p1",
                             mlist=[em, em2],
                             slist=[em, em2],
                             mdict = {'a':em, "b":em2  },
                             mset=[em, em, em]
                             )
         t1.save()
-        
+
         t = TestFieldModel.objects.get(id=t1.id)
         self.assertEqual(len(t.mlist), 2)
         self.assertEqual(t.mlist[0].test_func(), 1)
@@ -226,7 +226,7 @@ class MongoDjTest(TestCase):
             list(Entry.objects.filter(blog=blog1.pk)),
             [entry1, entry2]
         )
-        
+
 
     def test_foreign_keys_bug(self):
         blog1 = Blog(title="Blog")
@@ -258,21 +258,21 @@ class MongoDjTest(TestCase):
         )
 
         sam1_query = StandardAutoFieldModel.objects.get(pk=sam1.pk)
-        
-        
+
+
     def test_generic_field(self):
 
         dyn = DynamicModel(gen=u"title 1")
         dyn.save()
-        
+
         dyn = DynamicModel.objects.get(gen=u"title 1")
-       
-       
+
+
         self.assertTrue(isinstance(
             dyn.gen,
             unicode
         ))
-        
+
         dyn.gen = 1
         dyn.save()
         dyn = DynamicModel.objects.get(gen=1)

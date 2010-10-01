@@ -14,7 +14,7 @@ class DatabaseOperations(NonrelDatabaseOperations):
         """
         This function is meant to raise exception if backend does
         not support aggregation.
-        
+
         In fact, mongo probably even has more flexible aggregation
         support than relational DB
         """

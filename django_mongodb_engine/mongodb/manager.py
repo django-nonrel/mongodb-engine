@@ -137,7 +137,7 @@ class Q(object):
 
         # Perform the substitution
         operation_js = op_js % {
-            'field': key, 
+            'field': key,
             'value': value_name
         }
         return value, operation_js
@@ -169,7 +169,7 @@ class QuerySet(object):
         self._loaded_fields = []
         self._ordering = []
         self.transform = TransformDjango()
-        
+
         # If inheritance is allowed, only return instances and instances of
         # subclasses of the class being used
         #if document._meta.get('allow_inheritance'):
@@ -216,7 +216,7 @@ class QuerySet(object):
         """An alias of :meth:`~mongoengine.queryset.QuerySet.__call__`
         """
         return self.__call__()
-    
+
     def distinct(self, *args, **kwargs):
         """
         Distinct method
@@ -229,23 +229,23 @@ class QuerySet(object):
         perform operations only if the collection is accessed.
         """
         return self._collection_obj
-    
+
     def values(self, *args):
         return (args and [dict(zip(args,[getattr(doc, key) for key in args])) for doc in self]) or [obj for obj in self._cursor.clone()]
-        
+
     def values_list(self, *args, **kwargs):
         flat = kwargs.pop("flat", False)
         if flat and len(args) != 1:
             raise Exception("args len must be 1 when flat=True")
-        
+
         return (flat and self.distinct(args[0] if not args[0] in ["id", "pk"] else "_id")) or zip(*[self.distinct(field if not field in ["id", "pk"] else "_id") for field in args])
-#                
+#
 #            if self._document._meta['geo_indexes'] and \
 #               pymongo.version >= "1.5.1":
 #                from pymongo import GEO2D
 #                for index in self._document._meta['geo_indexes']:
 #                    self._collection.ensure_index([(index, GEO2D)])
-#            
+#
 #            # Ensure all needed field indexes are created
 #            for field_name, field_instance in self._document._fields.iteritems():
 #                if field_instance.__class__.__name__ == 'GeoLocationField':
@@ -258,7 +258,7 @@ class QuerySet(object):
             cursor_args = {}
             if self._loaded_fields:
                 cursor_args = {'fields': self._loaded_fields}
-            self._cursor_obj = self._collection.find(self._query, 
+            self._cursor_obj = self._collection.find(self._query,
                                                      **cursor_args)
             # Apply where clauses to cursor
             if self._where_clause:
@@ -290,31 +290,31 @@ class QuerySet(object):
     @classmethod
     def _transform_query(self,  _doc_cls=None, **parameters):
         """
-        Converts parameters to mongodb queries. 
+        Converts parameters to mongodb queries.
         """
         spec = {}
         operators = ['ne', 'gt', 'gte', 'lt', 'lte', 'in', 'nin', 'mod', 'all', 'size', 'exists']
         match_operators = ['contains', 'icontains', 'startswith', 'istartswith', 'endswith', 'iendswith', 'exact', 'iexact']
         exclude = parameters.pop("not", False)
-        
+
         for key, value in parameters.items():
-            
+
             parts  = key.split("__")
             lookup_type = (len(parts)>=2) and ( parts[-1] in operators + match_operators and parts.pop()) or ""
-            
+
             # Let's get the right field and be sure that it exists
             parts[0] = QuerySet._lookup_field(_doc_cls, parts[0]).attname
-            
+
             if not lookup_type and len(parts)==1:
                 if exclude:
                     value = {"$ne" : value}
                 spec.update({parts[0] : value})
                 continue
-            
+
             if parts[0] == "id":
                 parts[0] = "_id"
                 value = [isinstance(par, basestring) and ObjectId(par) or par for par in value]
-                
+
             if lookup_type in ['contains', 'icontains',
                                  'startswith', 'istartswith',
                                  'endswith', 'iendswith',
@@ -323,7 +323,7 @@ class QuerySet(object):
                 if lookup_type.startswith('i'):
                     flags = re.IGNORECASE
                     lookup_type = lookup_type.lstrip('i')
-                    
+
                 regex = r'%s'
                 if lookup_type == 'startswith':
                     regex = r'^%s'
@@ -331,21 +331,21 @@ class QuerySet(object):
                     regex = r'%s$'
                 elif lookup_type == 'exact':
                     regex = r'^%s$'
-                    
+
                 value = re.compile(regex % value, flags)
-                
+
             elif lookup_type in operators:
                 value = { "$" + lookup_type : value}
             elif lookup_type and len(parts)==1:
                 raise DatabaseError("Unsupported lookup type: %r" % lookup_type)
-    
+
             key = '.'.join(parts)
             if exclude:
                 value = {"$ne" : value}
             spec.update({key : value})
-            
+
         return spec
-    
+
     def get(self, *q_objs, **query):
         """Retrieve the the matching object raising id django is available
         :class:`~django.core.exceptions.MultipleObjectsReturned` or
@@ -371,8 +371,8 @@ class QuerySet(object):
                                               % self._document._meta.object_name)
 
     def get_or_create(self, *q_objs, **query):
-        """Retrieve unique object or create, if it doesn't exist. Returns a tuple of 
-        ``(object, created)``, where ``object`` is the retrieved or created object 
+        """Retrieve unique object or create, if it doesn't exist. Returns a tuple of
+        ``(object, created)``, where ``object`` is the retrieved or created object
         and ``created`` is a boolean specifying whether a new object was created. Raises
         :class:`~mongoengine.queryset.MultipleObjectsReturned` or
         `DocumentName.MultipleObjectsReturned` if multiple results are found.
@@ -423,7 +423,7 @@ class QuerySet(object):
 
     def in_bulk(self, object_ids):
         """Retrieve a set of documents by their ids.
-        
+
         :param object_ids: a list or tuple of ``ObjectId``\ s
         :rtype: dict of ObjectIds as keys and collection-specific
                 Document subclasses as values.
@@ -435,9 +435,9 @@ class QuerySet(object):
         docs = self._collection.find({'_id': {'$in': [ (not isinstance(id, ObjectId) and ObjectId(id)) or id for id in object_ids]}})
         for doc in docs:
             doc_map[str(doc['id'])] = self._document(**dict_keys_to_str(doc))
- 
+
         return doc_map
-    
+
     def count(self):
         """Count the selected elements in the query.
         """
@@ -479,7 +479,7 @@ class QuerySet(object):
         .. versionadded:: 0.3
         """
         #from document import MapReduceDocument
-        
+
         if not hasattr(self._collection, "map_reduce"):
             raise NotImplementedError("Requires MongoDB >= 1.1.1")
 
@@ -560,7 +560,7 @@ class QuerySet(object):
                 self._skip, self._limit = key.start, key.stop
             except IndexError, err:
                 # PyMongo raises an error if key.start == key.stop, catch it,
-                # bin it, kill it. 
+                # bin it, kill it.
                 start = key.start or 0
                 if start >= 0 and key.stop >= 0 and key.step is None:
                     if start == key.stop:
@@ -576,9 +576,9 @@ class QuerySet(object):
 
     def only(self, *fields):
         """Load only a subset of this document's fields. ::
-        
+
             post = BlogPost.objects(...).only("title")
-        
+
         :param fields: fields to include
 
         .. versionadded:: 0.3
@@ -605,11 +605,11 @@ class QuerySet(object):
         :param keys: fields to order the query results by; keys may be
             prefixed with **+** or **-** to determine the ordering direction
         """
-        
+
         self._ordering = []
         for col in args:
             self._ordering.append(( (col.startswith("-") and col[1:]) or col, (col.startswith("-") and -1) or 1 ))
-            
+
         self._cursor.sort(self._ordering)
         return self
 
@@ -695,7 +695,7 @@ class QuerySet(object):
 
         update = QuerySet._transform_update(self._document, **update)
         try:
-            self._collection.update(self._query, update, safe=safe_update, 
+            self._collection.update(self._query, update, safe=safe_update,
                                     upsert=upsert, multi=True)
         except pymongo.errors.OperationFailure, err:
             if unicode(err) == u'multi not coded yet':
@@ -716,7 +716,7 @@ class QuerySet(object):
             # Explicitly provide 'multi=False' to newer versions of PyMongo
             # as the default may change to 'True'
             if pymongo.version >= '1.1.1':
-                self._collection.update(self._query, update, safe=safe_update, 
+                self._collection.update(self._query, update, safe=safe_update,
                                         upsert=upsert, multi=False)
             else:
                 # Older versions of PyMongo don't support 'multi'
@@ -732,8 +732,8 @@ class QuerySet(object):
             yield self._document(**data)
 
     def _sub_js_fields(self, code):
-        """When fields are specified with [~fieldname] syntax, where 
-        *fieldname* is the Python name of a field, *fieldname* will be 
+        """When fields are specified with [~fieldname] syntax, where
+        *fieldname* is the Python name of a field, *fieldname* will be
         substituted for the MongoDB name of the field (specified using the
         :attr:`name` keyword argument in a field's constructor).
         """
@@ -757,9 +757,9 @@ class QuerySet(object):
         options specified as keyword arguments.
 
         As fields in MongoEngine may use different names in the database (set
-        using the :attr:`db_field` keyword argument to a :class:`Field` 
+        using the :attr:`db_field` keyword argument to a :class:`Field`
         constructor), a mechanism exists for replacing MongoEngine field names
-        with the database field names in Javascript code. When accessing a 
+        with the database field names in Javascript code. When accessing a
         field, use square-bracket notation, and prefix the MongoEngine field
         name with a tilde (~).
 
@@ -888,7 +888,7 @@ class Manager(DJManager):
         else:
             model._meta.concrete_managers.append((self.creation_counter, name,
                 self))
-            
+
     def __get__(self, instance, owner):
         """Descriptor for instantiating a new QuerySet object when
         Document.objects is accessed.

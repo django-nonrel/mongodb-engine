@@ -21,11 +21,11 @@ __doc__ = "Common module to all nonrel engines"
 class GenericField(Field):
     def validate(self, value, model_instance):
         """
-        Validates value and throws ValidationError. 
+        Validates value and throws ValidationError.
         """
         if not isinstance(value, object):
             raise exceptions.ValidationError("Value has to be an instance of object")
-        
+
     def get_prep_value(self, value):
         return value
 
@@ -35,7 +35,7 @@ class GenericField(Field):
     def get_default(self):
         "Returns the default value for this field."
         return None
-    
+
 class ListField(Field):
     """A list field that wraps a standard field, allowing multiple instances
     of the field to be used as a list in the database.
@@ -54,12 +54,12 @@ class ListField(Field):
             kwargs['default'] = []
         if 'type' in kwargs:
             self._internaltype = kwargs.pop("type")
-            
+
         Field.__init__(self, *args, **kwargs)
 
     def validate(self, value, model_instance):
         """
-        Validates value and throws ValidationError. 
+        Validates value and throws ValidationError.
         """
         if not isinstance(value, list) and (not hasattr(value, "__iter__")):
             raise exceptions.ValidationError(self.error_messages['invalid'])
@@ -73,7 +73,7 @@ class ListField(Field):
             for v in value:
                 if not isinstance(v, self._internaltype):
                     raise exceptions.ValidationError(self.error_messages['invalid_value'])
-        
+
     def get_prep_value(self, value):
         if value is None:
             return None
@@ -116,7 +116,7 @@ class SortedListField(ListField):
         if self._ordering is not None:
             return sorted(value, key=itemgetter(self._ordering))
         return sorted(value)
-    
+
 class DictField(Field):
     """A dictionary field that wraps a standard Python dictionary.
     Key cannot contains . or $ for query problems.
@@ -130,7 +130,7 @@ class DictField(Field):
 
     def validate(self, value, model_instance):
         """
-        Validates value and throws ValidationError. 
+        Validates value and throws ValidationError.
         """
         if not isinstance(value, dict):
             raise exceptions.ValidationError(self.error_messages['invalid'])
@@ -179,7 +179,7 @@ class SetListField(Field):
         Field.__init__(self, *args, **kwargs)
     def validate(self, value, model_instance):
         """
-        Validates value and throws ValidationError. 
+        Validates value and throws ValidationError.
         """
         if not isinstance(value, set):
             raise exceptions.ValidationError(self.error_messages['invalid'])
@@ -213,7 +213,7 @@ class SetListField(Field):
         if not prepared:
             value = list(self.get_prep_value(value))
         return value
-    
+
     def get_prep_value(self, value):
         if value is None:
             return None
@@ -221,7 +221,7 @@ class SetListField(Field):
             if hasattr(value, "__iter__"):
                 value = set(value)
         return set(value)
-    
+
     def to_python(self, value):
         """
         Converts the input value into the expected Python data type, raising
@@ -274,7 +274,7 @@ class GridFSField(CharField):
             else:
                 if isinstance(val, unicode):
                     val = val.encode('utf8', 'ignore')
-                
+
                 if isinstance(val, basestring) and not as_string:
                     val = StringIO(val)
 
@@ -282,7 +282,7 @@ class GridFSField(CharField):
 
         setattr(cls, self.attname, property(_get, _set))
 
-    
+
     def db_type(self, connection):
         return "gridfs"
 
@@ -295,10 +295,10 @@ class GridFSField(CharField):
 
         if value == getattr(model_instance, "_%s_cache" % self.attname, None):
             return oid
-        
+
         from django.db import connections
         gdfs = GridFS(connections[self.model.objects.db].db_connection.db)
-        
+
 
         if not self._versioning and not oid is None:
             gdfs.delete(oid)
@@ -306,7 +306,7 @@ class GridFSField(CharField):
         if not self._as_string:
             value.seek(0)
             value = value.read()
-        
+
         oid = gdfs.put(value)
         setattr(self, "_%s_oid" % self.attname, oid)
         setattr(self, "_%s_cache" % self.attname, value)

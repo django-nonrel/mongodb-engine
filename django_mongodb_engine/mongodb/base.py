@@ -76,7 +76,7 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
 
                 if port:
                     if isinstance(host, basestring) and host.startswith('mongodb://'):
-                        # If host starts with mongodb:// the port will be 
+                        # If host starts with mongodb:// the port will be
                         # ignored so lets make sure it is None
                         port = None
                         warnings.warn(
