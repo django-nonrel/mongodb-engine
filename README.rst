@@ -12,8 +12,8 @@ Requirements
 ============
 * MongoDB of course ;-)
 * PyMongo (PyPI)
-* `Django-nonrel`
-* `djangotoolbox`
+* `Django-nonrel`_
+* `djangotoolbox`_
 
 .. _Django-nonrel: http://bitbucket.org/wkornewald/django-nonrel
 .. _djangotoolbox: http://bitbucket.org/wkornedwald/djangotoolbox
