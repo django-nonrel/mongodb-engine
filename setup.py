@@ -18,18 +18,20 @@ for ver in pkginfo.pyversions:
 
 
 setup(
-    name='django_mongodb_engine',
-    version= pkginfo.version,
-    packages=find_packages(exclude=['ez_setup', 'tests', 'tests.*']),
-    author='Flavio Percoco Premoli, Alberto Paro and contributors',
-    author_email='django-mongodb-engine@lophus.org',
-    url='http://github.com/django-mongodb-engine/mongodb-engine',
-    license='2-clause BSD',
-    include_package_data=True,
+    name=pkginfo.distname,
+    version=pkginfo.version,
+    author=pkginfo.author,
+    author_email=pkginfo.author_email,
+    url=pkginfo.web,
+    license=license,
     description=pkginfo.short_desc,
     long_description=pkginfo.long_desc,
+
     platforms=['any'],
-    classifiers=CLASSIFIERS,
     install_requires=pkginfo.install_requires,
+
+    packages=find_packages(exclude=['ez_setup', 'tests', 'tests.*']),
+    include_package_data=True,
+    classifiers=CLASSIFIERS,
     test_suite='tests',
 )

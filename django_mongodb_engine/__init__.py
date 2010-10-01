@@ -4,10 +4,8 @@
 import logging
 logger = logging.getLogger(__name__)
 
-VERSION = (0, 1, 1)
-
-__version__ = ".".join(map(str, VERSION[0:3])) + "".join(VERSION[3:])
-__author__ = "Flavio Percoco Premoli"
-__contact__ = "flaper87@flaper87.org"
-__homepage__ = "http://github.com/FlaPer87/django-mongodb-engine/"
-__docformat__ = "restructuredtext"
+__version__     = (0, 1, 2)
+__author__      = "Flavio Percoco Premoli, Alberto Paro and contributors"
+__contact__     = "django-mongodb-engine@lophus.org"
+__homepage__    = "http://github.com/django-mongodb-engine/mongodb-engine"
+__docformat__   = "restructuredtext"
