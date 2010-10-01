@@ -69,10 +69,10 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
             try:
                 if host is not None:
                     if pymongo.version >= '1.8':
-                    assert isinstance(host, (basestring, list)), \
-                        'If set, HOST must be a string or a list of strings'
-                else:
-                    assert isinstance(host, basestring), 'If set, HOST must be a string'
+                        assert isinstance(host, (basestring, list)), \
+                            'If set, HOST must be a string or a list of strings'
+                    else:
+                        assert isinstance(host, basestring), 'If set, HOST must be a string'
 
                 if port:
                     if isinstance(host, basestring) and host.startswith('mongodb://'):
