@@ -16,7 +16,7 @@ except ImportError:
         pass
     class MultipleObjectsReturned(Exception):
         pass
-    
+
 from django_mongodb_engine.mongodb.mongodb_serializer import TransformDjango
 
 DoesNotExist = ObjectDoesNotExist

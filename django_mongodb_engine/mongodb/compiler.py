@@ -1,13 +1,10 @@
+from future_builtins import zip
 import sys
 import re
 import time
 
 from datetime import datetime
 from functools import wraps
-
-import pymongo
-from gridfs import GridFS
-from pymongo.objectid import ObjectId
 
 from django.conf import settings
 from django.db import models
@@ -21,8 +18,12 @@ from django.db.models.sql.where import WhereNode
 from django.db.models.fields import NOT_PROVIDED
 from django.utils.tree import Node
 
+import pymongo
+from pymongo.objectid import ObjectId
+
 from djangotoolbox.db.basecompiler import NonrelQuery, NonrelCompiler, \
     NonrelInsertCompiler, NonrelUpdateCompiler, NonrelDeleteCompiler
+
 
 TYPE_MAPPING_FROM_DB = {
     'unicode':  lambda val: unicode(val),
@@ -90,7 +91,7 @@ def _get_mapping(db_type, value, mapping):
     # TODO - what if the data is represented as list on the python side?
     if isinstance(value, list):
         return map(_func, value)
-    
+
     return _func(value)
 
 def python2db(db_type, value):
@@ -115,16 +116,15 @@ def retry(times, interval):
     def decor(func):
         @wraps(func)
         def _inner(*args, **kwargs):
-            cnt = times
-            while cnt:
-                cnt -= 1
+            for try_ in xrange(times, 0, -1):
                 try:
                     return func(*args, **kwargs)
                 except pymongo.errors.PyMongoError:
-                    if not cnt:
+                    if not try_:
+                        # try_ = 0 --> last attempt (xrange from times -> 0)
+                        # let the exception propagate.
                         raise
-                    if cnt < times - 1:
-                        time.sleep(interval)
+                    time.sleep(interval)
                 else:
                     break
         return _inner
@@ -168,10 +168,10 @@ class DBQuery(NonrelQuery):
             del e['_id']
             return e
 
+        # TODO: Why on earth do retry handling manually here?
+        # Isn't this what `retry` is supposed to do?!
         iterating = False
-        cnt = 10
-        while cnt:
-            cnt -= 1
+        for try_ in xrange(10, 0, -1):
             try:
                 for entity in results:
                     iterating = True
@@ -220,7 +220,7 @@ class DBQuery(NonrelQuery):
             negated = False
         else:
             op = OPERATORS_MAP[lookup_type]
-            
+
         value = op(self.convert_value_for_db(db_type, value))
 
         if negated:
