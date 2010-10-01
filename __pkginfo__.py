@@ -12,7 +12,7 @@ install_requires = ['pymongo', 'django>=1.2', 'djangotoolbox']
 
 pyversions = ['2', '2.4', '2.5', '2.6', '2.7']
 
-license = 'GPLv2'
+license = '2-clause BSD'
 
 author = distmeta.__author__
 author_email = distmeta.__contact__
