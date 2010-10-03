@@ -1,6 +1,5 @@
 from pymongo.collection import Collection
 from djangotoolbox.db.base import NonrelDatabaseCreation
-from django.db.models.fields import FieldDoesNotExist
 
 TEST_DATABASE_PREFIX = 'test_'
 
@@ -67,6 +66,7 @@ class DatabaseCreation(NonrelDatabaseCreation):
                 field_name = field[0]
                 direction = (field[1] and 1) or -1
             if not field_name in model_fields:
+                from django.db.models.fields import FieldDoesNotExist
                 raise FieldDoesNotExist('%s has no field named %r' % (opts.object_name, field_name))
             checked_fields.append((field_name, direction))
         col.ensure_index(checked_fields, **group)
