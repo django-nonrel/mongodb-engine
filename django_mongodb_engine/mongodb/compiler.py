@@ -100,36 +100,16 @@ def python2db(db_type, value):
 def db2python(db_type, value):
     return _get_mapping(db_type, value, TYPE_MAPPING_FROM_DB)
 
-def safe_gen(func):
+def safe_generator(func):
     @wraps(func)
     def _func(*args, **kwargs):
         try:
             ret = func(*args, **kwargs)
-            for i in ret:
-                yield i
+            for item in ret:
+                yield item
         except pymongo.errors.PyMongoError, e:
             raise DatabaseError, DatabaseError(str(e)), sys.exc_info()[2]
-
     return _func
-
-def retry(times, interval):
-    def decor(func):
-        @wraps(func)
-        def _inner(*args, **kwargs):
-            for try_ in xrange(times, 0, -1):
-                try:
-                    return func(*args, **kwargs)
-                except pymongo.errors.PyMongoError:
-                    if not try_:
-                        # try_ = 0 --> last attempt (xrange from times -> 0)
-                        # let the exception propagate.
-                        raise
-                    time.sleep(interval)
-                else:
-                    break
-        return _inner
-    return decor
-
 
 def safe_call(func):
     @wraps(func)
@@ -155,7 +135,7 @@ class DBQuery(NonrelQuery):
     def __repr__(self):
         return '<DBQuery: %r ORDER %r>' % (self.db_query, self._ordering)
 
-    @safe_gen
+    @safe_generator
     def fetch(self, low_mark, high_mark):
         results = self._get_results()
         if low_mark > 0:
@@ -163,28 +143,10 @@ class DBQuery(NonrelQuery):
         if high_mark is not None:
             results = results.limit(high_mark - low_mark)
 
-        def _prepare(e):
-            e[self.query.get_meta().pk.column] = e['_id']
-            del e['_id']
-            return e
-
-        # TODO: Why on earth do retry handling manually here?
-        # Isn't this what `retry` is supposed to do?!
-        iterating = False
-        for try_ in xrange(10, 0, -1):
-            try:
-                for entity in results:
-                    iterating = True
-                    yield _prepare(entity)
-
-            except pymongo.errors.PyMongoError:
-                if iterating:
-                    raise
-                if cnt < 9:
-                    time.sleep(6)
-
-            else:
-                break
+        primarykey_column = self.query.get_meta().pk.column
+        for entity in results:
+            entity[primarykey_column] = entity.pop('_id')
+            yield entity
 
     @safe_call
     def count(self, limit=None):
@@ -315,7 +277,6 @@ class SQLCompiler(NonrelCompiler):
 
 class SQLInsertCompiler(NonrelInsertCompiler, SQLCompiler):
     @safe_call
-    @retry(10, 6)
     def insert(self, data, return_id=False):
         pk_column = self.query.get_meta().pk.column
         if pk_column in data:
@@ -334,7 +295,6 @@ class SQLInsertCompiler(NonrelInsertCompiler, SQLCompiler):
 # backend base classes and port this code to that API
 class SQLUpdateCompiler(SQLCompiler):
     @safe_call
-    @retry(10, 6)
     def execute_sql(self, return_id=False):
         """
         self.query - the data that should be inserted
