@@ -18,7 +18,7 @@ class MongoDBRouter(object):
         databases = []
         for name, databaseopt in settings.DATABASES.iteritems():
             if databaseopt['ENGINE'] == 'django_mongodb_engine.mongodb':
-                self.mongodb_databases.append(name)
+                databases.append(name)
                 if databaseopt.get('IS_DEFAULT'):
                     if default_database is None:
                         default_database = name
