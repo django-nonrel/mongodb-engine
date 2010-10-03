@@ -60,7 +60,7 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
             host = self.settings_dict['HOST'] or None
             port = self.settings_dict['PORT'] or None
             user = self.settings_dict.get('USER', None)
-            password = self.settings_dict.get('PASSWORD'(
+            password = self.settings_dict.get('PASSWORD')
             self.safe_inserts = self.settings_dict.get('SAFE_INSERTS', False)
             self.wait_for_slaves = self.settings_dict.get('WAIT_FOR_SLAVES', 0)
             slave_okay = self.settings_dict.get('SLAVE_OKAY', False)
