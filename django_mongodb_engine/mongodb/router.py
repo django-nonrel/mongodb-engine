@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.exceptions import ImproperlyConfigured
+from django.core.exceptions import ImproperlyConfigured
 
 def model_label(model):
     return '%s.%s' % (model._meta.app_label, model._meta.module_name)
