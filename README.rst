@@ -2,7 +2,7 @@
  Django MongoDB Engine for django-nonrel
 =========================================
 :Web: http://github.com/django-mongodb-engine/mongodb-engine/
-:Mailing List: django-mongodb-engine-users@googlegroups.com
+:Mailing List: http://groups.google.com/group/django-non-relational
 :Bug tracker: http://github.com/django-mongodb-engine/mongodb-engine/issues/
 :License: 2-clause BSD
 :Download: http://pypi.python.org/pypi/django_mongodb_engine/
