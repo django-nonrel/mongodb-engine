@@ -23,4 +23,4 @@ Contributing
 You are highly encouraged to participate in the development, simply use
 GitHub's fork/pull request system.
 If you don't like GitHub (for some reason) you're welcome
-to send regular patches to ``django-mongodb-engine hosted on lophus dot org``
+to send regular patches to the mailing list.
