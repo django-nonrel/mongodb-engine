@@ -532,6 +532,7 @@ class QuerySet(object):
         :param n: the maximum number of objects to return
         """
         if n == 0:
+            # wtf?!
             self._cursor.limit(1)
         else:
             self._cursor.limit(n)

@@ -109,3 +109,5 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
 
             # We're done!
             self._is_connected = True
+
+        # TODO: signal!
