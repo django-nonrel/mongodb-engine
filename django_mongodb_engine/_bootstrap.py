@@ -8,10 +8,6 @@ from django.db import models
 from django.db.models.fields import AutoField as DjangoAutoField
 from pymongo.objectid import ObjectId
 
-if 'django_mongodb_engine' not in settings.INSTALLED_APPS:
-    settings.INSTALLED_APPS.insert(0, 'django_mongodb_engine')
-
-
 def AutoField_to_python(value):
     if value is None:
         return value
@@ -25,6 +21,9 @@ def AutoField_get_prep_value(value):
         return None
     return ObjectId(value)
 
+class MongoMeta(object):
+    pass
+    
 def pre_init_mongodb_signal(sender, args, **kwargs):
     model = sender # may not use `model` directly as argument because of
                    # Django's magic arg inspecting voodoo
@@ -44,3 +43,13 @@ def pre_init_mongodb_signal(sender, args, **kwargs):
         setattr(primary_key_field, 'get_prep_value', AutoField_get_prep_value)
 
 models.signals.pre_init.connect(pre_init_mongodb_signal)
+
+def class_prepared_mongodb_signal(sender, *args, **kwargs):
+    model = sender
+    mongo_meta = getattr(cls, "MongoMeta", MongoMeta).__dict__.copy()
+    for attr in mongo_meta:
+        if attr.startswith("_"):
+            continue
+        setattr(model._meta, attr, mongo_meta[attr])
+        
+models.signals.class_prepared.connect(class_prepared_mongodb_signal)

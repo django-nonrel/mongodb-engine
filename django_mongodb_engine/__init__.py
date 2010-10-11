@@ -7,4 +7,8 @@ __contact__     = "django-mongodb-engine-users@googlegroups.com"
 __homepage__    = "http://github.com/django-mongodb-engine/mongodb-engine"
 __docformat__   = "restructuredtext"
 
-#import _bootstrap
+try:
+    from django.conf import settings
+    import _bootstrap
+except ImportError:
+    pass

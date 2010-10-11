@@ -13,7 +13,7 @@ except ImportError:
     sys.exit(1)
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
-import django_mongodb_engine._bootstrap
+# import django_mongodb_engine._bootstrap
 
 if __name__ == "__main__":
     execute_manager(settings)
