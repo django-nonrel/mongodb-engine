@@ -8,14 +8,12 @@ def skip(func):
     pass
 
 class EmbeddedModelFieldTestCase(TestCase):
-    @skip
     def test_empty(self):
         obj = Model(x=5)
         self.assertRaises(DatabaseError, obj.save)
 
-    @skip
     def test_empty_embedded(self):
-        obj = Model(x=5, em=EmbeddedModel())
+        obj = Model(x=5)
         self.assertRaises(DatabaseError, obj.save)
 
     def test_simple(self):

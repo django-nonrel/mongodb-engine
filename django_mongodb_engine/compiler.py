@@ -190,7 +190,7 @@ class SQLCompiler(NonrelCompiler):
         return db_type, db_subtype
 
     def convert_value_for_db(self, db_type, value):
-        if db_type is None:
+        if db_type is None or value is None:
             return value
 
         db_type, db_subtype = self._split_db_type(db_type)
@@ -218,6 +218,9 @@ class SQLCompiler(NonrelCompiler):
     def convert_value_from_db(self, db_type, value):
         if db_type is None:
             return value
+
+        if value in (None, NOT_PROVIDED):
+            return None
 
         db_type, db_subtype = self._split_db_type(db_type)
         if db_subtype is not None:

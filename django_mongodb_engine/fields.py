@@ -24,8 +24,9 @@ class EmbeddedModelField(ListField):
     get_db_prep_value = models.Field.get_db_prep_value
 
     def get_db_prep_save(self, model_instance, connection):
+        if model_instance is None:
+            return None
         values = []
-        print model_instance
         for field in self.embedded_model._meta.fields:
             values.append(
                 field.get_db_prep_save(
