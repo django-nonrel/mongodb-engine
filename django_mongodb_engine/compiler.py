@@ -1,22 +1,12 @@
 from future_builtins import zip
 import sys
 import re
-import time
 
 from datetime import datetime
 from functools import wraps
 
-from django.conf import settings
-from django.db import models
-from django.db.models.sql import aggregates as sqlaggregates
-from django.db.models.sql.compiler import SQLCompiler
-from django.db.models.sql import aggregates as sqlaggregates
-from django.db.models.sql.constants import LOOKUP_SEP, MULTI, SINGLE
-from django.db.models.sql.where import AND, OR
-from django.db.utils import DatabaseError, IntegrityError
-from django.db.models.sql.where import WhereNode
+from django.db.utils import DatabaseError
 from django.db.models.fields import NOT_PROVIDED
-from django.utils.tree import Node
 
 import pymongo
 from pymongo.objectid import ObjectId
@@ -24,25 +14,6 @@ from pymongo.objectid import ObjectId
 from djangotoolbox.db.basecompiler import NonrelQuery, NonrelCompiler, \
     NonrelInsertCompiler, NonrelUpdateCompiler, NonrelDeleteCompiler
 
-
-TYPE_MAPPING_FROM_DB = {
-    'unicode':  lambda val: unicode(val),
-    'int':      lambda val: int(val),
-    'float':    lambda val: float(val),
-    'bool':     lambda val: bool(val),
-    'objectid': lambda val: unicode(val),
-}
-
-TYPE_MAPPING_TO_DB = {
-    'unicode':  lambda val: unicode(val),
-    'int':      lambda val: int(val),
-    'float':    lambda val: float(val),
-    'bool':     lambda val: bool(val),
-    'date':     lambda val: datetime(val.year, val.month, val.day),
-    'time':     lambda val: datetime(2000, 1, 1, val.hour, val.minute,
-                                     val.second, val.microsecond),
-    'objectid': lambda val: ObjectId(val),
-}
 
 OPERATORS_MAP = {
     'exact':    lambda val: val,
@@ -74,31 +45,6 @@ NEGATED_OPERATORS_MAP = {
     'isnull':   lambda val: {'$ne': None} if val else None,
     'in':       lambda val: {'$nin': val},
 }
-
-def _get_mapping(db_type, value, mapping):
-    # TODO - comments. lotsa comments
-
-    if value == NOT_PROVIDED:
-        return None
-
-    if value is None:
-        return None
-
-    if db_type in mapping:
-        _func = mapping[db_type]
-    else:
-        _func = lambda val: val
-    # TODO - what if the data is represented as list on the python side?
-    if isinstance(value, list):
-        return map(_func, value)
-
-    return _func(value)
-
-def python2db(db_type, value):
-    return _get_mapping(db_type, value, TYPE_MAPPING_TO_DB)
-
-def db2python(db_type, value):
-    return _get_mapping(db_type, value, TYPE_MAPPING_FROM_DB)
 
 def safe_generator(func):
     @wraps(func)
@@ -183,6 +129,7 @@ class DBQuery(NonrelQuery):
         else:
             op = OPERATORS_MAP[lookup_type]
 
+        # TODO: does not work yet (need field)
         value = op(self.convert_value_for_db(db_type, value))
 
         if negated:
@@ -190,9 +137,6 @@ class DBQuery(NonrelQuery):
 
         self._add_filter(column, lookup_type, db_type, value)
 
-    # ----------------------------------------------
-    # Internal API
-    # ----------------------------------------------
     def _add_filter(self, column, lookup_type, db_type, value):
         query = self.db_query
         # Extend existing filters if there are multiple filter() calls
@@ -202,7 +146,7 @@ class DBQuery(NonrelQuery):
             if isinstance(existing, dict):
                 keys = tuple(existing.keys())
                 if len(keys) != 1:
-                    raise DatabaseError(
+                    raise NotImplementedError(
                         'Unsupported filter combination on column %s: '
                         '%r and %r' % (column, existing, value))
                 key = keys[0]
@@ -211,14 +155,14 @@ class DBQuery(NonrelQuery):
                     if key in inequality and value.keys()[0] in inequality:
                         existing.update(value)
                     else:
-                        raise DatabaseError(
+                        raise NotImplementedError(
                             'Unsupported filter combination on column %s: '
                             '%r and %r' % (column, existing, value))
                 else:
                     if key == '$all':
                         existing['$all'].append(value)
                     else:
-                        raise DatabaseError(
+                        raise NotImplementedError(
                             'Unsupported filter combination on column %s: '
                             '%r and %r' % (column, existing, value))
             else:
@@ -227,13 +171,9 @@ class DBQuery(NonrelQuery):
             query[column] = value
 
     def _get_results(self):
-        """
-        @returns: pymongo iterator over results
-        defined by self.query
-        """
         results = self._collection.find(self.db_query)
         if self._ordering:
-            results = results.sort(self._ordering)
+            results.sort(self._ordering)
         return results
 
 class SQLCompiler(NonrelCompiler):
@@ -242,29 +182,56 @@ class SQLCompiler(NonrelCompiler):
     """
     query_class = DBQuery
 
-    def convert_value_from_db(self, db_type, value):
-        # Handle list types
-        if db_type is not None and \
-                isinstance(value, (list, tuple)) and len(value) and \
-                db_type.startswith('ListField:'):
-            db_sub_type = db_type.split(':', 1)[1]
-            value = [self.convert_value_from_db(db_sub_type, subvalue)
-                     for subvalue in value]
+    def _split_db_type(self, db_type):
+        try:
+            db_type, db_subtype = db_type.split(':', 1)
+        except ValueError:
+            db_subtype = None
+        return db_type, db_subtype
+
+    def convert_value_for_db(self, db_type, value):
+        if db_type is None:
+            return value
+
+        db_type, db_subtype = self._split_db_type(db_type)
+        if db_subtype is not None:
+            if isinstance(value, (set, list, tuple)):
+                # Sets are converted to lists here because MongoDB has not sets.
+                return [self.convert_value_for_db(db_subtype, subvalue)
+                        for subvalue in value]
+            elif isinstance(value, dict):
+                return dict((key, self.convert_value_for_db(db_subtype, subvalue))
+                            for key, subvalue in value.iteritems())
+
         else:
-            value = db2python(db_type, value)
+            if isinstance(value, list):
+                # most likely a list of ObjectIds when doing a .delete() query
+                value = [self.convert_value_for_db(db_type, val) for val in value]
+            elif db_type == 'objectid':
+                # single ObjectId
+                return ObjectId(value)
+
+        # Pass values of any type not covered above as they are.
+        # PyMongo will complain if they can't be encoded.
         return value
 
-    # This gets called for each field type when you insert() an entity.
-    # db_type is the string that you used in the DatabaseCreation mapping
-    def convert_value_for_db(self, db_type, value):
-        if db_type is not None and \
-                isinstance(value, (list, tuple)) and len(value) and \
-                db_type.startswith('ListField:'):
-            db_sub_type = db_type.split(':', 1)[1]
-            value = [self.convert_value_for_db(db_sub_type, subvalue)
-                     for subvalue in value]
-        else:
-            value = python2db(db_type, value)
+    def convert_value_from_db(self, db_type, value):
+        if db_type is None:
+            return value
+
+        db_type, db_subtype = self._split_db_type(db_type)
+        if db_subtype is not None:
+            for field, type_ in [('SetField', set), ('ListField', list)]:
+                if db_type == field:
+                    return type_(self.convert_value_from_db(db_subtype, subvalue)
+                                 for subvalue in value)
+            if db_type == 'DictField':
+                return dict((key, self.convert_value_from_db(db_subtype, subvalue))
+                            for key, subvalue in value.iteritems())
+
+        if db_type == 'objectid':
+            return unicode(value)
+
         return value
 
     def insert_params(self):
@@ -274,45 +241,33 @@ class SQLCompiler(NonrelCompiler):
             params['w'] = conn.wait_for_slaves
         return params
 
+    def _save(self, data, return_id=False):
+        connection = self.connection.db_connection
+        db_table = self.query.get_meta().db_table
+        primary_key = connection[db_table].save(data, **self.insert_params())
+        return unicode(primary_key)
+
 
 class SQLInsertCompiler(NonrelInsertCompiler, SQLCompiler):
     @safe_call
     def insert(self, data, return_id=False):
         pk_column = self.query.get_meta().pk.column
-        if pk_column in data:
-            data['_id'] = data[pk_column]
-            del data[pk_column]
-
-        conn = self.connection.db_connection
-        db_table = self.query.get_meta().db_table
-        params = self.insert_params()
-
-        pk = conn[db_table].save(data, **params)
-
-        return unicode(pk)
+        try:
+            data['_id'] = data.pop(pk_column)
+        except KeyError:
+            pass
+        return SQLCompiler._save(self, data, return_id)
 
 # TODO: Define a common nonrel API for updates and add it to the nonrel
 # backend base classes and port this code to that API
 class SQLUpdateCompiler(SQLCompiler):
     @safe_call
     def execute_sql(self, return_id=False):
-        """
-        self.query - the data that should be inserted
-        """
-        dat = {}
+        # self.query: the data that shall be inserted
+        data = {}
         for (field, value), column in zip(self.query.values, self.query.columns):
-            dat[column] = python2db(field.db_type(connection=self.connection), value)
-        # every object should have a unique pk
-        pk_field = self.query.model._meta.pk
-        pk_name = pk_field.attname
-
-        conn = self.connection.db_connection
-        db_table = self.query.get_meta().db_table
-        params = self.insert_params()
-
-        res = conn[db_table].save(dat, **params)
-
-        return unicode(res)
+            data[column] = python2db(field.db_type(connection=self.connection), value)
+        return super(SQLCompiler, self)._save(data, return_id)
 
 class SQLDeleteCompiler(NonrelDeleteCompiler, SQLCompiler):
     pass

@@ -3,7 +3,7 @@ Test suite for mangodj.
 """
 
 from django.test import TestCase
-from testproj.myapp.models import Entry, Blog, StandardAutoFieldModel, Person, TestFieldModel, EModel, DynamicModel
+from testproj.myapp.models import Entry, Blog, StandardAutoFieldModel, Person, TestFieldModel, DynamicModel
 import datetime
 
 class MongoDjTest(TestCase):
@@ -183,22 +183,6 @@ class MongoDjTest(TestCase):
         self.assertEqual(sorted(t.mset), ["a", 'b'])
         self.assertEqual(sorted(t.mset_default), ["a", 'b'])
 
-
-    def test_embedded_model(self):
-        em = EModel(title="1", pos = 1)
-        em2 = EModel(title="2", pos = 2)
-        t1 = TestFieldModel(title="p1",
-                            mlist=[em, em2],
-                            slist=[em, em2],
-                            mdict = {'a':em, "b":em2  },
-                            mset=[em, em, em]
-                            )
-        t1.save()
-
-        t = TestFieldModel.objects.get(id=t1.id)
-        self.assertEqual(len(t.mlist), 2)
-        self.assertEqual(t.mlist[0].test_func(), 1)
-        self.assertEqual(t.mlist[1].test_func(), 2)
 
     def test_simple_foreign_keys(self):
         now = datetime.datetime.now()

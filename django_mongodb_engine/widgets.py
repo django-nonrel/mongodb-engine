@@ -57,21 +57,3 @@ class DictWidget(widgets.Widget):
         htmlval += "</table>"
         htmlval += "<input type='hidden' name='%s_rows' value='%d'>" % ( name, linenum )
         return mark_safe(htmlval)
-
-class SetWidget(widgets.Textarea):
-    def value_from_datadict(self, data, files, name):
-        if not data.has_key(name):
-            return []
-        lines=data[name]
-        a=set()
-        for line in lines.splitlines():
-            a.add(line)
-        return a
-
-    def render(self, name, value, attrs=None):
-        listStr=""
-        if (value is not None) and (type(value).__name__=='list') :
-            for key in value:
-               listStr += '%s\n' % key
-
-        return super(SetWidget, self).render(name, listStr, attrs)

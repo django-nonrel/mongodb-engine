@@ -11,15 +11,7 @@ MANAGERS = ADMINS
 
 DATABASES = {
     'default': {
-        'ENGINE': 'sqlite3', # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME': 'test.db',                      # Or path to database file if using sqlite3.
-        'USER': '',                      # Not used with sqlite3.
-        'PASSWORD': '',                  # Not used with sqlite3.
-        'HOST': '',                      # Set to empty string for localhost. Not used with sqlite3.
-        'PORT': '',                      # Set to empty string for default. Not used with sqlite3.
-    },
-    'mongodb': {
-        'ENGINE': 'django_mongodb_engine.mongodb',
+        'ENGINE': 'django_mongodb_engine',
         'NAME': 'test',
         'USER': '',
         'PASSWORD': '',
@@ -101,13 +93,15 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'testproj.myapp',
     'testproj.mixed',
-    'south',
+    'testproj.emb',
+    #'south',
     # Uncomment the next line to enable the admin:
     'django.contrib.admin',
+    'djangotoolbox'
 )
 
-DATABASE_ROUTERS = ['django_mongodb_engine.mongodb.router.MongoDBRouter']
+DATABASE_ROUTERS = ['django_mongodb_engine.router.MongoDBRouter']
 MONGODB_MANAGED_APPS = ['testproj.myapp', ]
 MONGODB_MANAGED_MODELS = ['mixed.record', ]
 
-SOUTH_DATABASE_ADAPTERS = { "mongodb" : "django_mongodb_engine.mongodb.south"}
+SOUTH_DATABASE_ADAPTERS = { "mongodb" : "django_mongodb_engine.south"}

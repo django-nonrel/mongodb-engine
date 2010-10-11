@@ -15,6 +15,7 @@ class ImproperlyConfiguredWarning(Warning):
 
 class DatabaseFeatures(NonrelDatabaseFeatures):
     string_based_auto_field = True
+    supports_dicts = True
 
 class DatabaseClient(NonrelDatabaseClient):
     pass
@@ -104,8 +105,8 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
 
             self._db_connection = self._connection[self.db_name]
 
-            from .mongodb_serializer import TransformDjango
-            self._db_connection.add_son_manipulator(TransformDjango())
+            #from .mongodb_serializer import TransformDjango
+            #self._db_connection.add_son_manipulator(TransformDjango())
 
             # We're done!
             self._is_connected = True

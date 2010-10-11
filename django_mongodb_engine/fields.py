@@ -1,246 +1,54 @@
+from future_builtins import zip
 from django.db import models
-from django.core import exceptions, validators
-from django.db.models import Field, CharField
+from django.core.exceptions import ValidationError
 from django.utils.translation import ugettext_lazy as _
-from django.utils.encoding import smart_unicode
-from django import forms
-
+from django.utils.importlib import import_module
 from pymongo.objectid import ObjectId
-from gridfs import GridFS, errors
-
-
+from gridfs import GridFS
 try:
     from cStringIO import StringIO
 except ImportError:
     from StringIO import StringIO
 
+from djangotoolbox.fields import ListField
 
-__all__ = ["ListField", "DictField", "SetListField", "SortedListField", "GenericField" ]
-__doc__ = "Common module to all nonrel engines"
+__all__ = ['GridFSField']
 
-class GenericField(Field):
-    def validate(self, value, model_instance):
-        """
-        Validates value and throws ValidationError.
-        """
-        if not isinstance(value, object):
-            raise exceptions.ValidationError("Value has to be an instance of object")
+class EmbeddedModelField(ListField):
+    __metaclass__ = models.SubfieldBase
 
-    def get_prep_value(self, value):
-        return value
+    def __init__(self, model, *args, **kwargs):
+        self.embedded_model = model
+        super(EmbeddedModelField, self).__init__(*args, **kwargs)
 
-    def to_python(self, value):
-        return value
+    get_db_prep_value = models.Field.get_db_prep_value
 
-    def get_default(self):
-        "Returns the default value for this field."
-        return None
+    def get_db_prep_save(self, model_instance, connection):
+        values = []
+        print model_instance
+        for field in self.embedded_model._meta.fields:
+            values.append(
+                field.get_db_prep_save(
+                    field.pre_save(model_instance, model_instance.id is None),
+                    connection=connection
+                )
+            )
+        return values
 
-class ListField(Field):
-    """A list field that wraps a standard field, allowing multiple instances
-    of the field to be used as a list in the database.
-    """
-
-    default_error_messages = {
-        'invalid': _(u'This value must be a list or an iterable.'),
-        'invalid_value': _(u'Invalid value in list.'),
-    }
-
-    description = _("List Field")
-    _internaltype = None
-    def __init__(self, *args, **kwargs):
-        kwargs['blank'] = True
-        if 'default' not in kwargs:
-            kwargs['default'] = []
-        if 'type' in kwargs:
-            self._internaltype = kwargs.pop("type")
-
-        Field.__init__(self, *args, **kwargs)
-
-    def validate(self, value, model_instance):
-        """
-        Validates value and throws ValidationError.
-        """
-        if not isinstance(value, list) and (not hasattr(value, "__iter__")):
-            raise exceptions.ValidationError(self.error_messages['invalid'])
-
-        if value is None and not self.null:
-            raise exceptions.ValidationError(self.error_messages['null'])
-
-        if not self.blank and value in validators.EMPTY_VALUES:
-            raise exceptions.ValidationError(self.error_messages['blank'])
-        if self._internaltype is not None:
-            for v in value:
-                if not isinstance(v, self._internaltype):
-                    raise exceptions.ValidationError(self.error_messages['invalid_value'])
-
-    def get_prep_value(self, value):
-        if value is None:
-            return None
-        return list(value)
-
-    def to_python(self, value):
-        if value is None:
-            return []
-        return value
-
-    def get_default(self):
-        "Returns the default value for this field."
-        if self.has_default():
-            if callable(self.default):
-                return self.default()
-            return self.default
-        return []
-
-class SortedListField(ListField):
-    """A ListField that sorts the contents of its list before writing to
-    the database in order to ensure that a sorted list is always
-    retrieved.
-    """
-
-    description = _("Sorted Field")
-    _ordering = None
-
-    def __init__(self, *args, **kwargs):
-        if 'ordering' in kwargs.keys():
-            self._ordering = kwargs.pop('ordering')
-        if 'type' in kwargs:
-            self._internaltype = kwargs.pop("type")
-        super(SortedListField, self).__init__(*args, **kwargs)
-
-    def get_prep_value(self, value):
-        if value is None:
-            return None
-        if not isinstance(value, list) and (not hasattr(value, "__iter__")):
-            raise exceptions.ValidationError(self.error_messages['invalid'])
-        if self._ordering is not None:
-            return sorted(value, key=itemgetter(self._ordering))
-        return sorted(value)
-
-class DictField(Field):
-    """A dictionary field that wraps a standard Python dictionary.
-    Key cannot contains . or $ for query problems.
-    """
-    description = _("Dict Field")
-
-    default_error_messages = {
-        'invalid': _(u'This value must be a dictionary.'),
-        'invalid_key': _(u'Invalid dictionary key name - Keys cannot contains . or $ for query problems'),
-    }
-
-    def validate(self, value, model_instance):
-        """
-        Validates value and throws ValidationError.
-        """
-        if not isinstance(value, dict):
-            raise exceptions.ValidationError(self.error_messages['invalid'])
-
-        if any(('.' in k or '$' in k) for k in value):
-            raise exceptions.ValidationError(self.error_messages['invalid_key'])
-
-        if value is None and not self.null:
-            raise exceptions.ValidationError(self.error_messages['null'])
-
-        if not self.blank and value in validators.EMPTY_VALUES:
-            raise exceptions.ValidationError(self.error_messages['blank'])
-
-    def get_default(self):
-        "Returns the default value for this field."
-        if self.has_default():
-            if callable(self.default):
-                return self.default()
-            return self.default
-        return {}
-
-    def formfield(self, form_class=forms.Field, **kwargs):
-        "Returns a django.forms.Field instance for this database Field."
-        defaults={}
-        defaults.update(kwargs)
-        return form_class(**defaults)
-
-class SetListField(Field):
-    """A list field that allows only one instance for item.
-    """
-
-    description = _("List Set Field")
-    _internaltype = None
-    default_error_messages = {
-        'invalid': _(u'This value must be a set.'),
-        'invalid_value': _(u'Invalid value in list.'),
-    }
-
-    def __init__(self, *args, **kwargs):
-        kwargs['blank'] = True
-        if 'default' not in kwargs:
-            kwargs['default'] = set()
-        if 'type' in kwargs:
-            self._internaltype = kwargs.pop("type")
-
-        Field.__init__(self, *args, **kwargs)
-    def validate(self, value, model_instance):
-        """
-        Validates value and throws ValidationError.
-        """
-        if not isinstance(value, set):
-            raise exceptions.ValidationError(self.error_messages['invalid'])
-
-        if value is None and not self.null:
-            raise exceptions.ValidationError(self.error_messages['null'])
-
-        if not self.blank and value in validators.EMPTY_VALUES:
-            raise exceptions.ValidationError(self.error_messages['blank'])
-        if self._internaltype is not None:
-            for v in value:
-                if not isinstance(v, self._internaltype):
-                    raise exceptions.ValidationError(self.error_messages['invalid_value'])
-
-    def get_default(self):
-        "Returns the default value for this field."
-        if self.has_default():
-            if callable(self.default):
-                return self.default()
-            return self.default
-        return set()
+    def to_python(self, values):
+        if isinstance(values, list):
+            if not values:
+                # empty list
+                return None
+            model_instance = self.embedded_model()
+            assert len(values) == len(self.embedded_model._meta.fields), 'corrupt embedded field'
+            for value, field in zip(values, self.embedded_model._meta.fields):
+                setattr(model_instance, field.attname, value)
+            return model_instance
+        return values
 
 
-    def get_db_prep_value(self, value, connection, prepared=False):
-        """Returns field's value prepared for interacting with the database
-        backend.
-
-        Used by the default implementations of ``get_db_prep_save``and
-        `get_db_prep_lookup```
-        """
-        if not prepared:
-            value = list(self.get_prep_value(value))
-        return value
-
-    def get_prep_value(self, value):
-        if value is None:
-            return None
-        if not isinstance(value, set):
-            if hasattr(value, "__iter__"):
-                value = set(value)
-        return set(value)
-
-    def to_python(self, value):
-        """
-        Converts the input value into the expected Python data type, raising
-        django.core.exceptions.ValidationError if the data can't be converted.
-        Returns the converted value.
-        """
-        if value is None:
-            return set()
-        if isinstance( value, set):
-            return value
-        return set(value)
-
-    def formfield(self, form_class=forms.Field, **kwargs):
-        "Returns a django.forms.Field instance for this database Field."
-        defaults={}
-        defaults.update(kwargs)
-        return form_class(**defaults)
-
-class GridFSField(CharField):
+class GridFSField(models.CharField):
 
     def __init__(self, *args, **kwargs):
         self._as_string = kwargs.pop("as_string", False)

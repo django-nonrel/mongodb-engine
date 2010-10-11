@@ -1,12 +1,9 @@
-import inspect
-import re
-
 class DatabaseOperations(object):
     """
     MongoDB implementation of database operations.
     """
 
-    backend_name = "django.db.backends.mongodb"
+    backend_name = 'django_mongodb_engine'
 
     supports_foreign_keys = False
     has_check_constraints = False
