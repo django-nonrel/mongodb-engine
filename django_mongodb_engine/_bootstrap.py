@@ -16,7 +16,7 @@ def AutoField_to_python(value):
     if value is None:
         return value
     try:
-        return str(value)
+        return unicode(value)
     except (TypeError, ValueError):
         raise exceptions.ValidationError("Invalid AutoField value %r" % value)
 
