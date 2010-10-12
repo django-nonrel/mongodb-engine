@@ -2,6 +2,7 @@ from django.core.exceptions import ImproperlyConfigured
 
 import pymongo
 from .creation import DatabaseCreation
+from .client import DatabaseClient
 
 from djangotoolbox.db.base import (
     NonrelDatabaseFeatures, NonrelDatabaseWrapper,
@@ -36,13 +37,12 @@ class DatabaseOperations(NonrelDatabaseOperations):
             self.connection.db_connection.drop_collection(table)
         return []
 
-class DatabaseClient(NonrelDatabaseClient):
-    pass
-
 class DatabaseValidation(NonrelDatabaseValidation):
     pass
 
 class DatabaseIntrospection(NonrelDatabaseIntrospection):
+    """Database Introspection"""
+
     def table_names(self):
         """ Show defined models """
         return self.connection.db_connection.collection_names()
@@ -71,7 +71,10 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
 
     @property
     def db_connection(self):
-        sle._connect()
+        """
+        Returns the db_connection instance (a :class:`pymongo.database.Database`)
+        """
+        self._connect()
         return self._db_connection
 
     def _connect(self):
@@ -127,4 +130,4 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
             # We're done!
             self._connected = True
 
-        # TODO: signal!
+        # TODO: signal! (see Alex' backend)
