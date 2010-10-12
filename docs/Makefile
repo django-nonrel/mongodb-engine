@@ -3,7 +3,7 @@
 
 # You can set these variables from the command line.
 SPHINXOPTS    =
-SPHINXBUILD   = sphinx-build
+SPHINXBUILD   = DJANGO_SETTINGS_MODULE="testproj.settings" sphinx-build
 PAPER         =
 
 # Internal variables.

@@ -5,6 +5,7 @@ from django.core.exceptions import ImproperlyConfigured
 import pymongo
 from .creation import DatabaseCreation
 from .operations import DatabaseOperations
+from .client import DatabaseClient
 
 from djangotoolbox.db.base import NonrelDatabaseFeatures, \
     NonrelDatabaseWrapper, NonrelDatabaseClient, \
@@ -17,13 +18,12 @@ class DatabaseFeatures(NonrelDatabaseFeatures):
     string_based_auto_field = True
     supports_dicts = True
 
-class DatabaseClient(NonrelDatabaseClient):
-    pass
-
 class DatabaseValidation(NonrelDatabaseValidation):
     pass
 
 class DatabaseIntrospection(NonrelDatabaseIntrospection):
+    """Database Introspection"""
+    
     def table_names(self):
         """
         Show defined models
@@ -35,6 +35,8 @@ class DatabaseIntrospection(NonrelDatabaseIntrospection):
         pass
 
 class DatabaseWrapper(NonrelDatabaseWrapper):
+    """Database Wrapper Class
+    """
     def _cursor(self):
         self._ensure_is_connected()
         return self._connection
@@ -53,6 +55,8 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
 
     @property
     def db_connection(self):
+        """Returns the db_connection instance :class:`pymongo.database.Database`
+        """
         self._ensure_is_connected()
         return self._db_connection
 
