@@ -32,7 +32,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'django-mongodb-engine'
-copyright = u'2009-2010, Flavio Percoco - Alberto Paro & contributors'
+copyright = u'2009-2010: Flavio Percoco, Alberto Paro, Jonas Haag"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -65,8 +65,8 @@ html_use_modindex = True
 html_use_index = True
 
 latex_documents = [
-  ('index', 'django_mongodb_engine.tex', ur'DjangoMongoDBEngine Documentation',
-   ur'Flavio Percoco - Alberto Paro', 'manual'),
+  ('index', 'django_mongodb_engine.tex', ur'django-mongodb-engine Documentation',
+   ur'Flavio Percoco, Alberto Paro, Jonas Haag', 'manual'),
 ]
 
 # html_theme = "django_mongodb_engine"
