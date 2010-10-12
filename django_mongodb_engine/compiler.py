@@ -259,7 +259,7 @@ class SQLInsertCompiler(NonrelInsertCompiler, SQLCompiler):
             data['_id'] = data.pop(pk_column)
         except KeyError:
             pass
-        return self._save(self, data, return_id)
+        return self._save(data, return_id)
 
 # TODO: Define a common nonrel API for updates and add it to the nonrel
 # backend base classes and port this code to that API
