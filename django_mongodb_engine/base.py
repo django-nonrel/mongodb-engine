@@ -1,21 +1,40 @@
-import warnings
-
 from django.core.exceptions import ImproperlyConfigured
 
 import pymongo
 from .creation import DatabaseCreation
-from .operations import DatabaseOperations
 
-from djangotoolbox.db.base import NonrelDatabaseFeatures, \
-    NonrelDatabaseWrapper, NonrelDatabaseClient, \
-    NonrelDatabaseValidation, NonrelDatabaseIntrospection
+from djangotoolbox.db.base import (
+    NonrelDatabaseFeatures, NonrelDatabaseWrapper,
+    NonrelDatabaseClient, NonrelDatabaseValidation,
+    NonrelDatabaseIntrospection, NonrelDatabaseOperations
+)
 
 class ImproperlyConfiguredWarning(Warning):
     pass
 
 class DatabaseFeatures(NonrelDatabaseFeatures):
     string_based_auto_field = True
-    supports_dicts = True
+
+
+class DatabaseOperations(NonrelDatabaseOperations):
+    compiler_module = __name__.rsplit('.', 1)[0] + '.compiler'
+
+    def max_name_length(self):
+        return 254
+
+    def sql_flush(self, style, tables, sequence_list):
+        """
+        Returns a list of SQL statements that have to be executed to drop
+        all `tables`. No SQL in MongoDB, so just drop all tables here and
+        return an empty list.
+        """
+        tables = self.connection.db_connection.collection_names()
+        for table in tables:
+            if table.startswith('system.'):
+                # no do not system collections
+                continue
+            self.connection.db_connection.drop_collection(table)
+        return []
 
 class DatabaseClient(NonrelDatabaseClient):
     pass
