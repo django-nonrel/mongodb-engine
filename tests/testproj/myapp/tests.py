@@ -300,3 +300,20 @@ class MongoDjTest(TestCase):
             Entry.objects.filter()[0].title,
             "Title has been updated"
         )
+        
+        Entry.objects.filter(blog=blog2).update(title="Last Update Test", blog=blog1)
+        
+        self.assertEqual(
+            # this should work too
+            Entry.objects.filter()[0].title,
+            "Last Update Test"
+        )
+        
+        self.assertEqual(
+            # this should work too
+            Entry.objects.filter(blog=blog1).count(),
+            1
+        )
+        
+        
+        
