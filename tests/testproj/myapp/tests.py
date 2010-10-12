@@ -274,3 +274,29 @@ class MongoDjTest(TestCase):
             dyn.gen,
             dict
         ))
+        
+        
+    def test_update(self):
+        blog1 = Blog(title="Blog")
+        blog1.save()
+        blog2 = Blog(title="Blog 2")
+        blog2.save()
+        entry1 = Entry(title="entry 1", blog=blog1)
+        entry1.save()
+        
+        Entry.objects.filter(pk=entry1.pk).update(blog=blog2)
+        
+        self.assertEqual(
+            # this should work too
+            list(Entry.objects.filter(blog=blog2)),
+            [entry1]
+        )
+        
+        
+        Entry.objects.filter(blog=blog2).update(title="Title has been updated")
+        
+        self.assertEqual(
+            # this should work too
+            Entry.objects.filter()[0].title,
+            "Title has been updated"
+        )

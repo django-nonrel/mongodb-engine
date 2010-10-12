@@ -181,6 +181,48 @@ class SQLCompiler(NonrelCompiler):
     A simple query: no joins, no distinct, etc.
     """
     query_class = DBQuery
+    
+    def get_filters(self, where):
+        if where.connector != "AND":
+            raise Exception("MongoDB only supports joining "
+                "filters with and, not or.")
+        assert where.connector == "AND"
+        filters = {}
+        for child in where.children:
+            if isinstance(child, self.query.where_class):
+                child_filters = self.get_filters(child)
+                for k, v in child_filters.iteritems():
+                    assert k not in filters
+                    if where.negated:
+                        filters.update(self.negate(k, v))
+                    else:
+                        filters[k] = v
+            else:
+                try:
+                    field, val = self.make_atom(*child, **{"negated": where.negated})
+                    filters[field] = val
+                except NotImplementedError:
+                    pass
+        return filters
+       
+    def make_atom(self, lhs, lookup_type, value_annotation, params_or_value,
+        negated):
+        
+        if hasattr(lhs, "process"):
+            lhs, params = lhs.process(
+                lookup_type, params_or_value, self.connection
+            )
+        else:
+            params = Field().get_db_prep_lookup(lookup_type, params_or_value, 
+                connection=self.connection, prepared=True)
+        assert isinstance(lhs, (list, tuple))
+        table, column, _ = lhs
+        assert table == self.query.model._meta.db_table
+        if column == self.query.model._meta.pk.column:
+            column = "_id"
+        
+        val = self.convert_value_for_db(_, params[0])
+        return column, val
 
     def _split_db_type(self, db_type):
         try:
@@ -244,10 +286,14 @@ class SQLCompiler(NonrelCompiler):
             params['w'] = conn.wait_for_slaves
         return params
 
-    def _save(self, data, return_id=False):
+    @property
+    def _collection(self):
         connection = self.connection.db_connection
         db_table = self.query.get_meta().db_table
-        primary_key = connection[db_table].save(data, **self.insert_params())
+        return connection[db_table]
+        
+    def _save(self, data, return_id=False):
+        primary_key = self._collection.save(data, **self.insert_params())
         return unicode(primary_key)
 
 
@@ -263,14 +309,42 @@ class SQLInsertCompiler(NonrelInsertCompiler, SQLCompiler):
 
 # TODO: Define a common nonrel API for updates and add it to the nonrel
 # backend base classes and port this code to that API
-class SQLUpdateCompiler(SQLCompiler):
+class SQLUpdateCompiler(NonrelUpdateCompiler, SQLCompiler):
+    query_class = DBQuery
+    
     @safe_call
     def execute_sql(self, return_id=False):
-        # self.query: the data that shall be inserted
-        data = {}
-        for (field, value), column in zip(self.query.values, self.query.columns):
-            data[column] = python2db(field.db_type(connection=self.connection), value)
-        return self._save(data, return_id)
+        filters = self.get_filters(self.query.where)
+                    
+        vals = {}
+        for field, o, value in self.query.values:
+            if hasattr(value, 'prepare_database_save'):
+                value = value.prepare_database_save(field)
+            else:
+                value = field.get_db_prep_save(value, connection=self.connection)
+                
+            value = self.convert_value_for_db(field.db_type(), value)
+            
+            if hasattr(value, "evaluate"):
+                assert value.connector in (value.ADD, value.SUB)
+                assert not value.negated
+                assert not value.subtree_parents
+                lhs, rhs = value.children
+                if isinstance(lhs, F):
+                    assert not isinstance(rhs, F)
+                    if value.connector == value.SUB:
+                        rhs = -rhs
+                else:
+                    assert value.connector == value.ADD
+                    rhs, lhs = lhs, rhs
+                vals.setdefault("$inc", {})[lhs.name] = rhs
+            else:
+                vals.setdefault("$set", {})[field.column] = value
+        return self._collection.update(
+            filters,
+            vals,
+            multi=True
+        )
 
 class SQLDeleteCompiler(NonrelDeleteCompiler, SQLCompiler):
     pass
