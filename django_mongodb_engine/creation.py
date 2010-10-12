@@ -4,6 +4,8 @@ from djangotoolbox.db.base import NonrelDatabaseCreation
 TEST_DATABASE_PREFIX = 'test_'
 
 class DatabaseCreation(NonrelDatabaseCreation):
+    """Database Creation class.
+    """
     data_types = {
         'DateTimeField':                'datetime',
         'DateField':                    'date',
@@ -34,7 +36,14 @@ class DatabaseCreation(NonrelDatabaseCreation):
         'DecimalField':                 'float',
     }
 
-    def sql_indexes_for_field(self, model, f, style):
+    def sql_indexes_for_field(self, model, f, **kwargs):
+        """Create Indexes for field in model. Returns an empty List. (Django Compatibility)
+
+        :param model: The model containing field
+        :param f: The field to create indexes to.
+        :param \*\*kwargs: Extra kwargs not used in this engine.
+        """
+        
         if f.db_index:
             kwargs = {}
             opts = model._meta
@@ -45,7 +54,25 @@ class DatabaseCreation(NonrelDatabaseCreation):
             col.ensure_index([(f.name, direction)], **kwargs)
         return []
 
-    def index_fields_group(self, model, group, style):
+    def index_fields_group(self, model, group, **kwargs):
+        """Create indexes for fields in group that belong to model. 
+            This method is used to do compound indexes.
+        
+        :param model: The model containing the fields inside group.
+        :param group: A ``dict`` containing the fields map to index.
+        :param \*\*kwargs: Extra kwargs not used in this engine.
+     
+          
+        Example
+
+            >>> class TestFieldModel(Task):
+            ...
+            ...     class MongoMeta:
+            ...         index_together = [{
+            ...             'fields' : [ ('title', False), 'mlist']
+            ...             }]     
+            ...
+        """
         if not isinstance(group, dict):
             raise TypeError("Indexes group has to be instance of dict")
 
@@ -71,8 +98,13 @@ class DatabaseCreation(NonrelDatabaseCreation):
             checked_fields.append((field_name, direction))
         col.ensure_index(checked_fields, **group)
 
-    def sql_indexes_for_model(self, model, style):
-        "Returns the CREATE INDEX SQL statements for a single model"
+    def sql_indexes_for_model(self, model, *args, **kwargs):
+        """Creates ``model`` indexes.
+        
+        :param model: The model containing the fields inside group.
+        :param \*args: Extra args not used in this engine.
+        :param \*\*kwargs: Extra kwargs not used in this engine.
+        """
         if not model._meta.managed or model._meta.proxy:
             return []
         fields = [f for f in model._meta.local_fields if f.db_index]
@@ -80,9 +112,9 @@ class DatabaseCreation(NonrelDatabaseCreation):
             return []
         print "Installing index for %s.%s model" % (model._meta.app_label, model._meta.object_name)
         for f in fields:
-            self.sql_indexes_for_field(model, f, style)
+            self.sql_indexes_for_field(model, f)
         for group in getattr(model._meta, "index_together", []):
-            self.index_fields_group(model, group, style)
+            self.index_fields_group(model, group)
 
         #unique_together support
         unique_together = getattr(model._meta, "unique_together", [])
@@ -91,10 +123,25 @@ class DatabaseCreation(NonrelDatabaseCreation):
             unique_together = (unique_together,)
         for fields in unique_together:
             group = { "fields" : fields, "unique" : True}
-            self.index_fields_group(model, group, style)
+            self.index_fields_group(model, group)
         return []
 
-    def sql_create_model(self, model, style, known_models=set()):
+    def sql_create_model(self, model, *args, **kwargs):
+        """Creates the collection for model. Mostly used for capped collections.
+        
+        :param model: The model that should be created.
+        :param \*args: Extra args not used in this engine.
+        :param \*\*kwargs: Extra kwargs not used in this engine.
+        
+        Example
+
+            >>> class TestFieldModel(Task):
+            ...
+            ...     class MongoMeta:
+            ...         capped = True
+            ...         collection_max = 100000
+            ...         collection_size = 10
+        """
         opts = model._meta
         kwargs = {}
         kwargs["capped"] = getattr(opts, "capped", False)
@@ -153,4 +200,8 @@ class DatabaseCreation(NonrelDatabaseCreation):
         self.connection.settings_dict['NAME'] = old_database_name
 
     def _drop_database(self, database_name):
+        """Drops the database with name database_name
+        
+        :param database_name: The name of the database to drop.
+        """
         self.connection._cursor().drop_database(database_name)
