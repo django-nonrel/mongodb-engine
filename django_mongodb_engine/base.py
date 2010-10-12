@@ -44,47 +44,46 @@ class DatabaseValidation(NonrelDatabaseValidation):
 
 class DatabaseIntrospection(NonrelDatabaseIntrospection):
     def table_names(self):
-        """
-        Show defined models
-        """
+        """ Show defined models """
         return self.connection.db_connection.collection_names()
 
     def sequence_list(self):
-        # TODO: check if it's necessary to implement that
+        # Only required for backends that support ManyToMany relations
         pass
 
 class DatabaseWrapper(NonrelDatabaseWrapper):
-    def _cursor(self):
-        self._ensure_is_connected()
-        return self._connection
+    safe_inserts = False
+    wait_for_slaves = 0
+    _connected = False
 
-    def __init__(self, *args, **kwds):
-        super(DatabaseWrapper, self).__init__(*args, **kwds)
+    def __init__(self, *args, **kwargs):
+        super(DatabaseWrapper, self).__init__(*args, **kwargs)
         self.features = DatabaseFeatures(self)
         self.ops = DatabaseOperations(self)
         self.client = DatabaseClient(self)
         self.creation = DatabaseCreation(self)
         self.validation = DatabaseValidation(self)
         self.introspection = DatabaseIntrospection(self)
-        self.safe_inserts = False
-        self.wait_for_slaves = 0
-        self._is_connected = False
+
+    def _cursor(self):
+        self._connect()
+        return self._connection
 
     @property
     def db_connection(self):
-        self._ensure_is_connected()
+        sle._connect()
         return self._db_connection
 
-    def _ensure_is_connected(self):
-        if not self._is_connected:
+    def _connect(self):
+        if not self._connected:
             host = self.settings_dict['HOST'] or None
             port = self.settings_dict['PORT'] or None
             user = self.settings_dict.get('USER', None)
             password = self.settings_dict.get('PASSWORD')
+            self.db_name = self.settings_dict['NAME']
             self.safe_inserts = self.settings_dict.get('SAFE_INSERTS', False)
             self.wait_for_slaves = self.settings_dict.get('WAIT_FOR_SLAVES', 0)
             slave_okay = self.settings_dict.get('SLAVE_OKAY', False)
-            self.db_name = self.settings_dict['NAME']
 
             try:
                 if host is not None:
@@ -99,6 +98,7 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
                         # If host starts with mongodb:// the port will be
                         # ignored so lets make sure it is None
                         port = None
+                        import warnings
                         warnings.warn(
                             "If 'HOST' is a mongodb:// URL, the 'PORT' setting "
                             "will be ignored", ImproperlyConfiguredWarning
@@ -124,10 +124,7 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
 
             self._db_connection = self._connection[self.db_name]
 
-            #from .mongodb_serializer import TransformDjango
-            #self._db_connection.add_son_manipulator(TransformDjango())
-
             # We're done!
-            self._is_connected = True
+            self._connected = True
 
         # TODO: signal!
