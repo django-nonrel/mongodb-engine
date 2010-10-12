@@ -259,7 +259,7 @@ class SQLInsertCompiler(NonrelInsertCompiler, SQLCompiler):
             data['_id'] = data.pop(pk_column)
         except KeyError:
             pass
-        return SQLCompiler._save(self, data, return_id)
+        return self._save(self, data, return_id)
 
 # TODO: Define a common nonrel API for updates and add it to the nonrel
 # backend base classes and port this code to that API
@@ -270,7 +270,7 @@ class SQLUpdateCompiler(SQLCompiler):
         data = {}
         for (field, value), column in zip(self.query.values, self.query.columns):
             data[column] = python2db(field.db_type(connection=self.connection), value)
-        return super(SQLCompiler, self)._save(data, return_id)
+        return self._save(data, return_id)
 
 class SQLDeleteCompiler(NonrelDeleteCompiler, SQLCompiler):
     pass
