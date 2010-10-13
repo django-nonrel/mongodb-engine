@@ -32,7 +32,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'django-mongodb-engine'
-copyright = u'2009-2010: Flavio Percoco, Alberto Paro, Jonas Haag"
+copyright = u'2009-2010: Flavio Percoco, Alberto Paro, Jonas Haag & contributors'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

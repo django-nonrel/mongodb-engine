@@ -15,6 +15,28 @@ from djangotoolbox.fields import *
 __all__ = ['GridFSField', 'EmbeddedModelField']
            
 class EmbeddedModelField(models.Field):
+    """Field used to save embedded objects.
+    
+    This field serializes the model instance to a dictionary and deserializes it.
+    
+    :param model: The model type to embed
+    
+    Example
+    
+        >>> class EmbeddedModel(models.Model):
+        ...     charfield = models.CharField(max_length=3, blank=False)
+        ...     datetime = models.DateTimeField(null=True)
+        ...     datetime_auto_now_add = models.DateTimeField(auto_now_add=True)
+        ...     datetime_auto_now = models.DateTimeField(auto_now=True)
+        >>>
+        >>>
+        >>> class Model(models.Model):
+        ...     x = models.IntegerField()
+        ...     em = EmbeddedModelField(EmbeddedModel)
+        ...     dict_emb = DictField()
+        >>>
+        
+    """
     __metaclass__ = models.SubfieldBase
     
     def __init__(self, model, *args, **kwargs):
