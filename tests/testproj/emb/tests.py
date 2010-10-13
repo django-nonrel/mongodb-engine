@@ -47,11 +47,11 @@ class EmbeddedModelFieldTestCase(TestCase):
         self.assertEqual(obj.em.datetime, foodate)
         self.assertEqual(obj.dict_emb['blah'].charfield, 'blurg')
         self.assertEqual(obj.dict_emb['lala'].datetime, foodate)
+        obj.dict_emb['blah'].charfield = "Some Change" 
         obj.dict_emb['foo'] = EmbeddedModel(charfield='bar')
         time.sleep(1) # sorry for that, FIXME!
         obj.save()
-        auto_now_before = obj.dict_emb['blah'].datetime_auto_now
         obj = Model.objects.get()
-        self.assertNotEqual(obj.dict_emb['blah'].datetime_auto_now,
-                            auto_now_before)
+        self.assertEqual(obj.dict_emb['blah'].charfield, 'Some Change')
+        self.assertNotEqual(obj.dict_emb['blah'].datetime_auto_now_add, obj.dict_emb['blah'].datetime_auto_now)
         self.assertEqual(obj.dict_emb['foo'].charfield, 'bar')

@@ -13,60 +13,59 @@ except ImportError:
 from djangotoolbox.fields import *
 
 __all__ = ['GridFSField', 'EmbeddedModelField']
-     
-class EmbeddedModel(models.Model):
-    _embedded_in =None
-
-    def save(self, *args, **kwargs):
-        if self.pk is None:
-            self.pk = unicode(ObjectId())
-        if self._embedded_in  is None:
-            raise RuntimeError("Invalid save")
-        self._embedded_in.save()
-
-    def serialize(self):
-        if self.pk is None:
-            self.pk = unicode(ObjectId())
-            self.id = self.pk
-        result = {'_app':self._meta.app_label,
-            '_model':self._meta.module_name,
-            '_id':self.pk}
-        for field in self._meta.fields:
-            result[field.attname] = getattr(self, field.attname)
-        return result
            
-class EmbeddedModelField(ListField):
+class EmbeddedModelField(models.Field):
     __metaclass__ = models.SubfieldBase
-
+    
     def __init__(self, model, *args, **kwargs):
         self.embedded_model = model
         super(EmbeddedModelField, self).__init__(*args, **kwargs)
 
-    get_db_prep_value = models.Field.get_db_prep_value
 
     def get_db_prep_save(self, model_instance, connection):
-        if model_instance is None:
+        if not model_instance:
             return None
-        values = []
+            
+        values = {}
         for field in self.embedded_model._meta.fields:
-            values.append(
-                field.get_db_prep_save(
+            values[field.name] = field.get_db_prep_save(
                     field.pre_save(model_instance, model_instance.id is None),
                     connection=connection
                 )
-            )
+        return values
+        
+    def get_db_prep_value(self, model_instance, connection, prepared=False):
+        if model_instance is None:
+            return None
+            
+        values = {}
+        for field in self.embedded_model._meta.fields:
+            values[field.name] = field.get_db_prep_value(getattr(model_instance, field.name),
+                    connection=connection,
+                    prepared=prepared
+                )
         return values
 
     def to_python(self, values):
-        if isinstance(values, list):
+        if isinstance(values, dict):
             if not values:
-                # empty list
                 return None
-            model_instance = self.embedded_model()
-            assert len(values) == len(self.embedded_model._meta.fields), 'corrupt embedded field'
-            for value, field in zip(values, self.embedded_model._meta.fields):
-                setattr(model_instance, field.attname, value)
-            return model_instance
+              
+            # Normalizes old EmbeddedModelField to the new one    
+            if "_app" in values:
+                del values["_app"]
+            if "_model" in values:
+                del values["_model"]
+            if "_id" in values:    
+                del values["_model"]
+                
+            assert len(values.keys()) == len(self.embedded_model._meta.fields), 'corrupt embedded field'
+            
+            model = self.embedded_model()
+            for k,v in values.items():
+                setattr(model, k, v)    
+                
+            return model
         return values
 
 

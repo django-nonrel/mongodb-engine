@@ -11,4 +11,4 @@ class EmbeddedModel(models.Model):
 class Model(models.Model):
     x = models.IntegerField()
     em = EmbeddedModelField(EmbeddedModel)
-    dict_emb = DictField(EmbeddedModelField(EmbeddedModel), null=True)
+    dict_emb = DictField()

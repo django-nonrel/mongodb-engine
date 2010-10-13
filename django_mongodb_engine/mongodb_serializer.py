@@ -9,7 +9,6 @@ from django.utils.importlib import import_module
 from datetime import datetime, date, time
 
 #TODO Add content type cache
-from .fields import EmbeddedModel
 from .utils import ModelLazyObject
 
 class TransformDjango(SONManipulator):
@@ -18,25 +17,7 @@ class TransformDjango(SONManipulator):
         """
         Encode ricorsive embedded models and django models
         """
-        if isinstance(model, EmbeddedModel):
-            if model.pk is None:
-                model.pk = unicode(ObjectId())
-            res = {'_app':model._meta.app_label, 
-                   '_model':model._meta.module_name,
-                   '_id':model.pk}
-            for field in model._meta.fields:
-                res[field.attname] = self.transform_incoming(getattr(model, field.attname), collection)
-            res["_type"] = "emb"
-            
-            try:
-                ContentType.objects.get(app_label=res['_app'], model=res['_model'])
-            except:
-                res['_app'] = model.__class__.__module__
-                res['_model'] = model._meta.object_name
-                
-            return res
-        if not model.pk:
-            model.save()
+        model.save()
         return {'_app':model._meta.app_label, 
                 '_model':model._meta.module_name,
                 'pk':model.pk,
@@ -47,7 +28,7 @@ class TransformDjango(SONManipulator):
             for (key, value) in son.items():
                 if isinstance(value, (str, unicode)):
                     continue
-                if isinstance(value, (Model, EmbeddedModel)):
+                if isinstance(value, Model):
                     son[key] = self.encode_django(value, collection)
                 elif isinstance(value, dict): # Make sure we recurse into sub-docs
                     son[key] = self.transform_incoming(value, collection)
@@ -57,38 +38,23 @@ class TransformDjango(SONManipulator):
             pass
         elif hasattr(son, "__iter__"): # Make sure we recurse into sub-docs
             son = [self.transform_incoming(item, collection) for item in son]
-        elif isinstance(son, (Model, EmbeddedModel)):
-            son = self.encode_django(son, collection)
+        # elif isinstance(son, (Model, EmbeddedModel)):
+        #     son = self.encode_django(son, collection)
         return son
 
     def decode_django(self, data, collection):
         if data['_type']=="django":
             model = ContentType.objects.get(app_label=data['_app'], model=data['_model'])
             return ModelLazyObject(model.model_class(), data['pk'])
-        elif data['_type']=="emb":
-            try:
-                model = ContentType.objects.get(app_label=data['_app'], model=data['_model']).model_class()
-            except:
-                module = import_module(data['_app'])
-                model = getattr(module, data['_model'])            
-            
-            del data['_type']
-            del data['_app']
-            del data['_model']
-            data.pop('_id', None)
-            values = {}
-            for k,v in data.items():
-                values[str(k)] = self.transform_outgoing(v, collection)
-            return model(**values)
     
     def transform_outgoing(self, son, collection):
         if isinstance(son, dict):
-            if "_type" in son and son["_type"] in [u"django", u'emb']:
+            if "_type" in son and son["_type"] in [u"django"]:
                 son = self.decode_django(son, collection)
             else:
                 for (key, value) in son.items():
                     if isinstance(value, dict):
-                        if "_type" in value and value["_type"] in [u"django", u'emb']:
+                        if "_type" in value and value["_type"] in [u"django"]:
                             son[key] = self.decode_django(value, collection)
                         else:
                             son[key] = self.transform_outgoing(value, collection)
