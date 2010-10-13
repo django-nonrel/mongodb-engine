@@ -5,7 +5,7 @@ import django_mongodb_engine as distmeta
 
 distname = 'django-mongodb-engine'
 numversion = distmeta.__version__
-version = ''.join(map(str, numversion))
+version = '.'.join(map(str, numversion))
 license = '2-clause BSD'
 author = distmeta.__author__
 author_email = distmeta.__contact__

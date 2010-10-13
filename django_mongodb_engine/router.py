@@ -51,7 +51,7 @@ class MongoDBRouter(object):
 
     def allow_relation(self, obj1, obj2, **hints):
         """Allow any relation if a model in myapp is involved"""
-        return self.is_managed(obj2)
+        return self.is_managed(obj2) or None
 
     def allow_syncdb(self, db, model):
         """Make sure that a mongodb model appears on a mongodb database"""

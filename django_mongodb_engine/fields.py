@@ -10,10 +10,31 @@ try:
 except ImportError:
     from StringIO import StringIO
 
-from djangotoolbox.fields import ListField
+from djangotoolbox.fields import *
 
-__all__ = ['GridFSField']
+__all__ = ['GridFSField', 'EmbeddedModelField']
+     
+class EmbeddedModel(models.Model):
+    _embedded_in =None
 
+    def save(self, *args, **kwargs):
+        if self.pk is None:
+            self.pk = unicode(ObjectId())
+        if self._embedded_in  is None:
+            raise RuntimeError("Invalid save")
+        self._embedded_in.save()
+
+    def serialize(self):
+        if self.pk is None:
+            self.pk = unicode(ObjectId())
+            self.id = self.pk
+        result = {'_app':self._meta.app_label,
+            '_model':self._meta.module_name,
+            '_id':self.pk}
+        for field in self._meta.fields:
+            result[field.attname] = getattr(self, field.attname)
+        return result
+           
 class EmbeddedModelField(ListField):
     __metaclass__ = models.SubfieldBase
 
