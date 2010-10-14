@@ -23,7 +23,6 @@ class EmbeddedModelFieldTestCase(TestCase):
         obj = Model.objects.get()
         self.assertTrue(isinstance(obj.em, EmbeddedModel))
         self.assertEqual(obj.em.charfield, 'foo')
-        self.assertEqual(obj.em.id, None)
         self.assertNotEqual(obj.em.datetime_auto_now, None)
         self.assertNotEqual(obj.em.datetime_auto_now_add, None)
         time.sleep(1) # sorry for that, FIXME!
