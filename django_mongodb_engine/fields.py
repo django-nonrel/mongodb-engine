@@ -48,6 +48,9 @@ class EmbeddedModelField(models.Field):
         if not model_instance:
             return None
             
+        if not model_instance.id:
+            model_instance.pk = model_instance.id = unicode(ObjectId())
+            
         values = {}
         for field in self.embedded_model._meta.fields:
             values[field.name] = field.get_db_prep_save(
@@ -59,6 +62,9 @@ class EmbeddedModelField(models.Field):
     def get_db_prep_value(self, model_instance, connection, prepared=False):
         if model_instance is None:
             return None
+            
+        if not model_instance.id:
+            model_instance.pk = model_instance.id = unicode(ObjectId())
             
         values = {}
         for field in self.embedded_model._meta.fields:
@@ -79,9 +85,11 @@ class EmbeddedModelField(models.Field):
             if "_model" in values:
                 del values["_model"]
             if "_id" in values:    
-                del values["_model"]
-                
-            assert len(values.keys()) == len(self.embedded_model._meta.fields), 'corrupt embedded field'
+                values["id"] = values["_id"]
+                del values["_id"]
+            if not values.get("id", None):
+                values["id"] = unicode(ObjectId())    
+            #assert len(values.keys()) == len(self.embedded_model._meta.fields), 'corrupt embedded field'
             
             model = self.embedded_model()
             for k,v in values.items():
