@@ -166,7 +166,7 @@ class MongoDjTest(TestCase):
 
     def test_fields(self):
         t1 = TestFieldModel(title="p1",
-                            mlist=["ab", "bc"],
+                            mlist=["ab", {'a':23, "b":True  }],
                             slist=["bc", "ab"],
                             mdict = {'a':23, "b":True  },
                             mset=["a", 'b', "b"]
@@ -174,7 +174,7 @@ class MongoDjTest(TestCase):
         t1.save()
 
         t = TestFieldModel.objects.get(id=t1.id)
-        self.assertEqual(t.mlist, ["ab", "bc"])
+        self.assertEqual(t.mlist, ["ab", {'a':23, "b":True  }])
         self.assertEqual(t.mlist_default, ["a", "b"])
         self.assertEqual(t.slist, ["ab", "bc"])
         self.assertEqual(t.slist_default, ["a", "b"])
@@ -182,7 +182,10 @@ class MongoDjTest(TestCase):
         self.assertEqual(t.mdict_default, {"a": "a", 'b':1})
         self.assertEqual(sorted(t.mset), ["a", 'b'])
         self.assertEqual(sorted(t.mset_default), ["a", 'b'])
-
+        
+        from django_mongodb_engine.query import A
+        t2 = TestFieldModel.objects.get(mlist=A("a", 23))
+        self.assertEqual(t1.pk, t2.pk)
 
     def test_simple_foreign_keys(self):
         now = datetime.datetime.now()
