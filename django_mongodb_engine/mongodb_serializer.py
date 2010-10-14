@@ -17,6 +17,7 @@ class TransformDjango(SONManipulator):
         """
         Encode ricorsive embedded models and django models
         """
+        # If we get here is because model instance has to be related.
         model.save()
         return {'_app':model._meta.app_label, 
                 '_model':model._meta.module_name,
@@ -38,8 +39,6 @@ class TransformDjango(SONManipulator):
             pass
         elif hasattr(son, "__iter__"): # Make sure we recurse into sub-docs
             son = [self.transform_incoming(item, collection) for item in son]
-        # elif isinstance(son, (Model, EmbeddedModel)):
-        #     son = self.encode_django(son, collection)
         return son
 
     def decode_django(self, data, collection):
