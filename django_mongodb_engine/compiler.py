@@ -14,6 +14,7 @@ from pymongo.objectid import ObjectId
 from djangotoolbox.db.basecompiler import NonrelQuery, NonrelCompiler, \
     NonrelInsertCompiler, NonrelUpdateCompiler, NonrelDeleteCompiler
 
+from .query import A
 
 OPERATORS_MAP = {
     'exact':    lambda val: val,
@@ -120,6 +121,11 @@ class DBQuery(NonrelQuery):
     @safe_call
     def add_filter(self, column, lookup_type, negated, db_type, value):
         # Emulated/converted lookups
+        
+        if isinstance(value, A):
+            field = [ f for f in self.fields if f.name == column][0]
+            column, value = value.as_q(field)
+            
         if column == self.query.get_meta().pk.column:
             column = '_id'
 
@@ -205,8 +211,7 @@ class SQLCompiler(NonrelCompiler):
                     pass
         return filters
        
-    def make_atom(self, lhs, lookup_type, value_annotation, params_or_value,
-        negated):
+    def make_atom(self, lhs, lookup_type, value_annotation, params_or_value, negated):
         
         if hasattr(lhs, "process"):
             lhs, params = lhs.process(
