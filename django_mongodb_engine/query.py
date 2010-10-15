@@ -1,5 +1,5 @@
 
-from djangotoolbox.fields import AbstractIterableField
+from djangotoolbox.fields import ListField, SetField
 
 class A(object):
     
@@ -8,5 +8,5 @@ class A(object):
         self.val = value
         
     def as_q(self, field):
-        if isinstance(field, (AbstractIterableField)):
+        if isinstance(field, (ListField, SetField)):
             return "%s.%s" % (field.name, self.op), self.val
