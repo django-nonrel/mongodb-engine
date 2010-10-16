@@ -1,0 +1,19 @@
+#!/usr/bin/env python
+"""
+Removes trailing whitespace from the file in sys.argv[1]
+Example:
+    ./normalize_whitespace foo.py
+
+or:
+    find -type f | xargs -n1 ./normalize_whitespace
+"""
+import re
+import sys
+with open(sys.argv[1]) as f: c = f.read().split('\n')
+with open(sys.argv[1], 'w') as f:
+    for line in c:
+        if not line.isspace():
+            f.write(line.rstrip())
+        f.write('\n')
+    f.truncate(f.tell()-1)
+

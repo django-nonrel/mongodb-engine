@@ -18,5 +18,5 @@ def class_prepared_mongodb_signal(sender, *args, **kwargs):
         if attr.startswith("_"):
             continue
         setattr(model._meta, attr, mongo_meta[attr])
-        
+
 models.signals.class_prepared.connect(class_prepared_mongodb_signal)

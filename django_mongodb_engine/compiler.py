@@ -121,11 +121,11 @@ class DBQuery(NonrelQuery):
     @safe_call
     def add_filter(self, column, lookup_type, negated, db_type, value):
         # Emulated/converted lookups
-        
+
         if isinstance(value, A):
             field = [ f for f in self.fields if f.name == column][0]
             column, value = value.as_q(field)
-            
+
         if column == self.query.get_meta().pk.column:
             column = '_id'
 
@@ -187,7 +187,7 @@ class SQLCompiler(NonrelCompiler):
     A simple query: no joins, no distinct, etc.
     """
     query_class = DBQuery
-    
+
     def get_filters(self, where):
         if where.connector != "AND":
             raise Exception("MongoDB only supports joining "
@@ -210,22 +210,22 @@ class SQLCompiler(NonrelCompiler):
                 except NotImplementedError:
                     pass
         return filters
-       
+
     def make_atom(self, lhs, lookup_type, value_annotation, params_or_value, negated):
-        
+
         if hasattr(lhs, "process"):
             lhs, params = lhs.process(
                 lookup_type, params_or_value, self.connection
             )
         else:
-            params = Field().get_db_prep_lookup(lookup_type, params_or_value, 
+            params = Field().get_db_prep_lookup(lookup_type, params_or_value,
                 connection=self.connection, prepared=True)
         assert isinstance(lhs, (list, tuple))
         table, column, _ = lhs
         assert table == self.query.model._meta.db_table
         if column == self.query.model._meta.pk.column:
             column = "_id"
-        
+
         val = self.convert_value_for_db(_, params[0])
         return column, val
 
@@ -296,7 +296,7 @@ class SQLCompiler(NonrelCompiler):
         connection = self.connection.db_connection
         db_table = self.query.get_meta().db_table
         return connection[db_table]
-        
+
     def _save(self, data, return_id=False):
         primary_key = self._collection.save(data, **self.insert_params())
         return unicode(primary_key)
@@ -316,20 +316,20 @@ class SQLInsertCompiler(NonrelInsertCompiler, SQLCompiler):
 # backend base classes and port this code to that API
 class SQLUpdateCompiler(NonrelUpdateCompiler, SQLCompiler):
     query_class = DBQuery
-    
+
     @safe_call
     def execute_sql(self, return_id=False):
         filters = self.get_filters(self.query.where)
-                    
+
         vals = {}
         for field, o, value in self.query.values:
             if hasattr(value, 'prepare_database_save'):
                 value = value.prepare_database_save(field)
             else:
                 value = field.get_db_prep_save(value, connection=self.connection)
-                
+
             value = self.convert_value_for_db(field.db_type(), value)
-            
+
             if hasattr(value, "evaluate"):
                 assert value.connector in (value.ADD, value.SUB)
                 assert not value.negated

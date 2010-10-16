@@ -126,7 +126,7 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
                                                "the MongoDB are not correct")
 
             self._db_connection = self._connection[self.db_name]
-            
+
             from .mongodb_serializer import TransformDjango
             self._db_connection.add_son_manipulator(TransformDjango())
             # We're done!

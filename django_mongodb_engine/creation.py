@@ -43,7 +43,7 @@ class DatabaseCreation(NonrelDatabaseCreation):
         :param f: The field to create indexes to.
         :param \*\*kwargs: Extra kwargs not used in this engine.
         """
-        
+
         if f.db_index:
             kwargs = {}
             opts = model._meta
@@ -55,14 +55,14 @@ class DatabaseCreation(NonrelDatabaseCreation):
         return []
 
     def index_fields_group(self, model, group, **kwargs):
-        """Create indexes for fields in group that belong to model. 
+        """Create indexes for fields in group that belong to model.
             This method is used to do compound indexes.
-        
+
         :param model: The model containing the fields inside group.
         :param group: A ``dict`` containing the fields map to index.
         :param \*\*kwargs: Extra kwargs not used in this engine.
-     
-          
+
+
         Example
 
             >>> class TestFieldModel(Task):
@@ -70,7 +70,7 @@ class DatabaseCreation(NonrelDatabaseCreation):
             ...     class MongoMeta:
             ...         index_together = [{
             ...             'fields' : [ ('title', False), 'mlist']
-            ...             }]     
+            ...             }]
             ...
         """
         if not isinstance(group, dict):
@@ -100,7 +100,7 @@ class DatabaseCreation(NonrelDatabaseCreation):
 
     def sql_indexes_for_model(self, model, *args, **kwargs):
         """Creates ``model`` indexes.
-        
+
         :param model: The model containing the fields inside group.
         :param \*args: Extra args not used in this engine.
         :param \*\*kwargs: Extra kwargs not used in this engine.
@@ -128,11 +128,11 @@ class DatabaseCreation(NonrelDatabaseCreation):
 
     def sql_create_model(self, model, *args, **kwargs):
         """Creates the collection for model. Mostly used for capped collections.
-        
+
         :param model: The model that should be created.
         :param \*args: Extra args not used in this engine.
         :param \*\*kwargs: Extra kwargs not used in this engine.
-        
+
         Example
 
             >>> class TestFieldModel(Task):
@@ -201,7 +201,7 @@ class DatabaseCreation(NonrelDatabaseCreation):
 
     def _drop_database(self, database_name):
         """Drops the database with name database_name
-        
+
         :param database_name: The name of the database to drop.
         """
         self.connection._cursor().drop_database(database_name)

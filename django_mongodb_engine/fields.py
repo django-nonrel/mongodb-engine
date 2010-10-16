@@ -13,16 +13,16 @@ except ImportError:
 from djangotoolbox.fields import *
 
 __all__ = ['GridFSField', 'EmbeddedModelField']
-           
+
 class EmbeddedModelField(models.Field):
     """Field used to save embedded objects.
-    
+
     This field serializes the model instance to a dictionary and deserializes it.
-    
+
     :param model: The model type to embed
-    
+
     Example
-    
+
         >>> class EmbeddedModel(models.Model):
         ...     charfield = models.CharField(max_length=3, blank=False)
         ...     datetime = models.DateTimeField(null=True)
@@ -35,10 +35,10 @@ class EmbeddedModelField(models.Field):
         ...     em = EmbeddedModelField(EmbeddedModel)
         ...     dict_emb = DictField()
         >>>
-        
+
     """
     __metaclass__ = models.SubfieldBase
-    
+
     def __init__(self, model, *args, **kwargs):
         self.embedded_model = model
         super(EmbeddedModelField, self).__init__(*args, **kwargs)
@@ -47,10 +47,10 @@ class EmbeddedModelField(models.Field):
     def get_db_prep_save(self, model_instance, connection):
         if not model_instance:
             return None
-            
+
         if not model_instance.id:
             model_instance.pk = model_instance.id = unicode(ObjectId())
-            
+
         values = {}
         for field in self.embedded_model._meta.fields:
             values[field.name] = field.get_db_prep_save(
@@ -58,14 +58,14 @@ class EmbeddedModelField(models.Field):
                     connection=connection
                 )
         return values
-        
+
     def get_db_prep_value(self, model_instance, connection, prepared=False):
         if model_instance is None:
             return None
-            
+
         if not model_instance.id:
             model_instance.pk = model_instance.id = unicode(ObjectId())
-            
+
         values = {}
         for field in self.embedded_model._meta.fields:
             values[field.name] = field.get_db_prep_value(getattr(model_instance, field.name),
@@ -78,23 +78,23 @@ class EmbeddedModelField(models.Field):
         if isinstance(values, dict):
             if not values:
                 return None
-              
-            # Normalizes old EmbeddedModelField to the new one    
+
+            # Normalizes old EmbeddedModelField to the new one
             if "_app" in values:
                 del values["_app"]
             if "_model" in values:
                 del values["_model"]
-            if "_id" in values:    
+            if "_id" in values:
                 values["id"] = values["_id"]
                 del values["_id"]
             if not values.get("id", None):
-                values["id"] = unicode(ObjectId())    
+                values["id"] = unicode(ObjectId())
             #assert len(values.keys()) == len(self.embedded_model._meta.fields), 'corrupt embedded field'
-            
+
             model = self.embedded_model()
             for k,v in values.items():
-                setattr(model, k, v)    
-                
+                setattr(model, k, v)
+
             return model
         return values
 

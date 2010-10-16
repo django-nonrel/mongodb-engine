@@ -19,11 +19,11 @@ class TransformDjango(SONManipulator):
         """
         # If we get here is because model instance has to be related.
         model.save()
-        return {'_app':model._meta.app_label, 
+        return {'_app':model._meta.app_label,
                 '_model':model._meta.module_name,
                 'pk':model.pk,
                 '_type':"django"}
-    
+
     def transform_incoming(self, son, collection):
         if isinstance(son, dict):
             for (key, value) in son.items():
@@ -45,7 +45,7 @@ class TransformDjango(SONManipulator):
         if data['_type']=="django":
             model = ContentType.objects.get(app_label=data['_app'], model=data['_model'])
             return ModelLazyObject(model.model_class(), data['pk'])
-    
+
     def transform_outgoing(self, son, collection):
         if isinstance(son, dict):
             if "_type" in son and son["_type"] in [u"django"]:
@@ -63,5 +63,5 @@ class TransformDjango(SONManipulator):
                         son[key] = self.transform_outgoing(value, collection)
         elif hasattr(son, "__iter__"): # Make sure we recurse into sub-docs
             son = [self.transform_outgoing(item, collection) for item in son]
-            
+
         return son
