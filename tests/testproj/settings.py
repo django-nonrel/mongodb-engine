@@ -93,7 +93,8 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'testproj.myapp',
     'testproj.mixed',
-    'testproj.emb',
+    'testproj.embedded',
+    'testproj.contrib',
     #'south',
     # Uncomment the next line to enable the admin:
     'django.contrib.admin',

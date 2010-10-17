@@ -182,7 +182,7 @@ class MongoDjTest(TestCase):
         self.assertEqual(t.mdict_default, {"a": "a", 'b':1})
         self.assertEqual(sorted(t.mset), ["a", 'b'])
         self.assertEqual(sorted(t.mset_default), ["a", 'b'])
-        
+
         from django_mongodb_engine.query import A
         t2 = TestFieldModel.objects.get(mlist=A("a", 23))
         self.assertEqual(t1.pk, t2.pk)
@@ -277,8 +277,8 @@ class MongoDjTest(TestCase):
             dyn.gen,
             dict
         ))
-        
-        
+
+
     def test_update(self):
         blog1 = Blog(title="Blog")
         blog1.save()
@@ -286,40 +286,40 @@ class MongoDjTest(TestCase):
         blog2.save()
         entry1 = Entry(title="entry 1", blog=blog1)
         entry1.save()
-        
+
         Entry.objects.filter(pk=entry1.pk).update(blog=blog2)
-        
+
         self.assertEqual(
             # this should work too
             list(Entry.objects.filter(blog=blog2)),
             [entry1]
         )
-        
-        
+
+
         Entry.objects.filter(blog=blog2).update(title="Title has been updated")
-        
+
         self.assertEqual(
             # this should work too
             Entry.objects.filter()[0].title,
             "Title has been updated"
         )
-        
+
         Entry.objects.filter(blog=blog2).update(title="Last Update Test", blog=blog1)
-        
+
         self.assertEqual(
             # this should work too
             Entry.objects.filter()[0].title,
             "Last Update Test"
         )
-        
+
         self.assertEqual(
             # this should work too
             Entry.objects.filter(blog=blog1).count(),
             1
         )
-        
-        
-        
+
+
+
 
     def test_illegal_update(self):
         self.assertRaises(DatabaseError,
