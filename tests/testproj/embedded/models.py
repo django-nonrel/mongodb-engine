@@ -12,3 +12,14 @@ class Model(models.Model):
     x = models.IntegerField()
     em = EmbeddedModelField(EmbeddedModel)
     dict_emb = DictField(EmbeddedModelField(EmbeddedModel))
+
+# docstring example copy
+class Address(models.Model):
+    street = models.CharField(max_length=200)
+    postal_code = models.IntegerField()
+    city = models.CharField(max_length=100)
+
+class Customer(models.Model):
+    name = models.CharField(max_length=100)
+    last_name = models.CharField(max_length=100)
+    address = EmbeddedModelField(Address)

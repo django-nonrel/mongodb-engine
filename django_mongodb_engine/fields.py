@@ -25,8 +25,6 @@ class EmbeddedModelField(models.Field):
     For example, we want to namespace everything that belongs to a customer's
     address into the ``address`` field:
 
-        >>> from django.models import Model
-        >>> from django_mongodb_engine.fields import EmbeddedModelField
         >>> class Address(models.Model):
         ...     street = models.CharField(max_length=200)
         ...     postal_code = models.IntegerField()
@@ -53,10 +51,10 @@ class EmbeddedModelField(models.Field):
     the dictionary will be unserialized, givin the user a model instance:
 
         >>> bob.save()
-        >>> bob_from_db = Customer.objects.get(name='Bob')[0]
+        >>> bob_from_db = Customer.objects.get(name='Bob')
         >>> bob.address
         <Address object>
-        >>> bob.city
+        >>> bob.address.city
         'Blurginson'
     """
     __metaclass__ = models.SubfieldBase

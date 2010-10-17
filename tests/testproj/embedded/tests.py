@@ -8,6 +8,17 @@ def skip(func):
     pass
 
 class EmbeddedModelFieldTestCase(TestCase):
+    def test_field_docstring(self):
+        bob = Customer(
+            name='Bob', last_name='Laxley',
+            address=Address(street='Behind the Mountains 23',
+                            postal_code=1337, city='Blurginson')
+        )
+        self.assertEqual(bob.address.postal_code, 1337)
+        bob.save()
+        bob_from_db = Customer.objects.get(name='Bob')
+        self.assertEqual(bob.address.city, 'Blurginson')
+
     def test_empty(self):
         obj = Model(x=5)
         self.assertRaises(DatabaseError, obj.save)
