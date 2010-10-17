@@ -6,3 +6,8 @@ class MapReduceModel(models.Model):
     m = models.IntegerField()
 
     objects = MongoDBManager()
+
+class MapReduceModelWithCustomPrimaryKey(models.Model):
+    primarykey = models.CharField(max_length=100, primary_key=True)
+    data = models.CharField(max_length=100)
+    objects = MongoDBManager()

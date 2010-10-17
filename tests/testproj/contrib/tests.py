@@ -67,3 +67,22 @@ class SimpleTest(TestCase):
                                                            scope=scope))
         self.assertEqual([document.value for document in documents],
                          [(n*scope['x']) * scope['y'] for n, m in random_numbers])
+
+    def test_map_reduce_with_custom_primary_key(self):
+        mapfunc = """ function() { emit(this._id, null) } """
+        reducefunc = """ function(key, values) { return null } """
+        for pk, data in [
+            ('foo', 'hello!'),
+            ('bar', 'yo?'),
+            ('blurg', 'wuzzup')
+        ]:
+            MapReduceModelWithCustomPrimaryKey(primarykey=pk, data=data).save()
+
+        documents = MapReduceModelWithCustomPrimaryKey.objects.map_reduce(
+            mapfunc, reducefunc)
+        somedoc = documents[0]
+        self.assertEqual(somedoc.key, 'bar') # ordered by pk
+        self.assertEqual(somedoc.value, None)
+        obj = somedoc.get_object()
+        self.assert_(not hasattr(obj, 'id') and not hasattr(obj, '_id'))
+        self.assertEqual(obj, MapReduceModelWithCustomPrimaryKey(pk='bar', data='yo?'))

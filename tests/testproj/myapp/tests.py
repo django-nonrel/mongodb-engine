@@ -1,7 +1,6 @@
 """
 Test suite for django-mongodb-engine.
 """
-from django.db.utils import DatabaseError
 from django.test import TestCase
 from testproj.myapp.models import Entry, Blog, StandardAutoFieldModel, Person, TestFieldModel, DynamicModel
 import datetime
@@ -318,9 +317,5 @@ class MongoDjTest(TestCase):
             1
         )
 
-
-
-
-    def test_illegal_update(self):
-        self.assertRaises(DatabaseError,
-            Entry.objects.filter(title='Last Update Test').update, id='foo')
+    def test_update_id(self):
+        Entry.objects.filter(title='Last Update Test').update(id='foo')
