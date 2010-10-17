@@ -4,6 +4,7 @@ Test suite for django-mongodb-engine.
 from django.test import TestCase
 from testproj.myapp.models import Entry, Blog, StandardAutoFieldModel, Person, TestFieldModel, DynamicModel
 import datetime
+from pymongo.objectid import ObjectId
 
 class MongoDjTest(TestCase):
     multi_db = True
@@ -318,4 +319,4 @@ class MongoDjTest(TestCase):
         )
 
     def test_update_id(self):
-        Entry.objects.filter(title='Last Update Test').update(id='foo')
+        Entry.objects.filter(title='Last Update Test').update(id=ObjectId())
