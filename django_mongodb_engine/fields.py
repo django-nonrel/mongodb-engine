@@ -15,27 +15,49 @@ from djangotoolbox.fields import *
 __all__ = ['GridFSField', 'EmbeddedModelField']
 
 class EmbeddedModelField(models.Field):
-    """Field used to save embedded objects.
-
-    This field serializes the model instance to a dictionary and deserializes it.
+    """
+    Field that allows you to embed a model instance.
 
     :param model: The model type to embed
 
-    Example
+    This can be useful to have "namespaced" attributes within a model.
 
-        >>> class EmbeddedModel(models.Model):
-        ...     charfield = models.CharField(max_length=3, blank=False)
-        ...     datetime = models.DateTimeField(null=True)
-        ...     datetime_auto_now_add = models.DateTimeField(auto_now_add=True)
-        ...     datetime_auto_now = models.DateTimeField(auto_now=True)
-        >>>
-        >>>
-        >>> class Model(models.Model):
-        ...     x = models.IntegerField()
-        ...     em = EmbeddedModelField(EmbeddedModel)
-        ...     dict_emb = DictField()
-        >>>
+    For example, we want to namespace everything that belongs to a customer's
+    address into the ``address`` field:
 
+        >>> from django.models import Model
+        >>> from django_mongodb_engine.fields import EmbeddedModelField
+        >>> class Address(models.Model):
+        ...     street = models.CharField(max_length=200)
+        ...     postal_code = models.IntegerField()
+        ...     city = models.CharField(max_length=100)
+        ...
+        >>> class Customer(models.Model):
+        ...     name = models.CharField(max_length=100)
+        ...     last_name = models.CharField(max_length=100)
+        ...     address = EmbeddedModelField(Address)
+
+    :class:``EmbeddedModelField``s behave similar to relations::
+
+        >>> bob = Customer(
+                name='Bob', last_name='Laxley',
+                address=Address(street='Behind the Mountains 23',
+                                postal_code=1337, city='Blurginson)
+            )
+        >>> bob.address
+        <Address object>
+        >>> bob.address.postal_code
+        1337
+
+    When saved, embedded models are serialized to dictionaries. When queried,
+    the dictionary will be unserialized, givin the user a model instance:
+
+        >>> bob.save()
+        >>> bob_from_db = Customer.objects.get(name='Bob')[0]
+        >>> bob.address
+        <Address object>
+        >>> bob.city
+        'Blurginson'
     """
     __metaclass__ = models.SubfieldBase
 
@@ -79,16 +101,12 @@ class EmbeddedModelField(models.Field):
             if not values:
                 return None
 
-            # Normalizes old EmbeddedModelField to the new one
-            if "_app" in values:
-                del values["_app"]
-            if "_model" in values:
-                del values["_model"]
-            if "_id" in values:
-                values["id"] = values["_id"]
-                del values["_id"]
-            if not values.get("id", None):
-                values["id"] = unicode(ObjectId())
+            # In version 0.2, the layout of the serialized model instance changed.
+            # Cleanup up old instances from keys that aren't used any more.
+            for key in ('_app', '_model', '_id'):
+                values.pop(key, None)
+
+            #values.setdefault('id', unicode(ObjectId())
             #assert len(values.keys()) == len(self.embedded_model._meta.fields), 'corrupt embedded field'
 
             model = self.embedded_model()

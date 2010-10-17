@@ -1,4 +1,3 @@
-
 from djangotoolbox.fields import ListField, SetField
 
 class A(object):
