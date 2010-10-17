@@ -3,11 +3,11 @@ from mapreduce import MapReduceMixin
 
 class MongoDBManager(models.Manager, MapReduceMixin):
     """
-    Example usage:
+    Example usage::
 
-        >>> from django_mongodb_engine.contrib import MongoDBManager
-        >>> class MyModel(models.Model):
-        ...     objects = MongoDBManager
-        ...     ...
-        >>> MyModel.objects.map_reduce(...) # see MapReduceMixin documentation
+        from django_mongodb_engine.contrib import MongoDBManager
+        class MyModel(models.Model):
+            objects = MongoDBManager()
+
+        MyModel.objects.map_reduce(...) # See `MapReduceMixin` documentation
     """

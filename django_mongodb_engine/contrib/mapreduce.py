@@ -4,7 +4,7 @@ class MapReduceResult(object):
     """
     Represents one item of a MapReduce result array.
 
-    :param model: the :class:``django.db.Model`` used to perform the MapReduce
+    :param model: the model on that query the MapReduce was performed
     :param key: the *key* from the result item
     :param value: the *value* from the result item
     """
@@ -40,18 +40,18 @@ class MapReduceMixin(object):
         Performs a MapReduce on the server using `map_func`, `reduce_func` and
         (optionally) `finalize_func`.
 
-        Returns a list of :class:~MapReduceResult instances, one instance for
+        Returns a list of :class:`.MapReduceResult` instances, one instance for
         each item in the array the MapReduce query returns.
 
-        MongoDB *>= 1.1* and PyMongo *>= 1.2* are required for using this feature.
+        MongoDB >= 1.1 and PyMongo >= 1.2 are required for using this feature.
 
         :param map_func: JavaScript map function as string
         :param reduce_func: The JavaScript reduce function as string
         :param finalize_func: (optional) JavaScript finalize function as string
-        :param limit: (optional) Number of entries to be processed
-        :param scope: (optional) Variable scope to pass the functions
+        :param limit: (optional) Maximum number of entries to be processed
+        :param scope: (optional) Variable scope to pass the functions (:class:`dict`)
         :param keeptemp: Whether to keep the temporarily created collection
-                         (boolean, defaults to :const:``False``)
+                         (boolean, defaults to :const:`False`)
         """
         collection = self._get_collection()
 

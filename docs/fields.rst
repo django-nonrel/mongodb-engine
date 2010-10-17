@@ -1,10 +1,6 @@
-====================================================
- Engine Fields Module - django_mongodb_engine.fields
-====================================================
-
-.. contents::
-    :local:
-.. currentmodule:: django_mongodb_engine.fields
+===============
+ MongoDB Fields
+===============
 
 .. automodule:: django_mongodb_engine.fields
-    :members: EmbeddedModelField
+    :members: EmbeddedModelField, GridFSField

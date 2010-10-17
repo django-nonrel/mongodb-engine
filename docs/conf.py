@@ -17,7 +17,7 @@ import django_mongodb_engine
 
 extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.coverage',
-              'sphinxcontrib.issuetracker',
+              #'sphinxcontrib.issuetracker',
               'django_mongodb_engine_docs',
               ]
 
@@ -41,7 +41,7 @@ copyright = u'2009-2010: Flavio Percoco, Alberto Paro, Jonas Haag & contributors
 # The short X.Y version.
 version = ".".join(map(str, django_mongodb_engine.__version__[0:2]))
 # The full version, including alpha/beta/rc tags.
-release = django_mongodb_engine.__version__
+release = '.'.join(map(str, django_mongodb_engine.__version__))
 
 exclude_trees = ['.build']
 
@@ -69,7 +69,8 @@ latex_documents = [
    ur'Flavio Percoco, Alberto Paro, Jonas Haag', 'manual'),
 ]
 
-# html_theme = "django_mongodb_engine"
+html_theme = 'nature'
+html_theme_options = {'nosidebar' : 'true'}
 # html_theme_path = ["_theme"]
 # html_sidebars = {
 #     'index': ['sidebarintro.html', 'sourcelink.html', 'searchbox.html'],

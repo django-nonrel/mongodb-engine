@@ -18,44 +18,36 @@ class EmbeddedModelField(models.Field):
     """
     Field that allows you to embed a model instance.
 
-    :param model: The model type to embed
-
-    This can be useful to have "namespaced" attributes within a model.
+    :param model: The model class that shall be embedded
 
     For example, we want to namespace everything that belongs to a customer's
-    address into the ``address`` field:
+    address into the ``address`` field::
 
-        >>> class Address(models.Model):
-        ...     street = models.CharField(max_length=200)
-        ...     postal_code = models.IntegerField()
-        ...     city = models.CharField(max_length=100)
-        ...
-        >>> class Customer(models.Model):
-        ...     name = models.CharField(max_length=100)
-        ...     last_name = models.CharField(max_length=100)
-        ...     address = EmbeddedModelField(Address)
+        class Address(models.Model):
+            street = models.CharField(max_length=200)
+            postal_code = models.IntegerField()
+            city = models.CharField(max_length=100)
 
-    :class:``EmbeddedModelField``s behave similar to relations::
+        class Customer(models.Model):
+            name = models.CharField(max_length=100)
+            last_name = models.CharField(max_length=100)
+            address = EmbeddedModelField(Address)
 
-        >>> bob = Customer(
-                name='Bob', last_name='Laxley',
-                address=Address(street='Behind the Mountains 23',
-                                postal_code=1337, city='Blurginson)
-            )
-        >>> bob.address
-        <Address object>
-        >>> bob.address.postal_code
-        1337
+    :class:`EmbeddedModelField` behaves similar to relations::
+
+        bob = Customer(
+           name='Bob', last_name='Laxley',
+           address=Address(street='Behind the Mountains 23',
+                           postal_code=1337, city='Blurginson')
+        )
+        assert bob.address.postal_code == 1337
 
     When saved, embedded models are serialized to dictionaries. When queried,
-    the dictionary will be unserialized, givin the user a model instance:
+    the dictionary will be unserialized back to a model instance::
 
-        >>> bob.save()
-        >>> bob_from_db = Customer.objects.get(name='Bob')
-        >>> bob.address
-        <Address object>
-        >>> bob.address.city
-        'Blurginson'
+        bob.save()
+        bob_from_db = Customer.objects.get(name='Bob')
+        assert bob_from_db.address.city == 'Blurginson'
     """
     __metaclass__ = models.SubfieldBase
 
