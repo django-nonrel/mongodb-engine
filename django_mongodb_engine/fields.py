@@ -14,7 +14,7 @@ from djangotoolbox.fields import *
 
 __all__ = ['GridFSField', 'EmbeddedModelField']
 
-class EmbeddedModelField(models.Field):
+class EmbeddedModelField(DictField):
     """
     Field that allows you to embed a model instance.
 
@@ -60,9 +60,6 @@ class EmbeddedModelField(models.Field):
         if not model_instance:
             return None
 
-        if not model_instance.id:
-            model_instance.pk = model_instance.id = unicode(ObjectId())
-
         values = {}
         for field in self.embedded_model._meta.fields:
             values[field.name] = field.get_db_prep_save(
@@ -75,15 +72,13 @@ class EmbeddedModelField(models.Field):
         if model_instance is None:
             return None
 
-        if not model_instance.id:
-            model_instance.pk = model_instance.id = unicode(ObjectId())
-
         values = {}
         for field in self.embedded_model._meta.fields:
-            values[field.name] = field.get_db_prep_value(getattr(model_instance, field.name),
-                    connection=connection,
-                    prepared=prepared
-                )
+            values[field.name] = field.get_db_prep_value(
+                getattr(model_instance, field.name),
+                connection=connection,
+                prepared=prepared
+            )
         return values
 
     def to_python(self, values):
@@ -96,14 +91,13 @@ class EmbeddedModelField(models.Field):
             for key in ('_app', '_model', '_id'):
                 values.pop(key, None)
 
-            #values.setdefault('id', unicode(ObjectId())
-            #assert len(values.keys()) == len(self.embedded_model._meta.fields), 'corrupt embedded field'
+            assert len(values.keys()) == len(self.embedded_model._meta.fields), 'corrupt embedded field'
 
             model = self.embedded_model()
             for k,v in values.items():
                 setattr(model, k, v)
-
             return model
+
         return values
 
 
