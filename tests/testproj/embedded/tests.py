@@ -46,7 +46,7 @@ class EmbeddedModelFieldTestCase(TestCase):
         self.assertEqual(obj.em.datetime, foodate)
         self.assertEqual(obj.dict_emb['blah'].charfield, 'blurg')
         self.assertEqual(obj.dict_emb['lala'].datetime, foodate)
-        obj.dict_emb['blah'].charfield = "Some Change" 
+        obj.dict_emb['blah'].charfield = "Some Change"
         obj.dict_emb['foo'] = EmbeddedModel(charfield='bar')
         time.sleep(1) # sorry for that, FIXME!
         obj.save()
