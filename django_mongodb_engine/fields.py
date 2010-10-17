@@ -66,6 +66,10 @@ class EmbeddedModelField(DictField):
                     field.pre_save(model_instance, model_instance.id is None),
                     connection=connection
                 )
+
+        if model_instance.id is None:
+            model_instance.pk = model_instance.id = unicode(ObjectId())
+
         return values
 
     def get_db_prep_value(self, model_instance, connection, prepared=False):
@@ -79,6 +83,10 @@ class EmbeddedModelField(DictField):
                 connection=connection,
                 prepared=prepared
             )
+
+        if model_instance.id is None:
+            model_instance.pk = model_instance.id = unicode(ObjectId())
+
         return values
 
     def to_python(self, values):

@@ -3,6 +3,7 @@ from django.db.utils import DatabaseError
 from .models import *
 from datetime import datetime
 import time
+from django_mongodb_engine.query import A
 
 def skip(func):
     pass
@@ -65,3 +66,14 @@ class EmbeddedModelFieldTestCase(TestCase):
         self.assertEqual(obj.dict_emb['blah'].charfield, 'Some Change')
         self.assertNotEqual(obj.dict_emb['blah'].datetime_auto_now_add, obj.dict_emb['blah'].datetime_auto_now)
         self.assertEqual(obj.dict_emb['foo'].charfield, 'bar')
+
+    def test_query_embedded(self):
+        Model(x=3, em=EmbeddedModel(charfield='foo')).save()
+        obj = Model(x=3, em=EmbeddedModel(charfield='blurg'))
+        obj.save()
+        Model(x=3, em=EmbeddedModel(charfield='bar')).save()
+
+        # XXX: Why does Model.objects.get(em=A....) behave differently here?
+        # (Crashes with a TypeError)
+        obj_from_db = Model.objects.filter(em=A('id', obj.em.id))
+        self.assertEqual(obj, obj_from_db)
