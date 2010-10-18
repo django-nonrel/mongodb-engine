@@ -59,6 +59,8 @@ class EmbeddedModelField(DictField):
     def get_db_prep_save(self, model_instance, connection):
         if not model_instance:
             return None
+        elif not isinstance(model_instance, models.Model):
+            return model_instance
 
         values = {}
         for field in self.embedded_model._meta.fields:
@@ -68,14 +70,16 @@ class EmbeddedModelField(DictField):
                 )
 
         if model_instance.id is None:
-            model_instance.pk = model_instance.id = unicode(ObjectId())
+            values["id"] = model_instance.pk = model_instance.id = unicode(ObjectId())
 
         return values
 
     def get_db_prep_value(self, model_instance, connection, prepared=False):
         if model_instance is None:
             return None
-
+        elif not isinstance(model_instance, models.Model):
+            return model_instance
+        
         values = {}
         for field in self.embedded_model._meta.fields:
             values[field.name] = field.get_db_prep_value(
@@ -85,7 +89,7 @@ class EmbeddedModelField(DictField):
             )
 
         if model_instance.id is None:
-            model_instance.pk = model_instance.id = unicode(ObjectId())
+            values["id"] = model_instance.pk = model_instance.id = unicode(ObjectId())
 
         return values
 
@@ -93,10 +97,12 @@ class EmbeddedModelField(DictField):
         if isinstance(values, dict):
             if not values:
                 return None
+                
+            values["id"] = values.pop('_id', None)
 
             # In version 0.2, the layout of the serialized model instance changed.
             # Cleanup up old instances from keys that aren't used any more.
-            for key in ('_app', '_model', '_id'):
+            for key in ('_app', '_model'):
                 values.pop(key, None)
 
             assert len(values.keys()) == len(self.embedded_model._meta.fields), 'corrupt embedded field'

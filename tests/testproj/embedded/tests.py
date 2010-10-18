@@ -75,5 +75,5 @@ class EmbeddedModelFieldTestCase(TestCase):
 
         # XXX: Why does Model.objects.get(em=A....) behave differently here?
         # (Crashes with a TypeError)
-        obj_from_db = Model.objects.filter(em=A('id', obj.em.id))
+        obj_from_db = Model.objects.get(em=A('id', obj.em.id))
         self.assertEqual(obj, obj_from_db)

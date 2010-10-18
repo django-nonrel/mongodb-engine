@@ -1,4 +1,4 @@
-from djangotoolbox.fields import ListField, SetField
+from djangotoolbox.fields import ListField, SetField, DictField
 
 class A(object):
 
@@ -7,5 +7,5 @@ class A(object):
         self.val = value
 
     def as_q(self, field):
-        if isinstance(field, (ListField, SetField)):
+        if isinstance(field, (DictField, ListField, SetField)):
             return "%s.%s" % (field.name, self.op), self.val

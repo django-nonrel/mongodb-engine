@@ -23,6 +23,12 @@ class DatabaseOperations(NonrelDatabaseOperations):
     def max_name_length(self):
         return 254
 
+    def check_aggregate_support(self, aggregate):
+        from django.db.models.sql.aggregates import Max, Count
+        if not isinstance(aggregate, (Count)):
+            raise NotImplementedError("This database does not support %r "
+                                      "aggregates" % type(aggregate))
+                                      
     def sql_flush(self, style, tables, sequence_list):
         """
         Returns a list of SQL statements that have to be executed to drop
