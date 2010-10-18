@@ -5,6 +5,7 @@ from django.test import TestCase
 from testproj.myapp.models import Entry, Blog, StandardAutoFieldModel, Person, TestFieldModel, DynamicModel
 import datetime
 from pymongo.objectid import ObjectId
+from django_mongodb_engine.serializer import LazyModelInstance
 
 class MongoDjTest(TestCase):
     multi_db = True
@@ -320,3 +321,15 @@ class MongoDjTest(TestCase):
 
     def test_update_id(self):
         Entry.objects.filter(title='Last Update Test').update(id=ObjectId())
+
+    def test_lazy_model_instance(self):
+        l1 = LazyModelInstance(Entry, 'some-pk')
+        l2 = LazyModelInstance(Entry, 'some-pk')
+
+        self.assertEqual(l1, l2)
+
+        obj = Entry(title='foobar')
+        obj.save()
+
+        l3 = LazyModelInstance(Entry, obj.id)
+        self.assertEqual(obj, l3)

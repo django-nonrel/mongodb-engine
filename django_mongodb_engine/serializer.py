@@ -15,6 +15,12 @@ class LazyModelInstance(SimpleLazyObject):
     def _load_data(self):
         return self._model.objects.get(pk=self._pk)
 
+    def __eq__(self, other):
+        if isinstance(other, LazyModelInstance):
+            return self.__dict__['_pk'] == other.__dict__['_pk'] and \
+                   self.__dict__['_model'] == other.__dict__['_model']
+        return super(LazyModelInstance, self).__eq__(other)
+
 
 class TransformDjango(SONManipulator):
     def transform_incoming(self, value, collection):
