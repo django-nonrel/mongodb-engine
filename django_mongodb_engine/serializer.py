@@ -1,7 +1,19 @@
-from django.db.models import Model
-from django.contrib.contenttypes.models import ContentType
+from django.db import models
 from django.utils.functional import SimpleLazyObject
+from django.utils.importlib import import_module
 from pymongo.son_manipulator import SONManipulator
+
+def get_model_by_meta(model_meta):
+    app, model = model_meta['_app'], model_meta['_model']
+    try:
+        module = import_module(app + '.models')
+    except ImportError:
+        return models.get_model(app, model)
+    else:
+        try:
+            return getattr(module, model)
+        except AttributeError:
+            raise AttributeError("Could not find model %r in module %r" % (model, module))
 
 class LazyModelInstance(SimpleLazyObject):
     """
@@ -31,11 +43,11 @@ class TransformDjango(SONManipulator):
             return dict((key, self.transform_incoming(subvalue, collection))
                         for key, subvalue in value.iteritems())
 
-        if isinstance(value, Model):
+        if isinstance(value, models.Model):
             value.save()
             return {
                 '_app' : value._meta.app_label,
-                '_model' : value._meta.app_label,
+                '_model' : value._meta.object_name,
                 'pk' : value.pk,
                 '_type' : 'django'
             }
@@ -48,9 +60,7 @@ class TransformDjango(SONManipulator):
 
         if isinstance(son, dict):
             if son.get('_type') == 'django':
-                model_class = get_model(son['_app'], son['_model']).model_class()
-                return LazyModelInstance(model_class, son['pk'])
-
+                return LazyModelInstance(get_model_by_meta(son), son['pk'])
             else:
                 return dict((key, self.transform_outgoing(value, collection))
                              for key, value in son.iteritems())
