@@ -266,7 +266,10 @@ class SQLCompiler(NonrelCompiler):
         if db_type is None:
             return value
 
-        if value in (None, NOT_PROVIDED):
+        if value is None or value is NOT_PROVIDED:
+            # ^^^ it is *crucial* that this is not written as 'in (None, NOT_PROVIDED)'
+            # because that would call value's __eq__ method, which in case value
+            # is an instance of serializer.LazyModelInstance does a database query.
             return None
 
         db_type, db_subtype = self._split_db_type(db_type)

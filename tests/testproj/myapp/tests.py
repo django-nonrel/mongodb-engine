@@ -332,4 +332,18 @@ class MongoDjTest(TestCase):
         obj.save()
 
         l3 = LazyModelInstance(Entry, obj.id)
+        self.assertEqual(l3._wrapped, None)
         self.assertEqual(obj, l3)
+        self.assertNotEqual(l3._wrapped, None)
+
+    def test_lazy_model_instance_in_list(self):
+        obj = TestFieldModel()
+        related = DynamicModel(gen=42)
+        obj.mlist.append(related)
+        obj.save()
+        self.assertNotEqual(related.id, None)
+        obj = TestFieldModel.objects.get()
+        self.assertEqual(obj.mlist[0]._wrapped, None)
+        # query will be done NOW:
+        self.assertEqual(obj.mlist[0].gen, 42)
+        self.assertNotEqual(obj.mlist[0]._wrapped, None)
