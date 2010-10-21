@@ -2,6 +2,7 @@ from setuptools import setup, find_packages
 import codecs
 import django_mongodb_engine as distmeta
 
+
 CLASSIFIERS = [
     'Topic :: Internet',
     'Topic :: Database',
