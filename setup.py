@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
-
-pkginfo = __import__('__pkginfo__')
+import codecs
+import django_mongodb_engine as distmeta
 
 CLASSIFIERS = [
     'Topic :: Internet',
@@ -13,22 +13,22 @@ CLASSIFIERS = [
     'Topic :: Software Development :: Libraries :: Python Modules',
 ]
 
-for ver in pkginfo.pyversions:
+for ver in ['2', '2.4', '2.5', '2.6', '2.7']:
     CLASSIFIERS.append('Programming Language :: Python :: %s' % ver)
 
 
 setup(
-    name=pkginfo.distname,
-    version=pkginfo.version,
-    author=pkginfo.author,
-    author_email=pkginfo.author_email,
-    url=pkginfo.web,
-    license=license,
-    description=pkginfo.short_desc,
-    long_description=pkginfo.long_desc,
+    name='django_mongodb_engine',
+    version='.'.join(map(str, distmeta.__version__)),
+    author=distmeta.__author__,
+    author_email=distmeta.__contact__,
+    url=distmeta.__homepage__,
+    license='2-clause BSD',
+    description= "A MongoDB backend standing outside django.",
+    long_description=codecs.open('README.rst', 'r', 'utf-8').read(),
 
     platforms=['any'],
-    install_requires=pkginfo.install_requires,
+    install_requires=['pymongo', 'django>=1.2', 'djangotoolbox'],
 
     packages=find_packages(exclude=['ez_setup', 'tests', 'tests.*']),
     include_package_data=True,
