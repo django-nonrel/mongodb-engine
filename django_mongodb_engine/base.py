@@ -10,8 +10,10 @@ from djangotoolbox.db.base import (
     NonrelDatabaseIntrospection, NonrelDatabaseOperations
 )
 
+
 class ImproperlyConfiguredWarning(Warning):
     pass
+
 
 class DatabaseFeatures(NonrelDatabaseFeatures):
     string_based_auto_field = True
@@ -29,7 +31,7 @@ class DatabaseOperations(NonrelDatabaseOperations):
         if not isinstance(aggregate, (Count, MongoAggregate)):
             raise NotImplementedError("This database does not support %r "
                                       "aggregates" % type(aggregate))
-                                      
+
     def sql_flush(self, style, tables, sequence_list):
         """
         Returns a list of SQL statements that have to be executed to drop
@@ -44,8 +46,10 @@ class DatabaseOperations(NonrelDatabaseOperations):
             self.connection.db_connection.drop_collection(table)
         return []
 
+
 class DatabaseValidation(NonrelDatabaseValidation):
     pass
+
 
 class DatabaseIntrospection(NonrelDatabaseIntrospection):
     """Database Introspection"""
@@ -57,6 +61,7 @@ class DatabaseIntrospection(NonrelDatabaseIntrospection):
     def sequence_list(self):
         # Only required for backends that support ManyToMany relations
         pass
+
 
 class DatabaseWrapper(NonrelDatabaseWrapper):
     safe_inserts = False
@@ -79,7 +84,8 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
     @property
     def db_connection(self):
         """
-        Returns the db_connection instance (a :class:`pymongo.database.Database`)
+        Returns the db_connection instance
+         (a :class:`pymongo.database.Database`)
         """
         self._connect()
         return self._db_connection
@@ -99,35 +105,43 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
                 if host is not None:
                     if pymongo.version >= '1.8':
                         assert isinstance(host, (basestring, list)), \
-                            'If set, HOST must be a string or a list of strings'
+                        'If set, HOST must be a string or a list of strings'
                     else:
-                        assert isinstance(host, basestring), 'If set, HOST must be a string'
+                        assert isinstance(host, basestring), \
+                        'If set, HOST must be a string'
 
                 if port:
-                    if isinstance(host, basestring) and host.startswith('mongodb://'):
+                    if isinstance(host, basestring) and \
+                            host.startswith('mongodb://'):
                         # If host starts with mongodb:// the port will be
                         # ignored so lets make sure it is None
                         port = None
                         import warnings
                         warnings.warn(
-                            "If 'HOST' is a mongodb:// URL, the 'PORT' setting "
-                            "will be ignored", ImproperlyConfiguredWarning
+                        "If 'HOST' is a mongodb:// URL, the 'PORT' setting "
+                        "will be ignored", ImproperlyConfiguredWarning
                         )
                     else:
                         try:
                             port = int(port)
                         except ValueError:
-                            raise ImproperlyConfigured('If set, PORT must be an integer')
+                            raise ImproperlyConfigured(
+                            'If set, PORT must be an integer')
 
-                assert isinstance(self.safe_inserts, bool), 'If set, SAFE_INSERTS must be True or False'
-                assert isinstance(self.wait_for_slaves, int), 'If set, WAIT_FOR_SLAVES must be an integer'
+                assert isinstance(self.safe_inserts, bool), \
+                'If set, SAFE_INSERTS must be True or False'
+                assert isinstance(self.wait_for_slaves, int), \
+                'If set, WAIT_FOR_SLAVES must be an integer'
             except AssertionError, e:
                 raise ImproperlyConfigured(e)
 
-            self._connection = pymongo.Connection(host=host, port=port, slave_okay=slave_okay)
+            self._connection = pymongo.Connection(host=host,
+                                                  port=port,
+                                                  slave_okay=slave_okay)
 
             if user and password:
-                auth = self._connection[self.db_name].authenticate(user, password)
+                auth = self._connection[self.db_name].authenticate(user,
+                                                                   password)
                 if not auth:
                     raise ImproperlyConfigured("Username and/or password for "
                                                "the MongoDB are not correct")

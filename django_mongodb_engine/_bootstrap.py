@@ -1,5 +1,6 @@
 from django.db import models
 
+
 def class_prepared_mongodb_signal(sender, *args, **kwargs):
     mongo_meta = getattr(sender, 'MongoMeta', None)
     if mongo_meta is not None:
