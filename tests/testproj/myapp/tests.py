@@ -122,6 +122,31 @@ class MongoDjTest(TestCase):
             list(Entry.objects.order_by('date_published')),
             [entry2, entry1]
         )
+        
+    def test_skip_limit(self):
+        now = datetime.datetime.now()
+        before = now - datetime.timedelta(days=1)
+
+        Entry(title="entry 1", date_published=now).save()
+        Entry(title="entry 2", date_published=before).save()
+        Entry(title="entry 3", date_published=before).save()
+
+        self.assertEqual(
+            len(Entry.objects.order_by('-date_published')[:2]),
+            2
+        )
+
+        # With step
+        self.assertEqual(
+            len(Entry.objects.order_by('date_published')[1:2:1]),
+            1
+        )
+        
+        self.assertEqual(
+            len(Entry.objects.order_by('date_published')[1:2]),
+            1
+        )
+
 
 
     def test_dates_less_and_more_than(self):

@@ -23,3 +23,5 @@ class Customer(models.Model):
     name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     address = EmbeddedModelField(Address)
+    birthday = models.DateTimeField(auto_now_add=True)
+    age = models.IntegerField(null=True)

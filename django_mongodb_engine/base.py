@@ -24,8 +24,9 @@ class DatabaseOperations(NonrelDatabaseOperations):
         return 254
 
     def check_aggregate_support(self, aggregate):
-        from django.db.models.sql.aggregates import Max, Count
-        if not isinstance(aggregate, (Count)):
+        from django.db.models.sql.aggregates import Count
+        from .contrib.aggregations import MongoAggregate
+        if not isinstance(aggregate, (Count, MongoAggregate)):
             raise NotImplementedError("This database does not support %r "
                                       "aggregates" % type(aggregate))
                                       
