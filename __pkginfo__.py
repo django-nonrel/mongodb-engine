@@ -3,7 +3,7 @@
 import codecs
 import django_mongodb_engine as distmeta
 
-distname = 'django-mongodb-engine'
+distname = 'django_mongodb_engine'
 numversion = distmeta.__version__
 version = '.'.join(map(str, numversion))
 license = '2-clause BSD'
