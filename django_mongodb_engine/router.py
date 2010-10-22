@@ -57,7 +57,7 @@ class MongoDBRouter(object):
         """Make sure that a mongodb model appears on a mongodb database"""
 
         if db in self.mongodb_databases:
-           return self.is_managed(model)
+            return self.is_managed(model)
         elif self.is_managed(model):
             return db in self.mongodb_databases
 

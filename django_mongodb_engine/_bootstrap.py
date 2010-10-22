@@ -6,6 +6,6 @@ def class_prepared_mongodb_signal(sender, *args, **kwargs):
     if mongo_meta is not None:
         for attr, value in mongo_meta.items():
             if not attr.startswith('_'):
-                setattr(model._meta, attr, value)
+                setattr(sender._meta, attr, value)
 
 models.signals.class_prepared.connect(class_prepared_mongodb_signal)

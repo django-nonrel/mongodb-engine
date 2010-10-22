@@ -36,7 +36,7 @@ class DatabaseCreation(NonrelDatabaseCreation):
         'DecimalField':                 'float',
     }
 
-    def sql_indexes_for_field(self, model, f, **kwargs):
+    def sql_indexes_for_field(self, model, field, **kwargs):
         """Create Indexes for field in model. Returns an empty List. (Django Compatibility)
 
         :param model: The model containing field
@@ -44,14 +44,14 @@ class DatabaseCreation(NonrelDatabaseCreation):
         :param \*\*kwargs: Extra kwargs not used in this engine.
         """
 
-        if f.db_index:
+        if field.db_index:
             kwargs = {}
             opts = model._meta
             col = getattr(self.connection.db_connection, opts.db_table)
             descending = getattr(model._meta, "descending_indexes", [])
-            direction =  (f.attname in descending and -1) or 1
-            kwargs["unique"] = f.unique
-            col.ensure_index([(f.name, direction)], **kwargs)
+            direction =  (field.attname in descending and -1) or 1
+            kwargs["unique"] = field.unique
+            col.ensure_index([(field.name, direction)], **kwargs)
         return []
 
     def index_fields_group(self, model, group, **kwargs):
@@ -89,7 +89,7 @@ class DatabaseCreation(NonrelDatabaseCreation):
         for field in fields:
             field_name = field
             direction = 1
-            if isinstance(field, (tuple,list)):
+            if isinstance(field, (tuple, list)):
                 field_name = field[0]
                 direction = (field[1] and 1) or -1
             if not field_name in model_fields:
@@ -111,8 +111,8 @@ class DatabaseCreation(NonrelDatabaseCreation):
         if not fields and not hasattr(model._meta, "index_together") and not hasattr(model._meta, "unique_together"):
             return []
         print "Installing index for %s.%s model" % (model._meta.app_label, model._meta.object_name)
-        for f in fields:
-            self.sql_indexes_for_field(model, f)
+        for field in fields:
+            self.sql_indexes_for_field(model, field)
         for group in getattr(model._meta, "index_together", []):
             self.index_fields_group(model, group)
 
@@ -159,7 +159,6 @@ class DatabaseCreation(NonrelDatabaseCreation):
     def create_test_db(self, verbosity=1, autoclobber=False):
         # No need to create databases in mongoDB :)
         # but we can make sure that if the database existed is emptied
-        from django.conf import settings
         if self.connection.settings_dict.get('TEST_NAME'):
             test_database_name = self.connection.settings_dict['TEST_NAME']
         elif 'NAME' in self.connection.settings_dict:

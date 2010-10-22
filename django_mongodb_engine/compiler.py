@@ -1,15 +1,13 @@
-from future_builtins import zip
 import sys
 import re
 
-from datetime import datetime
 from functools import wraps
 
 from django.db.utils import DatabaseError
 from django.db.models.fields import NOT_PROVIDED
 
 from django.db.models.sql import aggregates as sqlaggregates
-from django.db.models.sql.constants import LOOKUP_SEP, MULTI, SINGLE
+from django.db.models.sql.constants import MULTI, SINGLE
 
 import pymongo
 from pymongo.objectid import ObjectId
@@ -213,7 +211,7 @@ class SQLCompiler(NonrelCompiler):
                         filters[k] = v
             else:
                 try:
-                    field, val = self.make_atom(*child, **{"negated": where.negated})
+                    field, val = self.make_atom(*child, negated=where.negated)
                     filters[field] = val
                 except NotImplementedError:
                     pass
@@ -226,6 +224,8 @@ class SQLCompiler(NonrelCompiler):
                 lookup_type, params_or_value, self.connection
             )
         else:
+            # apparently this code is never executed
+            assert 0
             params = Field().get_db_prep_lookup(lookup_type, params_or_value,
                 connection=self.connection, prepared=True)
         assert isinstance(lhs, (list, tuple))
@@ -310,7 +310,8 @@ class SQLCompiler(NonrelCompiler):
 
     def _save(self, data, return_id=False):
         primary_key = self._collection.save(data, **self.insert_params())
-        return unicode(primary_key)
+        if return_id:
+            return unicode(primary_key)
 
     def execute_sql(self, result_type=MULTI):
         """

@@ -1,8 +1,4 @@
-from future_builtins import zip
 from django.db import models
-from django.core.exceptions import ValidationError
-from django.utils.translation import ugettext_lazy as _
-from django.utils.importlib import import_module
 from pymongo.objectid import ObjectId
 from gridfs import GridFS
 try:
@@ -106,7 +102,7 @@ class EmbeddedModelField(DictField):
                 values.pop(key, None)
 
             model = self.embedded_model()
-            for k,v in values.items():
+            for k, v in values.items():
                 setattr(model, k, v)
             return model
 

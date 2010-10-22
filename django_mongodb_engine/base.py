@@ -5,9 +5,11 @@ from .creation import DatabaseCreation
 from .client import DatabaseClient
 
 from djangotoolbox.db.base import (
-    NonrelDatabaseFeatures, NonrelDatabaseWrapper,
-    NonrelDatabaseClient, NonrelDatabaseValidation,
-    NonrelDatabaseIntrospection, NonrelDatabaseOperations
+    NonrelDatabaseFeatures,
+    NonrelDatabaseWrapper,
+    NonrelDatabaseValidation,
+    NonrelDatabaseIntrospection,
+    NonrelDatabaseOperations
 )
 
 
