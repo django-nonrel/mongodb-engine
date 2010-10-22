@@ -77,7 +77,7 @@ class EmbeddedModelFieldTestCase(TestCase):
         # (Crashes with a TypeError)
         obj_from_db = Model.objects.get(em=A('id', obj.em.id))
         self.assertEqual(obj, obj_from_db)
-        
+
     def test_aggregations(self):
         Customer(name='Bob', last_name='Laxley',
             address=Address(street='Behind the Mountains 23',
@@ -94,16 +94,16 @@ class EmbeddedModelFieldTestCase(TestCase):
         Customer(name='Bob', last_name='Laxley',
             address=Address(street='Behind the Mountains 23',
                             postal_code=1337, city='Blurginson'), age=12, birthday=datetime(1998, 9, 01)).save()
-        
+
         from django.db.models.aggregates import Count
         from django_mongodb_engine.contrib.aggregations import Max, Min, Avg
-        
+
         aggregates = Customer.objects.aggregate(Min("age"), Max("age"), Avg("age"))
         self.assertEqual(aggregates, {'age__min': 1, 'age__avg': 5.0, 'age__max': 12})
-        
+
         #with filters and testing the sqlaggregates->mongoaggregate conversion
         aggregates = Customer.objects.filter(age__gte=4).aggregate(Min("birthday"), Max("birthday"), Avg("age"), Count("id"))
-        self.assertEqual(aggregates, {'birthday__max': datetime(2007, 12, 25, 0, 0), 
+        self.assertEqual(aggregates, {'birthday__max': datetime(2007, 12, 25, 0, 0),
                                       'birthday__min': datetime(1998, 9, 1, 0, 0),
                                       'age__avg': 6.0,
                                       'id__count': 4})

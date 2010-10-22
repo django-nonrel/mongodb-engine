@@ -3,7 +3,7 @@ from django.db.models import Aggregate
 class MongoAggregate(Aggregate):
     is_ordinal = False
     is_computed = False
-    
+
     def add_to_query(self, query, alias, col, source, is_summary):
         """Add the aggregate to the nominated query.
 
@@ -24,7 +24,7 @@ class MongoAggregate(Aggregate):
         """
         self.alias = alias
         self.field = self.source = source
-        
+
         if self.valid_field_types and not self.source.get_internal_type() in self.valid_field_types:
             raise RuntimeError()
         query.aggregates[alias] = self
@@ -35,25 +35,25 @@ class MongoAggregate(Aggregate):
 class Count(MongoAggregate):
     name = "Count"
     valid_field_types = None
-    
+
     def as_query(self, query):
         return {self.alias : 0}, \
                "out.%s++" % (self.alias), \
                ""
-  
+
 class Min(MongoAggregate):
     name = "Min"
     valid_field_types = ("IntegerField", "FloatField", 'DateField', 'DateTimeField', 'TimeField')
-    
+
     def as_query(self, query):
         return {self.alias : "null"}, \
                "out.%s = (out.%s == 'null' || doc.%s < out.%s) ? doc.%s: out.%s" % (self.alias, self.alias, self.lookup, self.alias, self.lookup, self.alias), \
                ""
-        
+
 class Max(MongoAggregate):
     name = "Max"
     valid_field_types = ("IntegerField", "FloatField", 'DateField', 'DateTimeField', 'TimeField')
-    
+
     def as_query(self, query):
         return {self.alias : "null"}, \
                "out.%s = (out.%s == 'null' || doc.%s > out.%s) ? doc.%s: out.%s" % (self.alias, self.alias, self.lookup, self.alias, self.lookup, self.alias), \
@@ -63,7 +63,7 @@ class Avg(MongoAggregate):
     name = "Avg"
     is_computed = True
     valid_field_types = ("IntegerField", "FloatField")
-    
+
     def as_query(self, query):
         return {"%s__count" % self.alias : 0, "%s__total" % self.alias : 0}, \
                 "out.%s__count++; out.%s__total+=doc.%s" % (self.alias, self.alias, self.lookup), \

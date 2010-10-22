@@ -122,7 +122,7 @@ class MongoDjTest(TestCase):
             list(Entry.objects.order_by('date_published')),
             [entry2, entry1]
         )
-        
+
     def test_skip_limit(self):
         now = datetime.datetime.now()
         before = now - datetime.timedelta(days=1)
@@ -141,7 +141,7 @@ class MongoDjTest(TestCase):
             len(Entry.objects.order_by('date_published')[1:2:1]),
             1
         )
-        
+
         self.assertEqual(
             len(Entry.objects.order_by('date_published')[1:2]),
             1

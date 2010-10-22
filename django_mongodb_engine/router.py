@@ -60,8 +60,8 @@ class MongoDBRouter(object):
            return self.is_managed(model)
         elif self.is_managed(model):
             return db in self.mongodb_databases
-            
-        return None 
+
+        return None
 
     def valid_for_db_engine(self, driver, model):
         """Make sure that a model is valid for a database provider"""
