@@ -9,8 +9,10 @@ __homepage__ = "http://github.com/django-mongodb-engine/mongodb-engine"
 __docformat__ = "restructuredtext"
 
 try:
-    #This is not being loaded. Tests needed here
-    from django.conf import settings
+    # This is not being loaded. Tests needed here
+    # Huh? Works for me. -- Jonas
     import _bootstrap
-except ImportError:
-    pass
+except ImportError, err:
+    if not 'cannot import name' in err:
+        # not suppress errors about DJANGO_SETTINGS_MODULE (and others)
+        raise
