@@ -13,6 +13,6 @@ try:
     # Huh? Works for me. -- Jonas
     import _bootstrap
 except ImportError, err:
-    if not 'cannot import name' in str(err):
+    if not 'cannot import name' in err:
         # not suppress errors about DJANGO_SETTINGS_MODULE (and others)
         raise
