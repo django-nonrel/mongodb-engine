@@ -15,7 +15,6 @@ from pymongo.objectid import ObjectId
 from djangotoolbox.db.basecompiler import NonrelQuery, NonrelCompiler, \
     NonrelInsertCompiler, NonrelUpdateCompiler, NonrelDeleteCompiler
 
-from .contrib import aggregations
 from .query import A
 
 OPERATORS_MAP = {
@@ -317,7 +316,15 @@ class SQLCompiler(NonrelCompiler):
         """
         Handles aggregate/count queries
         """
+        aggregations = self.query.aggregate_select.items()
 
+        if len(aggregations) == 1 and isinstance(aggregations[0][1], sqlaggregates.Count):
+            # Ne need for full-featured aggregation processing if we only
+            # want to count() -- let djangotoolbox's simple Count aggregation
+            # implementation handle this case.
+            return super(SQLCompiler, self).execute_sql(result_type)
+
+        from .contrib import aggregations
         ret, sqlagg, reduce, finalize, order, initial = [], [], [], [], [], {}
         query = self.build_query()
 
@@ -329,7 +336,7 @@ class SQLCompiler(NonrelCompiler):
 
         # First aggregations implementation
         # THIS CAN/WILL BE IMPROVED!!!
-        for alias, aggregate in self.query.aggregate_select.items():
+        for alias, aggregate in aggregations:
             if isinstance(aggregate, sqlaggregates.Aggregate):
                 if isinstance(aggregate, sqlaggregates.Count):
                     # Needed to keep the iteration order which is important in the returned value.
