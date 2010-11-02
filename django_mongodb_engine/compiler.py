@@ -324,7 +324,7 @@ class SQLCompiler(NonrelCompiler):
             # implementation handle this case.
             return super(SQLCompiler, self).execute_sql(result_type)
 
-        from .contrib import aggregations
+        from .contrib import aggregations as aggregations_module
         ret, sqlagg, reduce, finalize, order, initial = [], [], [], [], [], {}
         query = self.build_query()
 
@@ -343,20 +343,20 @@ class SQLCompiler(NonrelCompiler):
                     order.append(None)
                     sqlagg.append(self.get_count())
                     continue
-                try:
-                    # Yes, it's not beautiful, it is just a quick and dirty solution.
-                    # Ideas?
-                    cls_name = aggregate.__class__.__name__
-                    agg = getattr(aggregations, cls_name)((aggregate.source and aggregate.source.name) or "_id", **aggregate.extra)
-                    agg.add_to_query(self.query, alias or "_id__%s" % cls_name, aggregate.col, aggregate.source, aggregate.extra.get("is_summary", False))
-                    aggregate = agg
-                except:
-                    # We're not able to execute sql aggregates here
-                    self.query.aggregates.pop(alias)
-                    # Should we raise an exception instead of failing silently?
-                    # raise NotImplementedError("The database backend doesn't support aggregations of type %s" % type(aggregate))
-                    continue
 
+                aggregate_class = getattr(aggregations_module, aggregate.__class__.__name__)
+                # aggregation availability has been checked in check_aggregate_support in base.py
+
+                # Yes, it's not beautiful, it is just a quick and dirty solution.
+                # Ideas?
+                if aggregate.source:
+                    field = aggregate.source.name
+                else:
+                    field = '_id'
+                aggregate = aggregate_class(field, **aggregate.extra)
+                aggregate.add_to_query(self.query, alias or "_id__%s" % cls_name,
+                                       aggregate.col, aggregate.source,
+                                       aggregate.extra.get("is_summary", False))
 
             #just to keep the right order
             order.append(aggregate.alias)

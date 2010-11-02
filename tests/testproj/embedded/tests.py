@@ -95,7 +95,7 @@ class EmbeddedModelFieldTestCase(TestCase):
             address=Address(street='Behind the Mountains 23',
                             postal_code=1337, city='Blurginson'), age=12, birthday=datetime(1998, 9, 01)).save()
 
-        from django.db.models.aggregates import Count
+        from django.db.models.aggregates import Count, Sum
         from django_mongodb_engine.contrib.aggregations import Max, Min, Avg
 
         aggregates = Customer.objects.aggregate(Min("age"), Max("age"), Avg("age"))
@@ -107,3 +107,5 @@ class EmbeddedModelFieldTestCase(TestCase):
                                       'birthday__min': datetime(1998, 9, 1, 0, 0),
                                       'age__avg': 6.0,
                                       'id__count': 4})
+
+        self.assertRaises(NotImplementedError, Customer.objects.aggregate, Sum('age'))
