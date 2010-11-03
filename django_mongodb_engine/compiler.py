@@ -17,15 +17,21 @@ from djangotoolbox.db.basecompiler import NonrelQuery, NonrelCompiler, \
 
 from .query import A
 
+def safe_regex(regex, *re_args, **re_kwargs):
+    def wrapper(value):
+        return re.compile(regex % re.escape(value), *re_args, **re_kwargs)
+    wrapper.__name__ = 'safe_regex (%r)' % regex
+    return wrapper
+
 OPERATORS_MAP = {
-    'exact':    lambda val: val,
-    'iexact':    lambda val: re.compile(r'^%s$' % val, re.IGNORECASE),
-    'startswith':    lambda val: re.compile(r'^%s' % val),
-    'istartswith':    lambda val: re.compile(r'^%s' % val, re.IGNORECASE),
-    'endswith':    lambda val: re.compile(r'%s$' % val),
-    'iendswith':    lambda val: re.compile(r'%s$' % val, re.IGNORECASE),
-    'contains':    lambda val: re.compile(r'%s' % val),
-    'icontains':    lambda val: re.compile(r'%s' % val, re.IGNORECASE),
+    'exact':        lambda val: val,
+    'iexact':       safe_regex('^%s$', re.IGNORECASE),
+    'startswith':   safe_regex('^%s'),
+    'istartswith':  safe_regex('^%s', re.IGNORECASE),
+    'endswith':     safe_regex('%s$'),
+    'iendswith':    safe_regex('%s$', re.IGNORECASE),
+    'contains':     safe_regex('%s'),
+    'icontains':    safe_regex('%s', re.IGNORECASE),
     'regex':    lambda val: re.compile(val),
     'iregex':   lambda val: re.compile(val, re.IGNORECASE),
     'gt':       lambda val: {'$gt': val},

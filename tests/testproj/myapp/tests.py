@@ -372,3 +372,11 @@ class MongoDjTest(TestCase):
         # query will be done NOW:
         self.assertEqual(obj.mlist[0].gen, 42)
         self.assertNotEqual(obj.mlist[0]._wrapped, None)
+
+    def test_regex_matchers(self):
+        objs = [Blog.objects.create(title=title) for title in
+                ('Hello', 'worLd', '[(', '**', '\\')]
+        self.assertEqual(list(Blog.objects.filter(title__startswith='h')), [])
+        self.assertEqual(list(Blog.objects.filter(title__istartswith='h')), [objs[0]])
+        self.assertEqual(list(Blog.objects.filter(title__contains='(')), [objs[2]])
+        self.assertEqual(list(Blog.objects.filter(title__endswith='\\')), [objs[4]])
