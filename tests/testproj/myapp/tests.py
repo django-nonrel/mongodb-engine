@@ -348,7 +348,6 @@ class MongoDjTest(TestCase):
         Blog.objects.update(title='Blog')
         self.assertEqual(Blog.objects.filter(title='Blog').count(), 2)
 
-
     def test_update_id(self):
         Entry.objects.filter(title='Last Update Test').update(id=ObjectId())
 

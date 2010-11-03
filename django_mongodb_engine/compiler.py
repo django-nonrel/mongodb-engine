@@ -189,49 +189,6 @@ class SQLCompiler(NonrelCompiler):
     """
     query_class = DBQuery
 
-    def get_filters(self, where):
-        if where.connector != "AND":
-            raise Exception("MongoDB only supports joining "
-                "filters with and, not or.")
-        assert where.connector == "AND"
-        filters = {}
-        for child in where.children:
-            if isinstance(child, self.query.where_class):
-                child_filters = self.get_filters(child)
-                for k, v in child_filters.iteritems():
-                    assert k not in filters
-                    if where.negated:
-                        filters.update(self.negate(k, v))
-                    else:
-                        filters[k] = v
-            else:
-                try:
-                    field, val = self.make_atom(*child, negated=where.negated)
-                    filters[field] = val
-                except NotImplementedError:
-                    pass
-        return filters
-
-    def make_atom(self, lhs, lookup_type, value_annotation, params_or_value, negated):
-
-        if hasattr(lhs, "process"):
-            lhs, params = lhs.process(
-                lookup_type, params_or_value, self.connection
-            )
-        else:
-            # apparently this code is never executed
-            assert 0
-            params = Field().get_db_prep_lookup(lookup_type, params_or_value,
-                connection=self.connection, prepared=True)
-        assert isinstance(lhs, (list, tuple))
-        table, column, _ = lhs
-        assert table == self.query.model._meta.db_table
-        if column == self.query.model._meta.pk.column:
-            column = "_id"
-
-        val = self.convert_value_for_db(_, params[0])
-        return column, val
-
     def _split_db_type(self, db_type):
         try:
             db_type, db_subtype = db_type.split(':', 1)
@@ -393,10 +350,13 @@ class SQLUpdateCompiler(NonrelUpdateCompiler, SQLCompiler):
 
     @safe_call
     def execute_sql(self, return_id=False):
-        filters = self.get_filters(self.query.where)
+        multi = True
 
         vals = {}
         for field, o, value in self.query.values:
+            if field.unique:
+                multi = False
+
             if hasattr(value, 'prepare_database_save'):
                 value = value.prepare_database_save(field)
             else:
@@ -419,11 +379,9 @@ class SQLUpdateCompiler(NonrelUpdateCompiler, SQLCompiler):
                 vals.setdefault("$inc", {})[lhs.name] = rhs
             else:
                 vals.setdefault("$set", {})[field.column] = value
-        return self._collection.update(
-            filters,
-            vals,
-            multi=True
-        )
+
+        return self._collection.update(self.build_query().db_query,
+                                       vals, multi=multi)
 
 class SQLDeleteCompiler(NonrelDeleteCompiler, SQLCompiler):
     pass
