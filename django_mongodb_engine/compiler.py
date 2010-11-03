@@ -6,6 +6,7 @@ from functools import wraps
 
 from django.db.utils import DatabaseError
 from django.db.models.fields import NOT_PROVIDED
+from django.db.models import F
 
 from django.db.models.sql import aggregates as sqlaggregates
 from django.db.models.sql.constants import MULTI, SINGLE
