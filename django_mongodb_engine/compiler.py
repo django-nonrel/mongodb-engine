@@ -1,5 +1,6 @@
 import sys
 import re
+from datetime import datetime
 
 from functools import wraps
 
@@ -268,13 +269,19 @@ class SQLCompiler(NonrelCompiler):
                 return dict((key, self.convert_value_for_db(db_subtype, subvalue))
                             for key, subvalue in value.iteritems())
 
-        else:
-            if isinstance(value, list):
-                # most likely a list of ObjectIds when doing a .delete() query
-                value = [self.convert_value_for_db(db_type, val) for val in value]
-            elif db_type == 'objectid':
-                # single ObjectId
-                return ObjectId(value)
+        if isinstance(value, list):
+            # most likely a list of ObjectIds when doing a .delete() query
+            return [self.convert_value_for_db(db_type, val) for val in value]
+
+        if db_type == 'objectid':
+            return ObjectId(value)
+
+        if db_type == 'date':
+            return datetime(value.year, value.month, value.day)
+
+        if db_type == 'time':
+            return datetime(1, 1, 1, value.hour, value.minute,
+                            value.second, value.microsecond)
 
         # Pass values of any type not covered above as they are.
         # PyMongo will complain if they can't be encoded.
@@ -303,6 +310,12 @@ class SQLCompiler(NonrelCompiler):
         if db_type == 'objectid':
             return unicode(value)
 
+        if db_type == 'date':
+            return datetime.date(value.year, value.month, value.day)
+
+        if db_type == 'time':
+            return datetime.time(value.hour, value.minute, value.second,
+                                 value.microsecond)
         return value
 
     def insert_params(self):
