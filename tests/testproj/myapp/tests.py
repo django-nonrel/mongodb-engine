@@ -6,6 +6,7 @@ from testproj.myapp.models import Entry, Blog, StandardAutoFieldModel, Person, T
 import datetime
 from pymongo.objectid import ObjectId
 from django_mongodb_engine.serializer import LazyModelInstance
+from django.db.models import F
 
 class MongoDjTest(TestCase):
     multi_db = True
@@ -350,6 +351,13 @@ class MongoDjTest(TestCase):
 
     def test_update_id(self):
         Entry.objects.filter(title='Last Update Test').update(id=ObjectId())
+
+    def test_update_with_F(self):
+        john = Person.objects.create(name='john', surname='nhoj', age=42)
+        andy = Person.objects.create(name='andy', surname='ydna', age=-5)
+        Person.objects.update(age=F('age')+7)
+        self.assertEqual(Person.objects.get(pk=john.id).age, 49)
+        self.assertEqual(Person.objects.get(id=andy.pk).age, 2)
 
     def test_lazy_model_instance(self):
         l1 = LazyModelInstance(Entry, 'some-pk')
