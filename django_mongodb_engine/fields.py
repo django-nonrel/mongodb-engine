@@ -64,7 +64,7 @@ class EmbeddedModelField(DictField):
                     field.pre_save(model_instance, model_instance.id is None),
                     connection=connection
                 )
-                
+
         if model_instance.id is None:
             values["id"] = model_instance.pk = model_instance.id = unicode(ObjectId())
 
@@ -93,7 +93,7 @@ class EmbeddedModelField(DictField):
         if isinstance(values, dict):
             if not values:
                 return None
-                
+
             if "_id" in values:
                 values["id"] = values.pop("_id")
 
