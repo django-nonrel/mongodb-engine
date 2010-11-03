@@ -54,6 +54,11 @@ NEGATED_OPERATORS_MAP = {
     'in':       lambda val: {'$nin': val},
 }
 
+def first(test_func, iterable):
+    for item in iterable:
+        if test_func(item):
+            return item
+
 def safe_generator(func):
     @wraps(func)
     def _func(*args, **kwargs):
@@ -330,46 +335,34 @@ class SQLCompiler(NonrelCompiler):
             # implementation handle this case.
             return super(SQLCompiler, self).execute_sql(result_type)
 
-        from .contrib import aggregations
-        ret, sqlagg, reduce, finalize, order, initial = [], [], [], [], [], {}
+        from .contrib import aggregations as aggregations_module
+        sqlagg, reduce, finalize, order, initial = [], [], [], [], {}
         query = self.build_query()
-
-        def add_to_ret(val):
-            if result_type is SINGLE:
-                ret.append(val)
-            elif result_type is MULTI:
-                ret.append([val])
 
         # First aggregations implementation
         # THIS CAN/WILL BE IMPROVED!!!
         for alias, aggregate in aggregations:
             if isinstance(aggregate, sqlaggregates.Aggregate):
                 if isinstance(aggregate, sqlaggregates.Count):
-                    # Needed to keep the iteration order which is important in the returned value.
                     order.append(None)
+                    # Needed to keep the iteration order which is important in the returned value.
                     sqlagg.append(self.get_count())
                     continue
-                try:
-                    # Yes, it's not beautiful, it is just a quick and dirty solution.
-                    # Ideas?
-                    cls_name = aggregate.__class__.__name__
-                    agg = getattr(aggregations, cls_name)((aggregate.source and aggregate.source.name) or "_id", **aggregate.extra)
-                    agg.add_to_query(self.query, alias or "_id__%s" % cls_name, aggregate.col, aggregate.source, aggregate.extra.get("is_summary", False))
-                    aggregate = agg
-                except:
-                    # We're not able to execute sql aggregates here
-                    self.query.aggregates.pop(alias)
-                    # Should we raise an exception instead of failing silently?
-                    # raise NotImplementedError("The database backend doesn't support aggregations of type %s" % type(aggregate))
-                    continue
 
+                aggregate_class = getattr(aggregations_module, aggregate.__class__.__name__)
 
-            #just to keep the right order
-            order.append(aggregate.alias)
-            agg = aggregate.as_query(query)
-            initial.update(agg[0])
-            reduce.append(agg[1])
-            finalize.append(agg[2])
+                field = aggregate.source.name if aggregate.source else '_id'
+                if alias is None:
+                    alias = '_id__%s' % cls_name
+                aggregate = aggregate_class(field, **aggregate.extra)
+                aggregate.add_to_query(self.query, alias, aggregate.col, aggregate.source,
+                                       aggregate.extra.get("is_summary", False))
+
+            order.append(aggregate.alias) # just to keep the right order
+            initial_, reduce_, finalize_ = aggregate.as_query(query)
+            initial.update(initial_)
+            reduce.append(reduce_)
+            finalize.append(finalize_)
 
         cursor = query.collection.group(None,
                             query.db_query,
@@ -377,9 +370,12 @@ class SQLCompiler(NonrelCompiler):
                             reduce="function(doc, out){ %s }" % "; ".join(reduce),
                             finalize="function(out){ %s }" % "; ".join(finalize))
 
-        for agg in order:
-            add_to_ret((agg and cursor[0][agg]) or sqlagg.pop(0))
-
+        ret = []
+        for alias in order:
+            result = cursor[0][alias] if alias else sqlagg.pop(0)
+            if result_type is MULTI:
+                result = [result]
+            ret.append(result)
         return ret
 
 class SQLInsertCompiler(NonrelInsertCompiler, SQLCompiler):
