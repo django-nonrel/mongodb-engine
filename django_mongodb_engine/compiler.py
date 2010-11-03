@@ -136,7 +136,7 @@ class DBQuery(NonrelQuery):
         # Emulated/converted lookups
 
         if isinstance(value, A):
-            field = [ f for f in self.fields if f.name == column][0]
+            field = first(lambda field:field.name == column, self.fields)
             column, value = value.as_q(field)
 
         if column == self.query.get_meta().pk.column:
