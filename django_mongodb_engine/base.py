@@ -31,7 +31,7 @@ class DatabaseOperations(NonrelDatabaseOperations):
         from django.db.models.sql.aggregates import Count
         from .contrib.aggregations import MongoAggregate
         if not isinstance(aggregate, (Count, MongoAggregate)):
-            raise NotImplementedError("This database does not support %r "
+            raise NotImplementedError("django-mongodb-engine does not support %r "
                                       "aggregates" % type(aggregate))
 
     def sql_flush(self, style, tables, sequence_list):

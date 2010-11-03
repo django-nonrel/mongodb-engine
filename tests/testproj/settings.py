@@ -10,7 +10,7 @@ DATABASES = {
     },
 }
 
-INSTALLED_APPS = 'contrib embedded myapp'.split()
+INSTALLED_APPS = 'aggregations contrib embedded myapp'.split()
 
 if 0:
     # shortcut to check whether tests would pass using an SQL backend

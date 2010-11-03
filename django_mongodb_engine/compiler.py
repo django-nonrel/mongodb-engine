@@ -137,7 +137,7 @@ class DBQuery(NonrelQuery):
         # Emulated/converted lookups
 
         if isinstance(value, A):
-            field = [ f for f in self.fields if f.name == column][0]
+            field = first(lambda field:field.name == column, self.fields)
             column, value = value.as_q(field)
 
         if column == self.query.get_meta().pk.column:
@@ -364,6 +364,7 @@ class SQLCompiler(NonrelCompiler):
                     continue
 
                 aggregate_class = getattr(aggregations_module, aggregate.__class__.__name__)
+                # aggregation availability has been checked in check_aggregate_support in base.py
 
                 field = aggregate.source.name if aggregate.source else '_id'
                 if alias is None:
