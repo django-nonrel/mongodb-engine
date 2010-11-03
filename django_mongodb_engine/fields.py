@@ -64,7 +64,7 @@ class EmbeddedModelField(DictField):
                     field.pre_save(model_instance, model_instance.id is None),
                     connection=connection
                 )
-
+                
         if model_instance.id is None:
             values["id"] = model_instance.pk = model_instance.id = unicode(ObjectId())
 
@@ -93,8 +93,9 @@ class EmbeddedModelField(DictField):
         if isinstance(values, dict):
             if not values:
                 return None
-
-            values["id"] = values.pop('_id', None)
+                
+            if "_id" in values:
+                values["id"] = values.pop("_id")
 
             # In version 0.2, the layout of the serialized model instance changed.
             # Cleanup up old instances from keys that aren't used any more.

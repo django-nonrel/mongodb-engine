@@ -363,6 +363,7 @@ class SQLCompiler(NonrelCompiler):
                     continue
 
                 aggregate_class = getattr(aggregations_module, aggregate.__class__.__name__)
+                # aggregation availability has been checked in check_aggregate_support in base.py
 
                 field = aggregate.source.name if aggregate.source else '_id'
                 if alias is None:
