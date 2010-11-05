@@ -2,7 +2,7 @@
 Test suite for django-mongodb-engine.
 """
 from django.test import TestCase
-from testproj.myapp.models import Entry, Blog, StandardAutoFieldModel, Person, TestFieldModel, DynamicModel
+from testproj.general.models import Entry, Blog, StandardAutoFieldModel, Person, TestFieldModel, DynamicModel
 import datetime
 from pymongo.objectid import ObjectId
 from django_mongodb_engine.serializer import LazyModelInstance
