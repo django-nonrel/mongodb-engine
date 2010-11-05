@@ -26,7 +26,7 @@ class LegacyEmbeddedModelField(EmbeddedModelField):
             # Keep backwards compatibility to old data records.
             if "_id" in values:
                 values["id"] = values.pop("_id")
-        return values
+        return super(LegacyEmbeddedModelField, self).to_python(values)
 
 
 class GridFSField(models.CharField):
