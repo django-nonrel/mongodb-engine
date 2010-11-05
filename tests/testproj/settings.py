@@ -1,3 +1,6 @@
+# Run the test for 'myapp' with this setting on and off
+MONGODB_ENGINE_ENABLE_MODEL_SERIALIZATION = False
+
 DATABASES = {
     'default': {
         'ENGINE': 'django_mongodb_engine',
