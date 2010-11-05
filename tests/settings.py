@@ -1,3 +1,6 @@
+# Run the test for 'myapp' with this setting on and off
+MONGODB_ENGINE_ENABLE_MODEL_SERIALIZATION = False
+
 DATABASES = {
     'default': {
         'ENGINE': 'django_mongodb_engine',
@@ -10,10 +13,10 @@ DATABASES = {
     },
 }
 
-INSTALLED_APPS = 'aggregations contrib embedded myapp'.split()
+INSTALLED_APPS = 'aggregations contrib embedded general'.split()
 
 if 0:
     # shortcut to check whether tests would pass using an SQL backend
     DATABASES = {'default' : {'ENGINE' : 'sqlite3'}}
     INSTALLED_APPS.remove('embedded')
-    INSTALLED_APPS.remove('myapp')
+    INSTALLED_APPS.remove('general')

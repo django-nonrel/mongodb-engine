@@ -2,7 +2,7 @@
 Test suite for django-mongodb-engine.
 """
 from django.test import TestCase
-from testproj.myapp.models import Entry, Blog, StandardAutoFieldModel, Person, TestFieldModel, DynamicModel
+from tests.general.models import Entry, Blog, StandardAutoFieldModel, Person, TestFieldModel, DynamicModel
 import datetime
 from pymongo.objectid import ObjectId
 from django_mongodb_engine.serializer import LazyModelInstance
@@ -375,16 +375,21 @@ class MongoDjTest(TestCase):
         self.assertNotEqual(l3._wrapped, None)
 
     def test_lazy_model_instance_in_list(self):
+        from django.conf import settings
         obj = TestFieldModel()
         related = DynamicModel(gen=42)
         obj.mlist.append(related)
-        obj.save()
-        self.assertNotEqual(related.id, None)
-        obj = TestFieldModel.objects.get()
-        self.assertEqual(obj.mlist[0]._wrapped, None)
-        # query will be done NOW:
-        self.assertEqual(obj.mlist[0].gen, 42)
-        self.assertNotEqual(obj.mlist[0]._wrapped, None)
+        if settings.MONGODB_ENGINE_ENABLE_MODEL_SERIALIZATION:
+            obj.save()
+            self.assertNotEqual(related.id, None)
+            obj = TestFieldModel.objects.get()
+            self.assertEqual(obj.mlist[0]._wrapped, None)
+            # query will be done NOW:
+            self.assertEqual(obj.mlist[0].gen, 42)
+            self.assertNotEqual(obj.mlist[0]._wrapped, None)
+        else:
+            from bson.errors import InvalidDocument
+            self.assertRaises(InvalidDocument, obj.save)
 
     def test_regex_matchers(self):
         objs = [Blog.objects.create(title=title) for title in
