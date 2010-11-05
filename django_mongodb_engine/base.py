@@ -1,4 +1,5 @@
 from django.core.exceptions import ImproperlyConfigured
+from django.conf import settings
 
 import pymongo
 from .creation import DatabaseCreation
@@ -150,8 +151,10 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
 
             self._db_connection = self._connection[self.db_name]
 
-            from .serializer import TransformDjango
-            self._db_connection.add_son_manipulator(TransformDjango())
+            if getattr(settings, 'MONGODB_ENGINE_ENABLE_MODEL_SERIALIZATION', False):
+                from .serializer import TransformDjango
+                self._db_connection.add_son_manipulator(TransformDjango())
+
             # We're done!
             self._connected = True
 
