@@ -5,9 +5,6 @@ from datetime import datetime
 import time
 from django_mongodb_engine.query import A
 
-def skip(func):
-    pass
-
 class EmbeddedModelFieldTestCase(TestCase):
     def test_field_docstring(self):
         bob = Customer(
