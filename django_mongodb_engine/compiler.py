@@ -18,9 +18,6 @@ from pymongo.objectid import ObjectId
 
 from djangotoolbox.db.basecompiler import NonrelQuery, NonrelCompiler, \
     NonrelInsertCompiler, NonrelUpdateCompiler, NonrelDeleteCompiler
-from djangotoolbox.db import safe_call
-
-safe_call = safe_call(pymongo.errors.PyMongoError)
 
 from .query import A
 
@@ -61,10 +58,21 @@ NEGATED_OPERATORS_MAP = {
     'in':       lambda val: val
 }
 
+
 def first(test_func, iterable):
     for item in iterable:
         if test_func(item):
             return item
+
+def safe_call(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except pymongo.errors.PyMongoError, e:
+            raise DatabaseError, DatabaseError(str(e)), sys.exc_info()[2]
+    return wrapper
+
 
 class DBQuery(NonrelQuery):
     # ----------------------------------------------
