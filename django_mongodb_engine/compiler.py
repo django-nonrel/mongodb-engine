@@ -18,6 +18,9 @@ from pymongo.objectid import ObjectId
 
 from djangotoolbox.db.basecompiler import NonrelQuery, NonrelCompiler, \
     NonrelInsertCompiler, NonrelUpdateCompiler, NonrelDeleteCompiler
+from djangotoolbox.db import safe_call
+
+safe_call = safe_call(pymongo.errors.PyMongoError)
 
 from .query import A
 
@@ -55,33 +58,13 @@ NEGATED_OPERATORS_MAP = {
     'lt':       lambda val: {'$gte': val},
     'lte':      lambda val: {'$gt': val},
     'isnull':   lambda val: {'$ne': None} if val else None,
-    'in':       lambda val: {'$nin': val},
+    'in':       lambda val: val
 }
 
 def first(test_func, iterable):
     for item in iterable:
         if test_func(item):
             return item
-
-def safe_generator(func):
-    @wraps(func)
-    def _func(*args, **kwargs):
-        try:
-            ret = func(*args, **kwargs)
-            for item in ret:
-                yield item
-        except pymongo.errors.PyMongoError, e:
-            raise DatabaseError, DatabaseError(str(e)), sys.exc_info()[2]
-    return _func
-
-def safe_call(func):
-    @wraps(func)
-    def _func(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except pymongo.errors.PyMongoError, e:
-            raise DatabaseError, DatabaseError(str(e)), sys.exc_info()[2]
-    return _func
 
 class DBQuery(NonrelQuery):
     # ----------------------------------------------
@@ -102,7 +85,6 @@ class DBQuery(NonrelQuery):
     def collection(self):
         return self._collection
 
-    @safe_generator
     def fetch(self, low_mark, high_mark):
         results = self._get_results()
         primarykey_column = self.query.get_meta().pk.column
@@ -140,42 +122,84 @@ class DBQuery(NonrelQuery):
         children = self._get_children(filters.children)
 
         if filters.connector is OR:
-            or_conditions = query.setdefault('$or', [])
+            or_conditions = query['$or'] = []
+
+        if filters.negated:
+            self._negated = not self._negated
 
         for child in children:
             if filters.connector is OR:
                 subquery = {}
             else:
                 subquery = query
+
             if isinstance(child, Node):
+                if filters.connector is OR and child.connector is OR:
+                   if len(child.children) > 1:
+                        raise DatabaseError("Nested ORs are not supported")
+
+                if filters.connector is OR and filters.negated:
+                    raise NotImplementedError("Negated ORs are not implemented")
+
                 self.add_filters(child, query=subquery)
-                if filters.connector is OR:
-                    if child.connector is OR:
-                        or_conditions.extend(subquery.pop('$or'))
-                    if subquery:
-                        or_conditions.append(subquery)
-                else:
-                    query.update(subquery)
+
+                if filters.connector is OR and subquery:
+                    or_conditions.extend(subquery.pop('$or', []))
+                    or_conditions.append(subquery)
             else:
                 column, lookup_type, db_type, value = self._decode_child(child)
                 if column == self.query.get_meta().pk.column:
                     column = '_id'
 
+                existing = subquery.get(column)
+
+                if self._negated and isinstance(existing, dict) and '$ne' in existing:
+                    raise DatabaseError(
+                        "Negated conditions can not be used in conjunction ( ~Q1 & ~Q2 )\n"
+                        "Try replacing your condition with  ~Q(foo__in=[...])"
+                    )
+
                 if isinstance(value, A):
                     field = first(lambda field: field.attname == column, self.fields)
                     column, value = value.as_q(field)
 
-                op_func = OPERATORS_MAP[lookup_type]
+                if self._negated:
+                    if lookup_type in NEGATED_OPERATORS_MAP:
+                        op_func = NEGATED_OPERATORS_MAP[lookup_type]
+                    else:
+                        def op_func(value):
+                            return {'$not' : OPERATORS_MAP[lookup_type](value)}
+                else:
+                    op_func = OPERATORS_MAP[lookup_type]
                 value = op_func(self.convert_value_for_db(db_type, value))
-                if column in subquery:
-                    subquery[column].update(value)
+
+                if existing is not None:
+                    key = '$all' if not self._negated else '$nin'
+                    if isinstance(value, dict):
+                        assert isinstance(existing, dict)
+                        existing.update(value)
+                    else:
+                        if isinstance(existing, dict) and key in existing:
+                            existing[key].append(value)
+                        else:
+                            if isinstance(existing, dict):
+                                existing.update({key: value})
+                            else:
+                                subquery[column] = {key: [existing, value]}
                 else:
                     subquery[column] = value
 
                 query.update(subquery)
 
+        if filters.negated:
+            self._negated = not self._negated
+
     def _get_results(self):
-        results = self._collection.find(self.db_query)
+        if self.query.select_fields:
+            fields = dict((field.attname, 1) for field in self.query.select_fields)
+        else:
+            fields = None
+        results = self._collection.find(self.db_query, fields=fields)
         if self._ordering:
             results.sort(self._ordering)
         if self.query.low_mark > 0:

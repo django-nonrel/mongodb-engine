@@ -1,15 +1,31 @@
 """
 Test suite for django-mongodb-engine.
 """
-from django.test import TestCase
-from tests.general.models import Entry, Blog, StandardAutoFieldModel, Person, TestFieldModel, DynamicModel
 import datetime
+from django.test import TestCase
+from django.db.models import F, Q
+from django.db.utils import DatabaseError
+
 from pymongo.objectid import ObjectId
 from django_mongodb_engine.serializer import LazyModelInstance
-from django.db.models import F
+
+from models import *
+
+
+def skip_all_except(*tests):
+    class meta(type):
+        def __new__(cls, name, bases, dict):
+            for attr in dict.keys():
+                if attr.startswith('test_') and attr not in tests:
+                    del dict[attr]
+            return type.__new__(cls, name, bases, dict)
+    return meta
 
 class MongoDjTest(TestCase):
     multi_db = True
+
+    def assertEqualQueryset(self, a, b):
+        self.assertEqual(list(a), list(b))
 
     def test_add_and_delete_blog(self):
         blog1 = Blog(title="blog1")
@@ -32,7 +48,7 @@ class MongoDjTest(TestCase):
         blog2.save()
         self.assertEqual(Blog.objects.count(), 2)
         self.assertEqual(
-            Blog.objects.get(title="blog2"),
+            Blog.objects.filter(title="blog2").filter(title="blog2")[0],
             blog2
         )
         self.assertEqual(
@@ -54,7 +70,7 @@ class MongoDjTest(TestCase):
             2
         )
         self.assertEqual(
-            Blog.objects.filter(title="same title", pk=blog1.pk).count(),
+            Blog.objects.filter(title="same title").filter(pk=blog1.pk).count(),
             1
         )
         self.assertEqual(
@@ -148,7 +164,31 @@ class MongoDjTest(TestCase):
             1
         )
 
-
+    def test_values_query(self):
+        blog = Blog.objects.create(title='fooblog')
+        entry = Entry.objects.create(blog=blog, title='footitle', content='foocontent')
+        entry2 = Entry.objects.create(blog=blog, title='footitle2', content='foocontent2')
+        self.assertEqual(
+            list(Entry.objects.values()),
+            [{'blog_id' : blog.id, 'title' : u'footitle', 'id' : entry.id,
+              'content' : u'foocontent', 'date_published' : None},
+             {'blog_id' : blog.id, 'title' : u'footitle2', 'id' : entry2.id,
+              'content' : u'foocontent2', 'date_published' : None}
+            ]
+        )
+        self.assertEqual(
+            list(Entry.objects.values('blog')),
+            [{'blog' : blog.id}, {'blog' : blog.id}]
+        )
+        self.assertEqual(
+            list(Entry.objects.values_list('blog_id', 'date_published')),
+            [(blog.id, None), (blog.id, None)]
+        )
+        self.assertEqual(
+            list(Entry.objects.values('title', 'content')),
+            [{'title' : u'footitle', 'content' : u'foocontent'},
+             {'title' : u'footitle2', 'content' : u'foocontent2'}]
+        )
 
     def test_dates_less_and_more_than(self):
         now = datetime.datetime.now()
@@ -397,3 +437,83 @@ class MongoDjTest(TestCase):
         self.assertEqual(list(Blog.objects.filter(title__istartswith='h')), [objs[0]])
         self.assertEqual(list(Blog.objects.filter(title__contains='(')), [objs[2]])
         self.assertEqual(list(Blog.objects.filter(title__endswith='\\')), [objs[4]])
+
+    def test_multiple_regex_matchers(self):
+        objs = [Person.objects.create(name=a, surname=b) for a, b in
+                (name.split() for name in ['donald duck', 'dagobert duck', 'daisy duck'])]
+
+        filters = dict(surname__startswith='duck', surname__istartswith='duck',
+                       surname__endswith='duck', surname__iendswith='duck',
+                       surname__contains='duck', surname__icontains='duck')
+        base_query = Person.objects \
+                        .filter(**filters) \
+                        .filter(~Q(surname__contains='just-some-random-condition',
+                                   surname__endswith='hello world'))
+        #base_query = base_query | base_query
+
+        self.assertEqual(base_query.filter(name__iendswith='d')[0], objs[0])
+        self.assertEqual(base_query.filter(name='daisy').get(), objs[2])
+
+    def test_multiple_filter_on_same_name(self):
+        Blog.objects.create(title='a')
+        self.assertEqual(
+            Blog.objects.filter(title='a').filter(title='a').filter(title='a').get(),
+            Blog.objects.get()
+        )
+        self.assertEqual([], list(Blog.objects.filter(title='a')
+                                              .filter(title='b')
+                                              .filter(title='a')))
+
+    def test_negated_Q(self):
+        blogs = [Blog.objects.create(title=title) for title in
+                 ('blog', 'other blog', 'another blog')]
+        self.assertEqual(
+            list(Blog.objects.filter(title='blog')
+                 | Blog.objects.filter(~Q(title='another blog'))),
+            [blogs[0], blogs[1]]
+        )
+        self.assertRaises(
+            DatabaseError,
+            lambda: Blog.objects.filter(~Q(title='blog') & ~Q(title='other blog')).get()
+        )
+        self.assertEqual(
+            list(Blog.objects.filter(~Q(title='another blog')
+                                     | ~Q(title='blog')
+                                     | ~Q(title='aaaaa')
+                                     | ~Q(title='fooo')
+                                     | Q(title__in=[b.title for b in blogs]))),
+            blogs
+        )
+        self.assertEqual(
+            Blog.objects.filter(Q(title__in=['blog', 'other blog']),
+                                ~Q(title__in=['blog'])).get(),
+            blogs[1]
+        )
+        self.assertEqual(
+            Blog.objects.filter().exclude(~Q(title='blog')).get(),
+            blogs[0]
+        )
+
+    def test_simple_or_queries(self):
+        obj1 = Simple.objects.create(a=1)
+        obj2 = Simple.objects.create(a=1)
+        obj3 = Simple.objects.create(a=2)
+        obj4 = Simple.objects.create(a=3)
+
+        self.assertEqualQueryset(
+            Simple.objects.filter(a=1),
+            [obj1, obj2]
+        )
+        self.assertEqualQueryset(
+            Simple.objects.filter(a=1) | Simple.objects.filter(a=2),
+            [obj1, obj2, obj3]
+        )
+        self.assertEqualQueryset(
+            Simple.objects.filter(Q(a=2) | Q(a=3)),
+            [obj3, obj4]
+        )
+
+        self.assertEqualQueryset(
+            Simple.objects.filter(Q(Q(a__lt=4) & Q(a__gt=2)) | Q(a=1)),
+            [obj1, obj2, obj4]
+        )
