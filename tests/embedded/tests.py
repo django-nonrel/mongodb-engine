@@ -83,3 +83,11 @@ class EmbeddedModelFieldTestCase(TestCase):
         collection.update({}, {'$set' : {'legacy._model' : 'a', 'legacy._app' : 'b'}}, safe=True)
         self.assertFalse(hasattr(LegacyModel.objects.get().legacy, '_model'))
         self.assertFalse(hasattr(LegacyModel.objects.get().legacy, '_app'))
+
+    def test_query_embedded(self):
+        Model(x=3, em=EmbeddedModel(charfield='foo')).save()
+        obj = Model(x=3, em=EmbeddedModel(charfield='blurg'))
+        obj.save()
+        Model(x=3, em=EmbeddedModel(charfield='bar')).save()
+        obj_from_db = Model.objects.get(em=A('id', obj.em.id))
+        self.assertEqual(obj, obj_from_db)
