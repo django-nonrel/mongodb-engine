@@ -69,8 +69,5 @@ class EmbeddedModelFieldTestCase(TestCase):
         obj = Model(x=3, em=EmbeddedModel(charfield='blurg'))
         obj.save()
         Model(x=3, em=EmbeddedModel(charfield='bar')).save()
-
-        # XXX: Why does Model.objects.get(em=A....) behave differently here?
-        # (Crashes with a TypeError)
         obj_from_db = Model.objects.get(em=A('id', obj.em.id))
         self.assertEqual(obj, obj_from_db)

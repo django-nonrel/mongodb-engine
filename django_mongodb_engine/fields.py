@@ -51,7 +51,6 @@ class EmbeddedModelField(DictField):
         self.embedded_model = model
         super(EmbeddedModelField, self).__init__(*args, **kwargs)
 
-
     def get_db_prep_save(self, model_instance, connection):
         if not model_instance:
             return None

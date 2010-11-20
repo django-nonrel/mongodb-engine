@@ -13,14 +13,14 @@ from djangotoolbox.db.base import (
     NonrelDatabaseOperations
 )
 
+from datetime import datetime
 
 class ImproperlyConfiguredWarning(Warning):
     pass
 
-
 class DatabaseFeatures(NonrelDatabaseFeatures):
     string_based_auto_field = True
-
+    supports_dicts = True
 
 class DatabaseOperations(NonrelDatabaseOperations):
     compiler_module = __name__.rsplit('.', 1)[0] + '.compiler'
@@ -48,6 +48,17 @@ class DatabaseOperations(NonrelDatabaseOperations):
                 continue
             self.connection.db_connection.drop_collection(table)
         return []
+
+    def value_to_db_date(self, value):
+        if value is None:
+            return None
+        return datetime(value.year, value.month, value.day)
+
+    def value_to_db_time(self, value):
+        if value is None:
+            return None
+        return datetime(1, 1, 1, value.hour, value.minute, value.second,
+                                 value.microsecond)
 
 
 class DatabaseValidation(NonrelDatabaseValidation):
