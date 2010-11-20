@@ -1,6 +1,6 @@
 import sys
 import re
-from datetime import datetime
+import datetime
 
 from functools import wraps
 
@@ -243,19 +243,12 @@ class SQLCompiler(NonrelCompiler):
                 return dict((key, self.convert_value_for_db(db_subtype, subvalue))
                             for key, subvalue in value.iteritems())
 
-        if isinstance(value, list):
+        if isinstance(value, (set, list, tuple)):
             # most likely a list of ObjectIds when doing a .delete() query
             return [self.convert_value_for_db(db_type, val) for val in value]
 
         if db_type == 'objectid':
             return ObjectId(value)
-
-        if db_type == 'date':
-            return datetime(value.year, value.month, value.day)
-
-        if db_type == 'time':
-            return datetime(1, 1, 1, value.hour, value.minute,
-                            value.second, value.microsecond)
 
         # Pass values of any type not covered above as they are.
         # PyMongo will complain if they can't be encoded.

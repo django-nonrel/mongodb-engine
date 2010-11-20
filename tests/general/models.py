@@ -41,6 +41,14 @@ class StandardAutoFieldModel(models.Model):
     def __unicode__(self):
         return "Standard model: %s" % (self.title)
 
+class DateModel(models.Model):
+    datetime = models.DateTimeField(auto_now_add=True)
+    time = models.TimeField(null=True)
+    date = models.DateField(null=True)
+    if not settings.USE_SQLITE:
+        _datelist_default = []
+        datelist = ListField(models.DateField(), default=_datelist_default)
+
 class DynamicModel(models.Model):
     gen = RawField()
 

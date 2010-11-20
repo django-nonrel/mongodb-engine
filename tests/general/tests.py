@@ -255,8 +255,6 @@ class MongoDjTest(TestCase):
         self.assertEqual(t1.pk, t2.pk)
 
     def test_simple_foreign_keys(self):
-        now = datetime.datetime.now()
-
         blog1 = Blog(title="Blog")
         blog1.save()
         entry1 = Entry(title="entry 1", blog=blog1)
@@ -516,4 +514,21 @@ class MongoDjTest(TestCase):
         self.assertEqualQueryset(
             Simple.objects.filter(Q(Q(a__lt=4) & Q(a__gt=2)) | Q(a=1)),
             [obj1, obj2, obj4]
+        )
+
+    def test_date_datetime_and_time(self):
+        self.assertEqual(DateModel().datelist, DateModel._datelist_default)
+        self.assert_(DateModel().datelist is not DateModel._datelist_default)
+        DateModel.objects.create()
+        self.assertNotEqual(DateModel.objects.get().datetime, None)
+        DateModel.objects.update(
+            time=datetime.time(hour=3, minute=5, second=7),
+            date=datetime.date(year=2042, month=3, day=5),
+            datelist=[datetime.date(2001, 1, 2)]
+        )
+        self.assertEqual(
+            DateModel.objects.values_list('time', 'date', 'datelist').get(),
+            (datetime.time(hour=3, minute=5, second=7),
+             datetime.date(year=2042, month=3, day=5),
+             [datetime.date(year=2001, month=1, day=2)])
         )

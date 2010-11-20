@@ -73,7 +73,7 @@ class EmbeddedModelFieldTestCase(TestCase):
 
         # LegacyLegacyModelField should keep the embedded model's 'id' if the data
         # set contains it. To add one, we have to do a manual update here:
-        from testproj.utils import get_pymongo_collection
+        from utils import get_pymongo_collection
         collection = get_pymongo_collection('embedded_legacymodel')
         collection.update({}, {'$set' : {'legacy._id' : 42}}, safe=True)
         self.assertEqual(LegacyModel.objects.get().legacy.id, 42)
