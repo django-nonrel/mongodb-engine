@@ -27,6 +27,9 @@ class MongoDjTest(TestCase):
     def assertEqualQueryset(self, a, b):
         self.assertEqual(list(a), list(b))
 
+    def test_mongometa(self):
+        self.assertEqual(Entry._meta.descending_indexes, ['title'])
+
     def test_add_and_delete_blog(self):
         blog1 = Blog(title="blog1")
         blog1.save()
