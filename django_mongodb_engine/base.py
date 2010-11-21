@@ -29,9 +29,10 @@ class DatabaseOperations(NonrelDatabaseOperations):
         return 254
 
     def check_aggregate_support(self, aggregate):
-        from django.db.models.sql.aggregates import Count
-        from .contrib.aggregations import MongoAggregate
-        if not isinstance(aggregate, (Count, MongoAggregate)):
+        import aggregations
+        try:
+            getattr(aggregations, aggregate.__class__.__name__)
+        except AttributeError:
             raise NotImplementedError("django-mongodb-engine does not support %r "
                                       "aggregates" % type(aggregate))
 

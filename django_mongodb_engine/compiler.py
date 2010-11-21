@@ -20,6 +20,7 @@ from djangotoolbox.db.basecompiler import NonrelQuery, NonrelCompiler, \
     NonrelInsertCompiler, NonrelUpdateCompiler, NonrelDeleteCompiler
 
 from .query import A
+import aggregations as aggregations_module
 
 def safe_regex(regex, *re_args, **re_kwargs):
     def wrapper(value):
@@ -203,7 +204,7 @@ class DBQuery(NonrelQuery):
             self._negated = not self._negated
 
     def _get_results(self):
-        if self.query.select_fields:
+        if self.query.select_fields and not self.query.aggregates:
             fields = dict((field.attname, 1) for field in self.query.select_fields)
         else:
             fields = None
@@ -310,50 +311,45 @@ class SQLCompiler(NonrelCompiler):
         aggregations = self.query.aggregate_select.items()
 
         if len(aggregations) == 1 and isinstance(aggregations[0][1], sqlaggregates.Count):
-            # Ne need for full-featured aggregation processing if we only
-            # want to count() -- let djangotoolbox's simple Count aggregation
-            # implementation handle this case.
-            return super(SQLCompiler, self).execute_sql(result_type)
+            # Ne need for full-featured aggregation processing if we only want to count()
+            if result_type is MULTI:
+                return [[self.get_count()]]
+            else:
+                return [self.get_count()]
 
-        from .contrib import aggregations as aggregations_module
-        sqlagg, reduce, finalize, order, initial = [], [], [], [], {}
+        counts, reduce, finalize, order, initial = [], [], [], [], {}
         query = self.build_query()
 
-        # First aggregations implementation
-        # THIS CAN/WILL BE IMPROVED!!!
         for alias, aggregate in aggregations:
-            if isinstance(aggregate, sqlaggregates.Aggregate):
-                if isinstance(aggregate, sqlaggregates.Count):
-                    order.append(None)
-                    # Needed to keep the iteration order which is important in the returned value.
-                    sqlagg.append(self.get_count())
-                    continue
+            assert isinstance(aggregate, sqlaggregates.Aggregate)
+            if isinstance(aggregate, sqlaggregates.Count):
+                order.append(None)
+                # Needed to keep the iteration order which is important in the returned value.
+                counts.append(self.get_count())
+                continue
 
-                aggregate_class = getattr(aggregations_module, aggregate.__class__.__name__)
-                # aggregation availability has been checked in check_aggregate_support in base.py
+            aggregate_class = getattr(aggregations_module, aggregate.__class__.__name__)
+            lookup = aggregate.col
+            if isinstance(lookup, tuple):
+                # lookup is a (table_name, column_name) tuple.
+                # Get rid of the table name as aggregations can't span
+                # multiple tables anyway
+                if lookup[0] != query.collection.name:
+                    raise DatabaseError("Aggregations can not span multiple tables (tried %r and %r)" % (lookup[0], query.collection.name))
+                lookup = lookup[1]
+            self.query.aggregates[alias] = aggregate = aggregate_class(alias, lookup, aggregate.source)
+            order.append(alias) # just to keep the right order
+            initial.update(aggregate.initial())
+            reduce.append(aggregate.reduce())
+            finalize.append(aggregate.finalize())
 
-                field = aggregate.source.name if aggregate.source else '_id'
-                if alias is None:
-                    alias = '_id__%s' % cls_name
-                aggregate = aggregate_class(field, **aggregate.extra)
-                aggregate.add_to_query(self.query, alias, aggregate.col, aggregate.source,
-                                       aggregate.extra.get("is_summary", False))
-
-            order.append(aggregate.alias) # just to keep the right order
-            initial_, reduce_, finalize_ = aggregate.as_query(query)
-            initial.update(initial_)
-            reduce.append(reduce_)
-            finalize.append(finalize_)
-
-        cursor = query.collection.group(None,
-                            query.db_query,
-                            initial,
-                            reduce="function(doc, out){ %s }" % "; ".join(reduce),
-                            finalize="function(out){ %s }" % "; ".join(finalize))
+        reduce="function(doc, out){ %s }" % "; ".join(reduce)
+        finalize="function(out){ %s }" % "; ".join(finalize)
+        cursor = query.collection.group(None, query.db_query, initial, reduce, finalize)
 
         ret = []
         for alias in order:
-            result = cursor[0][alias] if alias else sqlagg.pop(0)
+            result = cursor[0][alias] if alias else counts.pop(0)
             if result_type is MULTI:
                 result = [result]
             ret.append(result)

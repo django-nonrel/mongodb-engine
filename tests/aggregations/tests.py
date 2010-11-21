@@ -13,11 +13,10 @@ class SimpleTest(TestCase):
         ):
             Person.objects.create(age=age, birthday=datetime(*birthday))
 
-        from django.db.models.aggregates import Count, Sum
-        from django_mongodb_engine.contrib.aggregations import Max, Min, Avg
+        from django.db.models.aggregates import Count, Sum, Max, Min, Avg
 
-        aggregates = Person.objects.aggregate(Min("age"), Max("age"), Avg("age"))
-        self.assertEqual(aggregates, {'age__min': 1, 'age__avg': 5.0, 'age__max': 12})
+        aggregates = Person.objects.aggregate(Min("age"), Max("age"), avgage=Avg("age"))
+        self.assertEqual(aggregates, {'age__min': 1, 'age__max': 12, 'avgage': 5.0})
 
         #with filters and testing the sqlaggregates->mongoaggregate conversion
         aggregates = Person.objects.filter(age__gte=4).aggregate(Min("birthday"), Max("birthday"), Avg("age"), Count("id"))
@@ -25,5 +24,3 @@ class SimpleTest(TestCase):
                                       'birthday__min': datetime(1998, 9, 1, 0, 0),
                                       'age__avg': 6.0,
                                       'id__count': 4})
-
-        self.assertRaises(NotImplementedError, Person.objects.aggregate, Sum('age'))
