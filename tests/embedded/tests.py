@@ -34,7 +34,6 @@ class EmbeddedModelFieldTestCase(TestCase):
         self.assertEqual(obj.em.charfield, 'foo')
         self.assertNotEqual(obj.em.datetime_auto_now, None)
         self.assertNotEqual(obj.em.datetime_auto_now_add, None)
-        time.sleep(1) # sorry for that, FIXME!
         obj.save()
         auto_now_before = obj.em.datetime_auto_now
         obj = Model.objects.get()
