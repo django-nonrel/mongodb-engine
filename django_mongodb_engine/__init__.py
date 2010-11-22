@@ -28,5 +28,5 @@ try:
     # all apps defined in the project's 'settings.py' in the order implied by
     # iterating over the INSTALLED_APPS list. As we have to make sure that
     # django-mongodb-engine is loaded very first, we prepend it to the list.
-except:
+except ImportError:
     pass
