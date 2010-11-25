@@ -6,7 +6,7 @@
 
 *django-mongodb-engine* is a full-featured MongoDB backend for Django
 including support for :doc:`Embedded Objects </embedded-objects>`,
-:doc:`lists and dicts </lists-and-dicts>`, aggregations and
+:doc:`lists-and-dicts`, aggregations and
 :ref:`Map/Reduce <mapreduce>`.
 
 

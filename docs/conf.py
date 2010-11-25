@@ -88,4 +88,4 @@ issuetracker_project = "mongodb-engine"
 issuetracker_issue_pattern = r'[Ii]ssue #(\d+)'
 
 intersphinx_mapping = {'python' : ('http://docs.python.org', None),
-                       'django' : ('http://docs.djangoproject.com/en/dev/', 'django.inv')}
+                       'django' : ('http://docs.djangoproject.com/en/dev/_objects/', None)}
