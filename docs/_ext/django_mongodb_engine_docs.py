@@ -1,4 +1,8 @@
 def setup(app):
+    from docutils.parsers.rst.directives.admonitions import Note
+
+    app.add_directive('forthelazy', Note) # for now
+
     app.add_crossref_type(
         directivename="setting",
         rolename="setting",
