@@ -1,6 +1,11 @@
 from django_mongodb_engine.query import BaseExtraQuery
 
 class Ft(BaseExtraQuery):
+    """
+    FullText query.
+    
+    Should we use this or __ft ?
+    """
     
     def __init__(self, query):
         self.value = query

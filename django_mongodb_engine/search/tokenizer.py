@@ -6,6 +6,9 @@ class BaseTokenizer(object):
     """
     @staticmethod
     def tokenize(text):
+        """
+        Splits text into a list of words removing any symbol and converts it into lowercase
+        """
         tokens = []
         text = text.lower()
         for dot_item in BaseTokenizer.regex_split('\.(?=[a-zA-Z\s])', text):
@@ -23,6 +26,9 @@ class BaseTokenizer(object):
             
     @staticmethod       
     def tokenize_item(item):
+        """
+        If it is an int/float it returns the item (there's no need to remove , or .)
+        """
         item = item.strip()
         try:
             float(item)
