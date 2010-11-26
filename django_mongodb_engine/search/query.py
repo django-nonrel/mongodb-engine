@@ -11,5 +11,8 @@ class Ft(BaseExtraQuery):
         self.value = query
         
     def as_q(self, model, field):
+        """
+        Tokenizes the value passed and returns the right field name that contains the text tokens
+        """
         tokens = self.model._meta.tokenizer.tokenize(self.value)
         return "_%s_ft" % field.name, tokens
