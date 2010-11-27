@@ -6,7 +6,7 @@ Does it support JOINs?
 No, because MongoDB doesn't, but have look at
 :doc:`embedded-objects` and :doc:`lists-and-dicts`.
 
-Does it support transcations?
+Does it support transactions?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 No, because MongoDB doesn't.
 
