@@ -1,19 +1,23 @@
 Other Cool Stuff
 ================
 
-.. _mapreduce:
-
 Included MongoDB Batteries
 --------------------------
-For usage examples, see :file:`tests/contrib/tests.py`.
+For usage examples, see `tests/contrib/tests.py <contrib-tests-dot-py>`_.
+
+.. _contrib-tests-dot-py: https://github.com/django-mongodb-engine/mongodb-engine/blob/master/tests/contrib/tests.py
 
 .. autoclass:: django_mongodb_engine.contrib.MongoDBManager
+
+.. _raw-queries:
 
 Raw Queries
 ~~~~~~~~~~~
 
 .. autoclass:: django_mongodb_engine.contrib.RawQueryMixin
    :members:
+
+.. _mapreduce:
 
 Map/Reduce Support
 ~~~~~~~~~~~~~~~~~~
