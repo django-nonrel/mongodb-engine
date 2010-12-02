@@ -20,6 +20,7 @@ from djangotoolbox.db.basecompiler import NonrelQuery, NonrelCompiler, \
     NonrelInsertCompiler, NonrelUpdateCompiler, NonrelDeleteCompiler
 
 from .query import A
+from .contrib import RawQuery
 
 def safe_regex(regex, *re_args, **re_kwargs):
     def wrapper(value):
@@ -124,10 +125,14 @@ class DBQuery(NonrelQuery):
         return self
 
     def add_filters(self, filters, query=None):
+        children = self._get_children(filters.children)
+
         if query is None:
             query = self.db_query
 
-        children = self._get_children(filters.children)
+            if len(children) == 1 and isinstance(children[0], RawQuery):
+                self.db_query = children[0].query
+                return
 
         if filters.connector is OR:
             or_conditions = query['$or'] = []
@@ -140,6 +145,10 @@ class DBQuery(NonrelQuery):
                 subquery = {}
             else:
                 subquery = query
+
+
+            if isinstance(child, RawQuery):
+                raise TypeError("Can not combine raw queries with regular filters")
 
             if isinstance(child, Node):
                 if filters.connector is OR and child.connector is OR:

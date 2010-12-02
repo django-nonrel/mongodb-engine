@@ -86,3 +86,16 @@ class SimpleTest(TestCase):
         obj = somedoc.get_object()
         self.assert_(not hasattr(obj, 'id') and not hasattr(obj, '_id'))
         self.assertEqual(obj, MapReduceModelWithCustomPrimaryKey(pk='bar', data='yo?'))
+
+    def test_raw_query(self):
+        for i in xrange(10):
+            MapReduceModel.objects.create(n=i, m=i*2)
+
+        self.assertEqual(
+            list(MapReduceModel.objects.filter(n__gt=5)),
+            list(MapReduceModel.objects.raw_query({'n' : {'$gt' : 5}}))
+        )
+
+        self.assertRaises(TypeError,
+            lambda: len(MapReduceModel.objects.raw_query().filter(n__gt=5))
+        )
