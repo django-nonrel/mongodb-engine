@@ -3,9 +3,9 @@ Other Cool Stuff
 
 Included MongoDB Batteries
 --------------------------
-For usage examples, see `tests/contrib/tests.py <contrib-tests-dot-py>`_.
+For usage examples, see `tests/contrib/tests.py`_.
 
-.. _contrib-tests-dot-py: https://github.com/django-mongodb-engine/mongodb-engine/blob/master/tests/contrib/tests.py
+.. _tests/contrib/tests.py: https://github.com/django-mongodb-engine/mongodb-engine/blob/master/tests/contrib/tests.py
 
 .. autoclass:: django_mongodb_engine.contrib.MongoDBManager
 
