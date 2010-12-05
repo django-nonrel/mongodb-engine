@@ -387,7 +387,7 @@ class SQLUpdateCompiler(NonrelUpdateCompiler, SQLCompiler):
     def execute_sql(self, return_id=False):
         values = self.query.values
         if len(values) == 1 and isinstance(values[0][2], RawSpec):
-            spec, kwargs = values[0][2].query, values[0][2].kwargs, True
+            spec, kwargs = values[0][2].spec, values[0][2].kwargs, True
             kwargs['multi'] = True
         else:
             spec, kwargs = self._get_update_spec()
