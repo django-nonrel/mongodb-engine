@@ -20,7 +20,7 @@ from djangotoolbox.db.basecompiler import NonrelQuery, NonrelCompiler, \
     NonrelInsertCompiler, NonrelUpdateCompiler, NonrelDeleteCompiler
 
 from .query import A
-from .contrib import RawQuery
+from .contrib import RawQuery, RawSpec
 
 def safe_regex(regex, *re_args, **re_kwargs):
     def wrapper(value):
@@ -386,11 +386,12 @@ class SQLUpdateCompiler(NonrelUpdateCompiler, SQLCompiler):
     @safe_call
     def execute_sql(self, return_id=False):
         values = self.query.values
-        if len(values) == 1 and isinstance(values[0][2], RawQuery):
-            spec, multi = values[0][2].query, True
+        if len(values) == 1 and isinstance(values[0][2], RawSpec):
+            spec, kwargs = values[0][2].query, values[0][2].kwargs, True
+            kwargs['multi'] = True
         else:
-            spec, multi = self._get_update_spec()
-        return self._collection.update(self.build_query().db_query, spec, multi=multi)
+            spec, kwargs = self._get_update_spec()
+        return self._collection.update(self.build_query().db_query, spec, **kwargs)
 
     def _get_update_spec(self):
         multi = True
@@ -420,7 +421,7 @@ class SQLUpdateCompiler(NonrelUpdateCompiler, SQLCompiler):
             else:
                 vals.setdefault("$set", {})[field.column] = value
 
-        return spec, multi
+        return spec, {'multi' : multi}
 
 class SQLDeleteCompiler(NonrelDeleteCompiler, SQLCompiler):
     pass
