@@ -99,3 +99,11 @@ class SimpleTest(TestCase):
         self.assertRaises(TypeError,
             lambda: len(MapReduceModel.objects.raw_query().filter(n__gt=5))
         )
+
+        from django.db.models import Q
+        MapReduceModel.objects.raw_update(Q(n__lte=3), {'$set' : {'n' : -1}})
+        self.assertEqual([o.n for o in MapReduceModel.objects.all()],
+                         [-1, -1, -1, -1, 4, 5, 6, 7, 8, 9])
+        MapReduceModel.objects.raw_update({'n' : -1}, {'$inc' : {'n' : 2}})
+        self.assertEqual([o.n for o in MapReduceModel.objects.all()],
+                         [1, 1, 1, 1, 4, 5, 6, 7, 8, 9])

@@ -21,6 +21,21 @@ class RawQueryMixin:
         queryset.query.where.add(RawQuery(query), AND)
         return queryset
 
+    def raw_update(self, spec_or_q, update_dict):
+        """
+        Does a raw MongoDB update. `spec_or_q` is either a MongoDB filter
+        dict or a :class:`~django.db.models.query_utils.Q` instance that selects
+        the records to update. `update_dict` is a MongoDB style update document
+        containing either a new document or atomic modifiers such as ``$inc``.
+        """
+        queryset = self.get_query_set()
+        if isinstance(spec_or_q, dict):
+            queryset.query.where.add(RawQuery(spec_or_q), AND)
+        else:
+            queryset = queryset.filter(spec_or_q)
+        dummy_field = self.model._meta.pk.column
+        return queryset.update(**{dummy_field: RawQuery(update_dict)})
+
 class MongoDBManager(models.Manager, MapReduceMixin, RawQueryMixin):
     """
     Example usage::

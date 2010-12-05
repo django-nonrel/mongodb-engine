@@ -385,20 +385,25 @@ class SQLUpdateCompiler(NonrelUpdateCompiler, SQLCompiler):
 
     @safe_call
     def execute_sql(self, return_id=False):
-        multi = True
+        values = self.query.values
+        if len(values) == 1 and isinstance(values[0][2], RawQuery):
+            spec, multi = values[0][2].query, True
+        else:
+            spec, multi = self._get_update_spec()
+        return self._collection.update(self.build_query().db_query, spec, multi=multi)
 
-        vals = {}
+    def _get_update_spec(self):
+        multi = True
+        spec = {}
         for field, o, value in self.query.values:
             if field.unique:
                 multi = False
-
             if hasattr(value, 'prepare_database_save'):
                 value = value.prepare_database_save(field)
             else:
                 value = field.get_db_prep_save(value, connection=self.connection)
 
             value = self.convert_value_for_db(field.db_type(), value)
-
             if hasattr(value, "evaluate"):
                 assert value.connector in (value.ADD, value.SUB)
                 assert not value.negated
@@ -415,8 +420,7 @@ class SQLUpdateCompiler(NonrelUpdateCompiler, SQLCompiler):
             else:
                 vals.setdefault("$set", {})[field.column] = value
 
-        return self._collection.update(self.build_query().db_query,
-                                       vals, multi=multi)
+        return spec, multi
 
 class SQLDeleteCompiler(NonrelDeleteCompiler, SQLCompiler):
     pass
