@@ -7,7 +7,7 @@ class RawQuery:
         self.query = query
 
 class RawSpec:
-    def __init__(self, spec, **kwargs):
+    def __init__(self, spec, kwargs):
         self.spec, self.kwargs = spec, kwargs
 
 class RawQueryMixin:
