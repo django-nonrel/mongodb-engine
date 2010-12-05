@@ -36,7 +36,7 @@ class RawQueryMixin:
         """
         queryset = self.get_query_set()
         if isinstance(spec_or_q, dict):
-            queryset.query.where.add(RawSpec(spec_or_q, kwargs), AND)
+            queryset.query.where.add(RawQuery(spec_or_q), AND)
         else:
             queryset = queryset.filter(spec_or_q)
         dummy_field = self.model._meta.pk.column
