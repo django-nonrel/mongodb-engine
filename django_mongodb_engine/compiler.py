@@ -146,7 +146,6 @@ class DBQuery(NonrelQuery):
             else:
                 subquery = query
 
-
             if isinstance(child, RawQuery):
                 raise TypeError("Can not combine raw queries with regular filters")
 
@@ -417,9 +416,9 @@ class SQLUpdateCompiler(NonrelUpdateCompiler, SQLCompiler):
                 else:
                     assert value.connector == value.ADD
                     rhs, lhs = lhs, rhs
-                vals.setdefault("$inc", {})[lhs.name] = rhs
+                spec.setdefault("$inc", {})[lhs.name] = rhs
             else:
-                vals.setdefault("$set", {})[field.column] = value
+                spec.setdefault("$set", {})[field.column] = value
 
         return spec, {'multi' : multi}
 
