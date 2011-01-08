@@ -175,91 +175,86 @@ Consider your queries when designing your models.
 
 Querying and Updating Embedded Objects
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. warning::
+Querying
+--------
+.. forthelazy::
 
-   Sorry, this stuff is broken. Please fall back to
-   :ref:`raw queries <raw-queries>` for now
+   .. code-block:: python
 
-.. Querying
-.. --------
-.. .. forthelazy::
+      objects.filter(field=A('subfield', 'value'))
 
-..    .. code-block:: python
+   translates to the Mongo query
 
-..       objects.filter(field=A('subfield', 'value'))
+   .. code-block:: js
 
-..    translates to the Mongo query
+      .find( {'field.subfield' : 'value'} )
 
-..    .. code-block:: js
+django-mongodb-engine has full support for
+`queries and updates that reach into subobjects <MongoDB's embedded objects>`_
+using the :class:`~django_mongodb_engine.query.A` query helper.
 
-..       .find( {'field.subfield' : 'value'} )
+For example, *find any customer whose habitat is London*::
 
-.. django-mongodb-engine has full support for
-.. `queries and updates that reach into subobjects <MongoDB's embedded objects>`_
-.. using the :class:`~django_mongodb_engine.query.A` query helper.
+   >>> from django_mongodb_engine.query import A
+   >>> Customer.objects.create(name='Bob', address=Address(city='NY'))
+   >>> Customer.objects.create(name='Ann', address=Address(city='London'))
+   >>> Customer.objects.filter(address=A('city', 'London'))
+   [<Customer 'Ann'>]
 
-.. For example, *find any customer whose habitat is London*::
+If you :ref:`enable query debugging <query-debugging>`,
+you can see what this query translates to::
 
-..    >>> from django_mongodb_engine.query import A
-..    >>> Customer.objects.create(name='Bob', address=Address(city='NY'))
-..    >>> Customer.objects.create(name='Ann', address=Address(city='London'))
-..    >>> Customer.objects.filter(address=A('city', 'London'))
-..    [<Customer 'Ann'>]
+   DEBUG [...] .find {'address.city': 'London'} [...]
 
-.. If you :ref:`enable query debugging <query-debugging>`,
-.. you can see what this query translates to::
+If you need to match multiple filters on the same embedded field, chain
+:meth:`~django.db.query.QuerySet.filter` calls::
 
-..    DEBUG [...] .find {'address.city': 'London'} [...]
+   Customer.objects.filter(address=A('city', 'London')) \
+                   .filter(address=A('street', 'Some street'))
 
-.. If you need to match multiple filters on the same embedded field, chain
-.. :meth:`~django.db.query.QuerySet.filter` calls::
+This translates to:
 
-..    Customer.objects.filter(address=A('city', 'London')) \
-..                    .filter(address=A('street', 'Some street'))
+.. code-block:: js
 
-.. This translates to:
-
-.. .. code-block:: js
-
-..    .find( {'address.city': 'London', 'address.street': 'Some street'} )
+   .find( {'address.city': 'London', 'address.street': 'Some street'} )
 
 
-.. Updating
-.. --------
-.. .. forthelazy::
+Updating
+--------
+.. forthelazy::
 
-..    .. code-block:: python
+   .. code-block:: python
 
-..       objects.filter(foo='bar').update(field=A('subfield', 'new-value'))
+      objects.filter(foo='bar').update(field=A('subfield', 'new-value'))
 
-..    translates to the Mongo query
+   translates to the Mongo query
 
-..    .. code-block:: js
+   .. code-block:: js
 
-..       .update( {foo: 'bar'}, {'$set' : {'field.subfield' : 'new-value'}} )
+      .update( {foo: 'bar'}, {'$set' : {'field.subfield' : 'new-value'}} )
 
-.. Updating works similar to this, e.g. John moved to Houston::
+Updating works similar to this, e.g. John moved to Houston::
 
-..    Customer.objects.filter(name='John').update(addresss=A('city', 'Houston'))
+   Customer.objects.filter(name='John').update(addresss=A('city', 'Houston'))
 
-.. Translates to:
+Translates to:
 
-.. .. code-block:: js
+.. code-block:: js
 
-..    .update( {'name': 'John'}, {'$set': {'address.city': 'Houston'}} )
+   .update( {'name': 'John'}, {'$set': {'address.city': 'Houston'}} )
 
-.. Of course, :class:`~django_mongodb_engine.query.A` can be used for both filtering
-.. and updating at the same time; for example, for moving all customers from
-.. New York to Canasas::
+Of course, :class:`~django_mongodb_engine.query.A` can be used for both filtering
+and updating at the same time; for example, for moving all customers from
+New York to Canasas::
 
-..    Customer.objects.filter(address=A('city', 'NY')) \
-..                    .update(address=A('city', 'Cansas'))
+   Customer.objects.filter(address=A('city', 'NY')) \
+                   .update(address=A('city', 'Cansas'))
 
-.. Which translates to:
+Which translates to:
 
-.. .. code-block:: js
+.. code-block:: js
 
-..    .update( {'address.city': 'NY'}, {'$set': {'address.city': 'Cansas'}} )
+   .update( {'address.city': 'NY'}, {'$set': {'address.city': 'Cansas'}} )
 
 
 .. _MongoDB's embedded objects: http://www.mongodb.org/display/DOCS/Dot+Notation+%28Reaching+into+Objects%29
