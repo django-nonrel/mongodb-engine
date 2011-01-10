@@ -40,7 +40,9 @@ class MongoDBRouter(object):
         return model_label(model) in self.managed_models
 
     def is_managed(self, model):
-        return self.model_app_is_managed(model) or self.model_is_managed(model)
+        if hasattr(model, "_meta"):
+            return self.model_app_is_managed(model) or self.model_is_managed(model)
+        return False
 
     def db_for_read(self, model, **hints):
         """Point all operations on mongodb models to a mongodb database"""

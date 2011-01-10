@@ -157,6 +157,7 @@ class DBQuery(NonrelQuery):
                     or_conditions.extend(subquery.pop('$or', []))
                     or_conditions.append(subquery)
             else:
+                import pdb; pdb.set_trace()
                 column, lookup_type, db_type, value = self._decode_child(child)
                 if column == self.query.get_meta().pk.column:
                     column = '_id'
