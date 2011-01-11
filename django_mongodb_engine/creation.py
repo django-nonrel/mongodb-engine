@@ -47,7 +47,7 @@ class DatabaseCreation(NonrelDatabaseCreation):
         if field.db_index:
             kwargs = {}
             opts = model._meta
-            col = getattr(self.connection.database, opts.db_table)
+            col = getattr(self.connection.db_connection, opts.db_table)
             descending = getattr(opts, "descending_indexes", [])
             direction =  (field.attname in descending and -1) or 1
             kwargs["unique"] = field.unique
