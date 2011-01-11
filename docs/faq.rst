@@ -10,9 +10,9 @@ Does it support transactions?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 No, because MongoDB doesn't.
 
-Can I do Raw Queries?
-~~~~~~~~~~~~~~~~~~~~~
-Yep! See :ref:`raw-queries`.
+Can I do Raw Queries/Updates?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Yep! See :ref:`raw-queries-and-updates`.
 
 How can I use Capped Collections?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

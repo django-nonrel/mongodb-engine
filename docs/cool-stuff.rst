@@ -9,28 +9,41 @@ For usage examples, see `tests/contrib/tests.py`_.
 
 .. autoclass:: django_mongodb_engine.contrib.MongoDBManager
 
-.. _raw-queries:
 
-Raw Queries
-~~~~~~~~~~~
+.. _raw-queries-and-updates:
+
+Raw Queries/Updates
+~~~~~~~~~~~~~~~~~~~
+.. versionadded:: 0.3
 
 .. autoclass:: django_mongodb_engine.contrib.RawQueryMixin
    :members:
+
 
 .. _mapreduce:
 
 Map/Reduce Support
 ~~~~~~~~~~~~~~~~~~
+.. versionadded:: 0.2
 
 .. automodule:: django_mongodb_engine.contrib.mapreduce
    :members:
 
+
 .. _mongodb-fields:
+
+GridFS storage
+~~~~~~~~~~~~~~
+.. versionadded:: 0.3
+
+.. automodule:: django_mongodb_engine.storage
+   :members:
 
 Fields
 ------
 .. automodule:: django_mongodb_engine.fields
    :members:
+
 
 .. _collection-options:
 
@@ -82,6 +95,8 @@ Those flags can be:
    If using a ``capped`` collection, those two options specify the size (in bytes)
    and the maximum number of objects of the capped collection, respectively.
 
+
+.. _model_referencing:
 
 Automatic Model Instance (De)Referencing
 ----------------------------------------

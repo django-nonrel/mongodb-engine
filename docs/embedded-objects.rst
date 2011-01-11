@@ -171,7 +171,7 @@ to crawl through the whole collection::
 Consider your queries when designing your models.
 
 
-.. _embedded-objects-queries:
+.. _embedded-object-queries:
 
 Querying and Updating Embedded Objects
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

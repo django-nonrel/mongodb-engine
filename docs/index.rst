@@ -49,3 +49,4 @@ This might be interesting, too:
    Lists and Dicts Instead of JOINS <lists-and-dicts>
    cool-stuff
    faq
+   changelog
