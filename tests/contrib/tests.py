@@ -8,7 +8,7 @@ class SimpleTest(TestCase):
     #    self.assertNotEqual(MapReduceModel._default_manager,
     #                        MapReduceModel.mongodb)
 
-    def test_map_reduc(self):
+    def test_map_reduce(self):
         mapfunc = """
             function map() {
                 for(i=0; i<this.n; ++i) {

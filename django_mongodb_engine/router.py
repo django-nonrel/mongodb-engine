@@ -1,6 +1,8 @@
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 
+from django_mongodb_engine.utils import get_databases
+
 def model_label(model):
     return '%s.%s' % (model._meta.app_label, model._meta.module_name)
 
@@ -11,27 +13,7 @@ class MongoDBRouter(object):
     def __init__(self):
         self.managed_apps = [app.split('.')[-1] for app in getattr(settings, 'MONGODB_MANAGED_APPS', [])]
         self.managed_models = getattr(settings, 'MONGODB_MANAGED_MODELS', [])
-        self.mongodb_database, self.mongodb_databases = self.get_databases()
-
-    def get_databases(self):
-        default_database = None
-        databases = []
-        for name, databaseopt in settings.DATABASES.iteritems():
-            if databaseopt['ENGINE'] == 'django_mongodb_engine':
-                databases.append(name)
-                if databaseopt.get('IS_DEFAULT'):
-                    if default_database is None:
-                        default_database = name
-                    else:
-                        raise ImproperlyConfigured("There an be only one default MongoDB database")
-
-        if not databases:
-            raise ImproperlyConfigured("No MongoDB database found in settings.DATABASES")
-
-        if default_database is None:
-            default_database = databases[0]
-
-        return default_database, databases
+        self.mongodb_database, self.mongodb_databases = get_databases()
 
     def model_app_is_managed(self, model):
         return model._meta.app_label in self.managed_apps
