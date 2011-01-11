@@ -11,7 +11,7 @@ def get_databases():
                 if default_database is None:
                     default_database = name
                 else:
-                    raise ImproperlyConfigured("There an be only one default MongoDB database")
+                    raise ImproperlyConfigured("There can be only one default MongoDB database")
 
     if not databases:
         raise ImproperlyConfigured("No MongoDB database found in settings.DATABASES")
