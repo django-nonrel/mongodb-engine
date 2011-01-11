@@ -1,5 +1,5 @@
 # Run the test for 'myapp' with this setting on and off
-MONGODB_ENGINE_ENABLE_MODEL_SERIALIZATION = False
+MONGODB_AUTOMATIC_REFERENCING = True
 
 DATABASES = {
     'default': {

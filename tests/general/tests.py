@@ -419,7 +419,7 @@ class MongoDjTest(TestCase):
         obj = TestFieldModel()
         related = DynamicModel(gen=42)
         obj.mlist.append(related)
-        if settings.MONGODB_ENGINE_ENABLE_MODEL_SERIALIZATION:
+        if settings.MONGODB_AUTOMATIC_REFERENCING:
             obj.save()
             self.assertNotEqual(related.id, None)
             obj = TestFieldModel.objects.get()

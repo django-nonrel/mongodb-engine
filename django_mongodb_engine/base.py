@@ -162,7 +162,11 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
 
             self._db_connection = self._connection[self.db_name]
 
-            if getattr(settings, 'MONGODB_ENGINE_ENABLE_MODEL_SERIALIZATION', False):
+            enable_referencing = getattr(settings, 'MONGODB_AUTOMATIC_REFERENCING', False)
+            if not enable_referencing:
+                # backwards compatibility
+                enable_referencing = getattr(settings, 'MONGODB_ENGINE_ENABLE_MODEL_SERIALIZATION', False)
+            if enable_referencing:
                 from .serializer import TransformDjango
                 self._db_connection.add_son_manipulator(TransformDjango())
 
