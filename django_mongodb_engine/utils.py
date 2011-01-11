@@ -20,9 +20,9 @@ def get_databases():
         default_database = databases[0]
 
     return default_database, databases
-    
+
 def get_default_database():
     return get_databases()[0]
-    
+
 def get_default_db_connection():
     return connections[get_default_database()].db_connection
