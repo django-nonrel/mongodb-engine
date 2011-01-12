@@ -32,13 +32,6 @@ Map/Reduce Support
 
 .. _mongodb-fields:
 
-GridFS storage
-~~~~~~~~~~~~~~
-.. versionadded:: 0.3
-
-.. automodule:: django_mongodb_engine.storage
-   :members:
-
 Fields
 ------
 .. automodule:: django_mongodb_engine.fields

@@ -9,7 +9,6 @@ Version 0.3
 * ``EmbeddedModelField`` has been `merged into djangotoolbox`_.
   For legacy data records in your setup, you can use the ``LegacyEmbeddedModelField``.
 * Support for :ref:`raw queries and raw updates <raw-queries-and-updates>`
-* :ref:`GridFS storage implementation <gridfs-storage>`
 * Added a flag to enable :ref:`model-referencing`
 
 Version 0.2
