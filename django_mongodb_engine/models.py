@@ -1,4 +1,7 @@
-from django.db import models
+
+# If you wonder what this file is about please head over to '__init__.py' :-)
+
+from django.db.models import signals
 
 def class_prepared_mongodb_signal(sender, *args, **kwargs):
     mongo_meta = getattr(sender, 'MongoMeta', None)
@@ -7,4 +10,4 @@ def class_prepared_mongodb_signal(sender, *args, **kwargs):
             if not attr.startswith('_'):
                 setattr(sender._meta, attr, getattr(mongo_meta, attr))
 
-models.signals.class_prepared.connect(class_prepared_mongodb_signal)
+signals.class_prepared.connect(class_prepared_mongodb_signal)

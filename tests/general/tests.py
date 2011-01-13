@@ -27,6 +27,9 @@ class MongoDjTest(TestCase):
     def assertEqualQueryset(self, a, b):
         self.assertEqual(list(a), list(b))
 
+    def test_mongometa(self):
+        self.assertEqual(Entry._meta.descending_indexes, ['title'])
+
     def test_add_and_delete_blog(self):
         blog1 = Blog(title="blog1")
         blog1.save()
@@ -416,7 +419,7 @@ class MongoDjTest(TestCase):
         obj = TestFieldModel()
         related = DynamicModel(gen=42)
         obj.mlist.append(related)
-        if settings.MONGODB_ENGINE_ENABLE_MODEL_SERIALIZATION:
+        if settings.MONGODB_AUTOMATIC_REFERENCING:
             obj.save()
             self.assertNotEqual(related.id, None)
             obj = TestFieldModel.objects.get()
@@ -512,7 +515,7 @@ class MongoDjTest(TestCase):
         )
 
         self.assertEqualQueryset(
-            Simple.objects.filter(Q(Q(a__lt=4) & Q(a__gt=2)) | Q(a=1)),
+            Simple.objects.filter(Q(Q(a__lt=4) & Q(a__gt=2)) | Q(a=1)).order_by('id'),
             [obj1, obj2, obj4]
         )
 
