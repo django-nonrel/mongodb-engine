@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-__version__ = (0, 2, 0)
+__version__ = (0, 3, 0)
 __author__ = "Flavio Percoco Premoli, Alberto Paro, " + \
              "Jonas Haag and contributors"
 __contact__ = "django-non-relational@googlegroups.com"
