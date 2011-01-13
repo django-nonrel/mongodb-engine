@@ -59,7 +59,6 @@ class EmbeddedModelFieldTestCase(TestCase):
         obj.dict_emb['foo'] = EmbeddedModel(charfield='bar')
         obj.save()
         obj = Model.objects.get()
-        obj.save()
         self.assertEqual(obj.dict_emb['blah'].charfield, 'Some Change')
         self.assertNotEqual(obj.dict_emb['blah'].datetime_auto_now_add, obj.dict_emb['blah'].datetime_auto_now)
         self.assertEqual(obj.dict_emb['foo'].charfield, 'bar')
