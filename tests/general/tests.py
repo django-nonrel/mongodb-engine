@@ -515,7 +515,7 @@ class MongoDjTest(TestCase):
         )
 
         self.assertEqualQueryset(
-            Simple.objects.filter(Q(Q(a__lt=4) & Q(a__gt=2)) | Q(a=1)),
+            Simple.objects.filter(Q(Q(a__lt=4) & Q(a__gt=2)) | Q(a=1)).order_by('id'),
             [obj1, obj2, obj4]
         )
 
