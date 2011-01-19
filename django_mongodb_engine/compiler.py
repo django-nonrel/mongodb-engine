@@ -12,9 +12,10 @@ from django.db.models.sql import aggregates as sqlaggregates
 from django.db.models.sql.constants import MULTI, SINGLE
 from django.db.models.sql.where import AND, OR
 from django.utils.tree import Node
+from django.contrib.sites.models import Site
 
 import pymongo
-from pymongo.objectid import ObjectId
+from pymongo.objectid import ObjectId, InvalidId
 
 from djangotoolbox.db.basecompiler import NonrelQuery, NonrelCompiler, \
     NonrelInsertCompiler, NonrelUpdateCompiler, NonrelDeleteCompiler
@@ -256,7 +257,20 @@ class SQLCompiler(NonrelCompiler):
             return [self.convert_value_for_db(db_type, val) for val in value]
 
         if db_type == 'objectid':
-            return ObjectId(value)
+            try:
+                return ObjectId(value)
+            except InvalidId:
+                # Provide a better message for invalid IDs
+                assert isinstance(value, unicode)
+                if len(value) > 13:
+                    value = value[:10] + '...'
+                msg = "AutoField (_id) values must be ObjectIds on MongoDB " \
+                      "(%r is not a valid ObjectId)" % value
+                if self.query.model._meta.db_table == Site._meta.db_table:
+                    # Also provide some useful tips for (very common) issues
+                    # with settings.SITE_ID.
+                    msg += ". Please make sure your SITE_ID is a valid ObjectId."
+                raise InvalidId(msg)
 
         # Pass values of any type not covered above as they are.
         # PyMongo will complain if they can't be encoded.

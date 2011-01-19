@@ -5,8 +5,9 @@ import datetime
 from django.test import TestCase
 from django.db.models import F, Q
 from django.db.utils import DatabaseError
+from django.contrib.sites.models import Site
 
-from pymongo.objectid import ObjectId
+from pymongo.objectid import ObjectId, InvalidId
 from django_mongodb_engine.serializer import LazyModelInstance
 
 from models import *
@@ -534,4 +535,13 @@ class MongoDjTest(TestCase):
             (datetime.time(hour=3, minute=5, second=7),
              datetime.date(year=2042, month=3, day=5),
              [datetime.date(year=2001, month=1, day=2)])
+        )
+
+    def test_nice_int_objectid_exception(self):
+        msg = "AutoField \(_id\) values must be ObjectIds on MongoDB \(%r is not a valid ObjectId\)"
+        self.assertRaisesRegexp(InvalidId, msg % u'helloworld...',
+                                Simple.objects.create, id='helloworldwhatsup')
+        self.assertRaisesRegexp(
+            InvalidId, (msg % u'5') + ". Please make sure your SITE_ID is a valid ObjectId.",
+            Site.objects.get, id='5'
         )
