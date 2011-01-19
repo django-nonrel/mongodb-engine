@@ -538,10 +538,11 @@ class MongoDjTest(TestCase):
         )
 
     def test_nice_int_objectid_exception(self):
-        msg = "AutoField \(_id\) values must be ObjectIds on MongoDB \(%r is not a valid ObjectId\)"
+        msg = "AutoField \(default primary key\) values must be strings " \
+              "representing an ObjectId on MongoDB \(got %r instead\)"
         self.assertRaisesRegexp(InvalidId, msg % u'helloworld...',
                                 Simple.objects.create, id='helloworldwhatsup')
         self.assertRaisesRegexp(
-            InvalidId, (msg % u'5') + ". Please make sure your SITE_ID is a valid ObjectId.",
+            InvalidId, (msg % u'5') + ". Please make sure your SITE_ID contains a valid ObjectId.",
             Site.objects.get, id='5'
         )

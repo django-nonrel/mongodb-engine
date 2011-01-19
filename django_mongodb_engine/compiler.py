@@ -264,12 +264,12 @@ class SQLCompiler(NonrelCompiler):
                 assert isinstance(value, unicode)
                 if len(value) > 13:
                     value = value[:10] + '...'
-                msg = "AutoField (_id) values must be ObjectIds on MongoDB " \
-                      "(%r is not a valid ObjectId)" % value
-                if self.query.model._meta.db_table == Site._meta.db_table:
+                msg = "AutoField (default primary key) values must be strings " \
+                      "representing an ObjectId on MongoDB (got %r instead)" % value
+                if self.query.model._meta.db_table == 'django_site':
                     # Also provide some useful tips for (very common) issues
                     # with settings.SITE_ID.
-                    msg += ". Please make sure your SITE_ID is a valid ObjectId."
+                    msg += ". Please make sure your SITE_ID contains a valid ObjectId string."
                 raise InvalidId(msg)
 
         # Pass values of any type not covered above as they are.
