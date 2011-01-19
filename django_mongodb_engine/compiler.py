@@ -12,7 +12,6 @@ from django.db.models.sql import aggregates as sqlaggregates
 from django.db.models.sql.constants import MULTI, SINGLE
 from django.db.models.sql.where import AND, OR
 from django.utils.tree import Node
-from django.contrib.sites.models import Site
 
 import pymongo
 from pymongo.objectid import ObjectId, InvalidId
