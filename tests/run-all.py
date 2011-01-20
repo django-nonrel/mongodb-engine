@@ -1,6 +1,5 @@
 #!/usr/bin/python
-import os
+import subprocess
 import settings
 
-for app in settings.INSTALLED_APPS:
-    os.system('./manage.py test %s' % app)
+exit(subprocess.Popen(['./manage.py', 'test'] + settings.INSTALLED_APPS).wait())
