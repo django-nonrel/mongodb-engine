@@ -107,7 +107,7 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
     def _connect(self):
         if not self._connected:
             host = self.settings_dict['HOST'] or None
-            port = self.settings_dict['PORT'] or None
+            port = self.settings_dict.get('PORT', None)
             user = self.settings_dict.get('USER', None)
             password = self.settings_dict.get('PASSWORD')
             self.db_name = self.settings_dict['NAME']
