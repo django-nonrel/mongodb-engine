@@ -237,7 +237,7 @@ class SQLCompiler(NonrelCompiler):
             db_subtype = None
         return db_type, db_subtype
 
-    @safe_call # see #5
+    @safe_call # see #7
     def convert_value_for_db(self, db_type, value):
         if db_type is None or value is None:
             return value
@@ -276,7 +276,7 @@ class SQLCompiler(NonrelCompiler):
         # PyMongo will complain if they can't be encoded.
         return value
 
-    @safe_call # see #5
+    @safe_call # see #7
     def convert_value_from_db(self, db_type, value):
         if db_type is None:
             return value
