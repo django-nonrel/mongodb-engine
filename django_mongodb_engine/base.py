@@ -107,7 +107,10 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
     def _connect(self):
         if not self._connected:
             host = self.settings_dict['HOST'] or None
-            port = self.settings_dict['PORT'] or None
+            # If PORT is not specified it is set to '' and makes pymongo fail.
+            # Even if pymongo sets the port to 27017 I think we should keep it
+            # None and let pymongo do the change.
+            port = self.settings_dict.get('PORT', None) or None
             user = self.settings_dict.get('USER', None)
             password = self.settings_dict.get('PASSWORD')
             self.db_name = self.settings_dict['NAME']
@@ -125,22 +128,26 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
                         'If set, HOST must be a string'
 
                 if port:
-                    if isinstance(host, basestring) and \
-                            host.startswith('mongodb://'):
-                        # If host starts with mongodb:// the port will be
-                        # ignored so lets make sure it is None
-                        port = None
-                        import warnings
-                        warnings.warn(
-                        "If 'HOST' is a mongodb:// URL, the 'PORT' setting "
-                        "will be ignored", ImproperlyConfiguredWarning
-                        )
-                    else:
-                        try:
-                            port = int(port)
-                        except ValueError:
-                            raise ImproperlyConfigured(
-                            'If set, PORT must be an integer')
+                    # This code will be removed
+                    # if isinstance(host, basestring) and \
+                    #         host.startswith('mongodb://'):
+                    #     # If host starts with mongodb:// the port will be
+                    #     # ignored so lets make sure it is None
+                    #     port = None
+                    #     import warnings
+                    #     warnings.warn(
+                    #     "If 'HOST' is a mongodb:// URL, the 'PORT' setting " \
+                    #     + "will be ignored")
+                    # else:
+                    
+                    # It is possible to pass a mongodb uri like this mongodb://host1,host2,host3 and let pymongo set 
+                    # the default port to each host using the port specified in the PORT setting.
+                    # Reference: pymongo.connection.Connection line 84 (_parse_uri)
+                    try:
+                        port = int(port)
+                    except ValueError:
+                        raise ImproperlyConfigured(
+                        'If set, PORT must be an integer')
 
                 assert isinstance(self.safe_inserts, bool), \
                 'If set, SAFE_INSERTS must be True or False'
@@ -162,7 +169,11 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
 
             self._db_connection = self._connection[self.db_name]
 
-            if getattr(settings, 'MONGODB_ENGINE_ENABLE_MODEL_SERIALIZATION', False):
+            enable_referencing = getattr(settings, 'MONGODB_AUTOMATIC_REFERENCING', False)
+            if not enable_referencing:
+                # backwards compatibility
+                enable_referencing = getattr(settings, 'MONGODB_ENGINE_ENABLE_MODEL_SERIALIZATION', False)
+            if enable_referencing:
                 from .serializer import TransformDjango
                 self._db_connection.add_son_manipulator(TransformDjango())
 

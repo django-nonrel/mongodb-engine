@@ -8,7 +8,7 @@ class SimpleTest(TestCase):
     #    self.assertNotEqual(MapReduceModel._default_manager,
     #                        MapReduceModel.mongodb)
 
-    def test_map_reduc(self):
+    def test_map_reduce(self):
         mapfunc = """
             function map() {
                 for(i=0; i<this.n; ++i) {
@@ -86,3 +86,24 @@ class SimpleTest(TestCase):
         obj = somedoc.get_object()
         self.assert_(not hasattr(obj, 'id') and not hasattr(obj, '_id'))
         self.assertEqual(obj, MapReduceModelWithCustomPrimaryKey(pk='bar', data='yo?'))
+
+    def test_raw_query(self):
+        for i in xrange(10):
+            MapReduceModel.objects.create(n=i, m=i*2)
+
+        self.assertEqual(
+            list(MapReduceModel.objects.filter(n__gt=5)),
+            list(MapReduceModel.objects.raw_query({'n' : {'$gt' : 5}}))
+        )
+
+        self.assertRaises(TypeError,
+            lambda: len(MapReduceModel.objects.raw_query().filter(n__gt=5))
+        )
+
+        from django.db.models import Q
+        MapReduceModel.objects.raw_update(Q(n__lte=3), {'$set' : {'n' : -1}})
+        self.assertEqual([o.n for o in MapReduceModel.objects.all()],
+                         [-1, -1, -1, -1, 4, 5, 6, 7, 8, 9])
+        MapReduceModel.objects.raw_update({'n' : -1}, {'$inc' : {'n' : 2}})
+        self.assertEqual([o.n for o in MapReduceModel.objects.all()],
+                         [1, 1, 1, 1, 4, 5, 6, 7, 8, 9])

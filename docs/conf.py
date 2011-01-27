@@ -18,6 +18,8 @@ import django_mongodb_engine
 extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.coverage',
               #'sphinxcontrib.issuetracker',
+              'sphinx.ext.todo',
+              'sphinx.ext.intersphinx',
               'django_mongodb_engine_docs',
               ]
 
@@ -84,3 +86,6 @@ issuetracker = "github"
 issuetracker_user = "django-mongodb-engine"
 issuetracker_project = "mongodb-engine"
 issuetracker_issue_pattern = r'[Ii]ssue #(\d+)'
+
+intersphinx_mapping = {'python' : ('http://docs.python.org', None),
+                       'django' : ('http://docs.djangoproject.com/en/dev/_objects/', None)}

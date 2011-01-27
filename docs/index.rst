@@ -4,50 +4,49 @@
 
 .. _MongoDB: http://mongodb.org
 
-Setup
------
+*django-mongodb-engine* is a full-featured MongoDB backend for Django
+including support for :doc:`Embedded Objects </embedded-objects>`,
+:doc:`lists-and-dicts`, aggregations and
+:ref:`Map/Reduce <mapreduce>`.
 
-No special setup needed, just set ``django_mongodb_engine`` as your database
-``ENGINE``, pick a ``NAME`` and, if needed, change ``HOST`` and ``PORT`` to match
-your needs. Additionally, you should provide the ``SUPPORRTS_TRANSACTIONS``
-option in your ``DATABASES`` settings::
+
+Quickstart
+~~~~~~~~~~
+Get the *latest* versions of `djangotoolbox`_, `Django-nonrel`_ and
+django-mongodb-engine from GitHub::
+
+   git clone git://github.com/django-mongodb-engine/mongodb-engine
+   cd mongodb-engine && python setup.py install
+
+Database setup is easy (see also: `Django database setup docs`_)::
 
    DATABASES = {
       'default' : {
          'ENGINE' : 'django_mongodb_engine',
-         'NAME' : 'myproject_db',
+         'NAME' : 'my_database',
+
+         # optional:
+         'HOST' : 'localhost',
+         'PORT' : 27017,
          'SUPPORTS_TRANSACTIONS' : False
       }
    }
 
+**That's it!** You can now go straight ahead developing your Django application
+as you would do with any other database.
 
-Questions?
-----------
-Does it support transcations?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-No, because MongoDB doesn't.
-
-Does it support JOINs?
-~~~~~~~~~~~~~~~~~~~~~~
-No, because MongoDB doesn't, but
-
-* you can use djangotoolbox' ``DictField``, ``ListField`` and ``SetField`` to
-  store Python lists, sets and dictionaries
-* you can embed model instances using :class:`django_mongodb_engine.fields.EmbeddedModelField`
-* you can combine those two
+.. _Django database setup docs: http://docs.djangoproject.com/en/dev/ref/settings/#databases
+.. _djangotoolbox: http://allbuttonspressed.com/#TODO
+.. _Django-nonrel: http://allbuttonspressed.com/#TODO
 
 
-User Docs
----------
+This might be interesting, too:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. toctree::
    :maxdepth: 2
 
-   fields
-   contrib
-
-Internals
----------
-.. toctree::
-   :maxdepth: 2
-
-   internals/index
+   Embedded Objects Instead of JOINs <embedded-objects>
+   Lists and Dicts Instead of JOINS <lists-and-dicts>
+   cool-stuff
+   faq
+   changelog

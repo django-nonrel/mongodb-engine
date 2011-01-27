@@ -14,12 +14,13 @@ from django.db.models.sql.where import AND, OR
 from django.utils.tree import Node
 
 import pymongo
-from pymongo.objectid import ObjectId
+from pymongo.objectid import ObjectId, InvalidId
 
 from djangotoolbox.db.basecompiler import NonrelQuery, NonrelCompiler, \
     NonrelInsertCompiler, NonrelUpdateCompiler, NonrelDeleteCompiler
 
-from .query import A, BaseExtraQuery
+from .query import A
+from .contrib import RawQuery, RawSpec
 from django_mongodb_engine.search.query import Ft
 
 def safe_regex(regex, *re_args, **re_kwargs):
@@ -126,10 +127,14 @@ class DBQuery(NonrelQuery):
         return self
 
     def add_filters(self, filters, query=None):
+        children = self._get_children(filters.children)
+
         if query is None:
             query = self.db_query
 
-        children = self._get_children(filters.children)
+            if len(children) == 1 and isinstance(children[0], RawQuery):
+                self.db_query = children[0].query
+                return
 
         if filters.connector is OR:
             or_conditions = query['$or'] = []
@@ -142,6 +147,9 @@ class DBQuery(NonrelQuery):
                 subquery = {}
             else:
                 subquery = query
+
+            if isinstance(child, RawQuery):
+                raise TypeError("Can not combine raw queries with regular filters")
 
             if isinstance(child, Node):
                 if filters.connector is OR and child.connector is OR:
@@ -232,6 +240,7 @@ class SQLCompiler(NonrelCompiler):
             db_subtype = None
         return db_type, db_subtype
 
+    @safe_call # see #7
     def convert_value_for_db(self, db_type, value):
         if db_type is None or value is None:
             return value
@@ -251,12 +260,26 @@ class SQLCompiler(NonrelCompiler):
             return [self.convert_value_for_db(db_type, val) for val in value]
 
         if db_type == 'objectid':
-            return ObjectId(value)
+            try:
+                return ObjectId(value)
+            except InvalidId:
+                # Provide a better message for invalid IDs
+                assert isinstance(value, unicode)
+                if len(value) > 13:
+                    value = value[:10] + '...'
+                msg = "AutoField (default primary key) values must be strings " \
+                      "representing an ObjectId on MongoDB (got %r instead)" % value
+                if self.query.model._meta.db_table == 'django_site':
+                    # Also provide some useful tips for (very common) issues
+                    # with settings.SITE_ID.
+                    msg += ". Please make sure your SITE_ID contains a valid ObjectId string."
+                raise InvalidId(msg)
 
         # Pass values of any type not covered above as they are.
         # PyMongo will complain if they can't be encoded.
         return value
 
+    @safe_call # see #7
     def convert_value_from_db(self, db_type, value):
         if db_type is None:
             return value
@@ -384,20 +407,26 @@ class SQLUpdateCompiler(NonrelUpdateCompiler, SQLCompiler):
 
     @safe_call
     def execute_sql(self, return_id=False):
-        multi = True
+        values = self.query.values
+        if len(values) == 1 and isinstance(values[0][2], RawSpec):
+            spec, kwargs = values[0][2].spec, values[0][2].kwargs
+            kwargs['multi'] = True
+        else:
+            spec, kwargs = self._get_update_spec()
+        return self._collection.update(self.build_query().db_query, spec, **kwargs)
 
-        vals = {}
+    def _get_update_spec(self):
+        multi = True
+        spec = {}
         for field, o, value in self.query.values:
             if field.unique:
                 multi = False
-
             if hasattr(value, 'prepare_database_save'):
                 value = value.prepare_database_save(field)
             else:
                 value = field.get_db_prep_save(value, connection=self.connection)
 
             value = self.convert_value_for_db(field.db_type(), value)
-
             if hasattr(value, "evaluate"):
                 assert value.connector in (value.ADD, value.SUB)
                 assert not value.negated
@@ -410,12 +439,11 @@ class SQLUpdateCompiler(NonrelUpdateCompiler, SQLCompiler):
                 else:
                     assert value.connector == value.ADD
                     rhs, lhs = lhs, rhs
-                vals.setdefault("$inc", {})[lhs.name] = rhs
+                spec.setdefault("$inc", {})[lhs.name] = rhs
             else:
-                vals.setdefault("$set", {})[field.column] = value
+                spec.setdefault("$set", {})[field.column] = value
 
-        return self._collection.update(self.build_query().db_query,
-                                       vals, multi=multi)
+        return spec, {'multi' : multi}
 
 class SQLDeleteCompiler(NonrelDeleteCompiler, SQLCompiler):
     pass
