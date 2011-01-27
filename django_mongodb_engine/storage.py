@@ -26,7 +26,7 @@ class GridFsStorage(Storage):
     are contained inside /this/path and then lists the collection to get the files.
 
 
-    THIS IS UNDER EVALUATION. PLEASE SHARE YOUR COMMENTS AND THOUGHS.
+    THIS IS UNDER EVALUATION. PLEASE SHARE YOUR COMMENTS AND THOUGHTS.
 
     TO BE IMPROVED.
     """
