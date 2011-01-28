@@ -19,7 +19,7 @@ from pymongo.objectid import ObjectId, InvalidId
 from djangotoolbox.db.basecompiler import NonrelQuery, NonrelCompiler, \
     NonrelInsertCompiler, NonrelUpdateCompiler, NonrelDeleteCompiler
 
-from .query import A
+from .query import A, BaseExtraQuery
 from .contrib import RawQuery, RawSpec
 from django_mongodb_engine.search.query import Ft
 
@@ -48,7 +48,6 @@ OPERATORS_MAP = {
 #    'year':     lambda val: {'$gte': val[0], '$lt': val[1]},
     'isnull':   lambda val: None if val else {'$ne': None},
     'in':       lambda val: {'$in': val},
-    # 'ft':       lambda val: Ft(val)
 }
 
 NEGATED_OPERATORS_MAP = {
@@ -165,7 +164,6 @@ class DBQuery(NonrelQuery):
                     or_conditions.extend(subquery.pop('$or', []))
                     or_conditions.append(subquery)
             else:
-                import pdb; pdb.set_trace()
                 column, lookup_type, db_type, value = self._decode_child(child)
                 if column == self.query.get_meta().pk.column:
                     column = '_id'
@@ -180,7 +178,7 @@ class DBQuery(NonrelQuery):
 
                 if isinstance(value, BaseExtraQuery):
                     field = first(lambda field: field.attname == column, self.fields)
-                    column, value = value.as_q(self.query.model, field)
+                    column, value = value.as_q(field)
 
                 if self._negated:
                     if lookup_type in NEGATED_OPERATORS_MAP:
@@ -393,11 +391,6 @@ class SQLInsertCompiler(NonrelInsertCompiler, SQLCompiler):
             data['_id'] = data.pop(pk_column)
         except KeyError:
             pass
-
-        # lets get full text marked fields and tokenize them
-        for field in getattr(self.query.model._meta, 'full_text', []):
-            data["_%s_ft" % field] = self.query.model._meta.tokenizer.tokenize(data[field])
-        
         return self._save(data, return_id)
 
 # TODO: Define a common nonrel API for updates and add it to the nonrel

@@ -10,9 +10,9 @@ class Ft(BaseExtraQuery):
     def __init__(self, query):
         self.value = query
         
-    def as_q(self, model, field):
+    def as_q(self, field):
         """
         Tokenizes the value passed and returns the right field name that contains the text tokens
         """
-        tokens = self.model._meta.tokenizer.tokenize(self.value)
+        # tokens = self.model._meta.tokenizer.tokenize(self.value)
         return "_%s_ft" % field.name, tokens

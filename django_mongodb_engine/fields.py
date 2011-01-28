@@ -105,3 +105,21 @@ class GridFSField(models.CharField):
         setattr(self, "_%s_cache" % self.attname, value)
 
         return oid
+
+class FullTextField(models.TextField):
+    def __init__(self, *args, **kwargs):
+        from django_mongodb_engine.search import BaseTokenizer
+        self._tokenizer = kwargs.pop("tokenizer", BaseTokenizer)()
+        kwargs["max_length"] = 255
+        super(FullTextField, self).__init__(*args, **kwargs)
+
+    def get_db_prep_value(self, value, connection, prepared):
+        return self._tokenizer.tokenize(value)
+        
+    def db_type(self, connection):
+        return "tokenized"
+        
+    def to_python(self, values):
+        return values
+    # def pre_save(self, model_instance, add):
+    #     return self._tokenizer.tokenize(getattr(model_instance, self.attname))
