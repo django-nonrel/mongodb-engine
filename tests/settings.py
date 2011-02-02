@@ -15,7 +15,7 @@ DATABASES = {
 
 # 
 
-INSTALLED_APPS = 'aggregations contrib embedded general or_lookups search'.split()
+INSTALLED_APPS = 'aggregations contrib embedded general or_lookups search storage'.split()
 
 # shortcut to check whether tests would pass using an SQL backend
 USE_SQLITE = False
