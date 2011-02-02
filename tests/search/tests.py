@@ -1,15 +1,8 @@
 """
 Test suite for django-mongodb-engine.
 """
-import datetime
+
 from django.test import TestCase
-from django.db.models import F, Q
-from django.db.utils import DatabaseError
-from django.contrib.sites.models import Site
-
-from pymongo.objectid import ObjectId, InvalidId
-from django_mongodb_engine.query import A
-
 from models import *
 
 class FullTextTest(TestCase):

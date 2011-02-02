@@ -4,7 +4,6 @@
 from django.db.models import signals
 
 def class_prepared_mongodb_signal(sender, *args, **kwargs):
-    from search.tokenizer import BaseTokenizer
     mongo_meta = getattr(sender, 'MongoMeta', None)
     if mongo_meta is not None:
         for attr in dir(mongo_meta):
