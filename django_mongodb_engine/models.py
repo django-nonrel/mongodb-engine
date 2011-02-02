@@ -4,10 +4,14 @@
 from django.db.models import signals
 
 def class_prepared_mongodb_signal(sender, *args, **kwargs):
+    from search.tokenizer import BaseTokenizer
     mongo_meta = getattr(sender, 'MongoMeta', None)
     if mongo_meta is not None:
         for attr in dir(mongo_meta):
             if not attr.startswith('_'):
                 setattr(sender._meta, attr, getattr(mongo_meta, attr))
+                
+        if hasattr(sender._meta, "full_text") and not hasattr(sender._meta, "tokenizer"):
+            setattr(sender._meta, "tokenizer", BaseTokenizer)
 
 signals.class_prepared.connect(class_prepared_mongodb_signal)
