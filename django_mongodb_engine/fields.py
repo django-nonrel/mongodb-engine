@@ -106,20 +106,24 @@ class GridFSField(models.CharField):
 
         return oid
 
-class FullTextField(models.TextField):
+class AnalyzedField(models.Field):
     def __init__(self, *args, **kwargs):
+        super(AnalyzedField, self).__init__(*args, **kwargs)
         from django_mongodb_engine.search import BaseTokenizer
+        as_textfield = kwargs.pop('as_textfield', False)
         self._tokenizer = kwargs.pop("tokenizer", BaseTokenizer)()
-        kwargs["max_length"] = 255
-        super(FullTextField, self).__init__(*args, **kwargs)
+        self.parent_field = models.CharField(*args, **kwargs)
 
-    def get_db_prep_value(self, value, connection, prepared):
-        return self._tokenizer.tokenize(value)
+    def contribute_to_class(self, cls, name):
+        super(AnalyzedField, self).contribute_to_class(cls, "%s_analyzed" % name)
+        setattr(self, 'parent_field_name', name)
+        cls.add_to_class(name, self.parent_field)
         
-    def db_type(self, connection):
-        return "tokenized"
-        
-    def to_python(self, values):
-        return values
-    # def pre_save(self, model_instance, add):
-    #     return self._tokenizer.tokenize(getattr(model_instance, self.attname))
+    def get_db_prep_lookup(self, lookup_type, value, connection, prepared=False):
+        if lookup_type == 'exact':
+            return { "$all" : self._tokenizer.tokenize(value)}
+        else:
+            raise TypeError('Lookup type %r not supported for fulltext queries.' % lookup_type)
+                
+    def pre_save(self, model_instance, add):
+        return self._tokenizer.tokenize(getattr(model_instance, self.parent_field_name))

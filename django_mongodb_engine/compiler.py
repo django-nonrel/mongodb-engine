@@ -19,9 +19,8 @@ from pymongo.objectid import ObjectId, InvalidId
 from djangotoolbox.db.basecompiler import NonrelQuery, NonrelCompiler, \
     NonrelInsertCompiler, NonrelUpdateCompiler, NonrelDeleteCompiler
 
-from .query import A, BaseExtraQuery
+from .query import A
 from .contrib import RawQuery, RawSpec
-from django_mongodb_engine.search.query import Ft
 
 def safe_regex(regex, *re_args, **re_kwargs):
     def wrapper(value):
@@ -176,7 +175,7 @@ class DBQuery(NonrelQuery):
                         "Try replacing your condition with  ~Q(foo__in=[...])"
                     )
 
-                if isinstance(value, BaseExtraQuery):
+                if isinstance(value, A):
                     field = first(lambda field: field.attname == column, self.fields)
                     column, value = value.as_q(field)
 
