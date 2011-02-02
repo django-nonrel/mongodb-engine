@@ -177,7 +177,7 @@ class DatabaseCreation(NonrelDatabaseCreation):
 
         self.connection.settings_dict['NAME'] = test_database_name
         # This is important. Here we change the settings so that all other code
-        # things that the chosen database is now the test database. This means
+        # thinks that the chosen database is now the test database. This means
         # that nothing needs to change in the test code for working with
         # connections, databases and collections. It will appear the same as
         # when working with non-test code.
@@ -186,6 +186,8 @@ class DatabaseCreation(NonrelDatabaseCreation):
         # which could potentially happen if the test database was created but
         # was never dropped at the end of the tests
         self._drop_database(test_database_name)
+
+        return test_database_name
 
     def destroy_test_db(self, old_database_name, verbosity=1):
         """
