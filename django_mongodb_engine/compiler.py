@@ -164,6 +164,8 @@ class DBQuery(NonrelQuery):
                     or_conditions.append(subquery)
             else:
                 column, lookup_type, db_type, value = self._decode_child(child)
+                if lookup_type in ('year', 'month', 'day'):
+                    raise DatabaseError("MongoDB does not support year/month/day queries")
                 if column == self.query.get_meta().pk.column:
                     column = '_id'
 

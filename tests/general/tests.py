@@ -537,6 +537,12 @@ class MongoDjTest(TestCase):
              [datetime.date(year=2001, month=1, day=2)])
         )
 
+    def test_nice_yearmonthday_query_exception(self):
+        for x in ('year', 'month', 'day'):
+            key = 'date_published__%s' % x
+            self.assertRaisesRegexp(DatabaseError, "MongoDB does not support year/month/day queries",
+                                    lambda: Entry.objects.get(**{key : 1}))
+
     def test_nice_int_objectid_exception(self):
         msg = "AutoField \(default primary key\) values must be strings " \
               "representing an ObjectId on MongoDB \(got %r instead\)"
