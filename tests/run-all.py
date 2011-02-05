@@ -1,6 +1,16 @@
 #!/usr/bin/python
-import os
-import settings
+import subprocess
 
-for app in settings.INSTALLED_APPS:
-    os.system('./manage.py test %s' % app)
+import settings
+#subprocess.Popen(['./manage.py', 'test'] + settings.INSTALLED_APPS).wait()
+
+import settings_dbindexer
+subprocess.Popen(['./manage.py', 'test', '--settings', 'settings_dbindexer']
+                 + settings_dbindexer.INSTALLED_APPS).wait()
+
+subprocess.Popen(['./manage.py', 'test', '--settings', 'settings_ref']
+                 + settings.INSTALLED_APPS).wait()
+
+#import settings_sqlite
+#subprocess.Popen(['./manage.py --settings settings_sqlite', 'test']
+#                 + settings_sqlite.INSTALLED_APPS).wait()

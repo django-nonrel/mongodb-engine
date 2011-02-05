@@ -1,5 +1,5 @@
-import sys
 import re
+import sys
 import datetime
 
 from functools import wraps
@@ -7,14 +7,14 @@ from functools import wraps
 from django.db.utils import DatabaseError
 from django.db.models.fields import NOT_PROVIDED
 from django.db.models import F
-
 from django.db.models.sql import aggregates as sqlaggregates
 from django.db.models.sql.constants import MULTI, SINGLE
 from django.db.models.sql.where import AND, OR
 from django.utils.tree import Node
 
-import pymongo
-from pymongo.objectid import ObjectId
+from pymongo.errors import PyMongoError
+from pymongo import ASCENDING, DESCENDING
+from pymongo.objectid import ObjectId, InvalidId
 
 from djangotoolbox.db.basecompiler import NonrelQuery, NonrelCompiler, \
     NonrelInsertCompiler, NonrelUpdateCompiler, NonrelDeleteCompiler
@@ -22,12 +22,7 @@ from djangotoolbox.db.basecompiler import NonrelQuery, NonrelCompiler, \
 from .query import A
 from .aggregations import get_aggregation_class_by_name
 from .contrib import RawQuery, RawSpec
-
-def safe_regex(regex, *re_args, **re_kwargs):
-    def wrapper(value):
-        return re.compile(regex % re.escape(value), *re_args, **re_kwargs)
-    wrapper.__name__ = 'safe_regex (%r)' % regex
-    return wrapper
+from .utils import safe_regex, first
 
 OPERATORS_MAP = {
     'exact':        lambda val: val,
@@ -45,7 +40,6 @@ OPERATORS_MAP = {
     'lt':       lambda val: {'$lt': val},
     'lte':      lambda val: {'$lte': val},
     'range':    lambda val: {'$gte': val[0], '$lte': val[1]},
-#    'year':     lambda val: {'$gte': val[0], '$lt': val[1]},
     'isnull':   lambda val: None if val else {'$ne': None},
     'in':       lambda val: {'$in': val},
 }
@@ -60,18 +54,12 @@ NEGATED_OPERATORS_MAP = {
     'in':       lambda val: val
 }
 
-
-def first(test_func, iterable):
-    for item in iterable:
-        if test_func(item):
-            return item
-
 def safe_call(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
-        except pymongo.errors.PyMongoError, e:
+        except PyMongoError, e:
             raise DatabaseError, DatabaseError(str(e)), sys.exc_info()[2]
     return wrapper
 
@@ -117,9 +105,9 @@ class DBQuery(NonrelQuery):
     def order_by(self, ordering):
         for order in ordering:
             if order.startswith('-'):
-                order, direction = order[1:], pymongo.DESCENDING
+                order, direction = order[1:], DESCENDING
             else:
-                direction = pymongo.ASCENDING
+                direction = ASCENDING
             if order == self.query.get_meta().pk.column:
                 order = '_id'
             self._ordering.append((order, direction))
@@ -165,6 +153,8 @@ class DBQuery(NonrelQuery):
                     or_conditions.append(subquery)
             else:
                 column, lookup_type, db_type, value = self._decode_child(child)
+                if lookup_type in ('year', 'month', 'day'):
+                    raise DatabaseError("MongoDB does not support year/month/day queries")
                 if column == self.query.get_meta().pk.column:
                     column = '_id'
 
@@ -238,6 +228,7 @@ class SQLCompiler(NonrelCompiler):
             db_subtype = None
         return db_type, db_subtype
 
+    @safe_call # see #7
     def convert_value_for_db(self, db_type, value):
         if db_type is None or value is None:
             return value
@@ -257,12 +248,26 @@ class SQLCompiler(NonrelCompiler):
             return [self.convert_value_for_db(db_type, val) for val in value]
 
         if db_type == 'objectid':
-            return ObjectId(value)
+            try:
+                return ObjectId(value)
+            except InvalidId:
+                # Provide a better message for invalid IDs
+                assert isinstance(value, unicode)
+                if len(value) > 13:
+                    value = value[:10] + '...'
+                msg = "AutoField (default primary key) values must be strings " \
+                      "representing an ObjectId on MongoDB (got %r instead)" % value
+                if self.query.model._meta.db_table == 'django_site':
+                    # Also provide some useful tips for (very common) issues
+                    # with settings.SITE_ID.
+                    msg += ". Please make sure your SITE_ID contains a valid ObjectId string."
+                raise InvalidId(msg)
 
         # Pass values of any type not covered above as they are.
         # PyMongo will complain if they can't be encoded.
         return value
 
+    @safe_call # see #7
     def convert_value_from_db(self, db_type, value):
         if db_type is None:
             return value

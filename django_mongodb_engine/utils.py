@@ -1,5 +1,17 @@
+import re
 from django.conf import settings
 from django.db import connections
+
+def first(test_func, iterable):
+    for item in iterable:
+        if test_func(item):
+            return item
+
+def safe_regex(regex, *re_args, **re_kwargs):
+    def wrapper(value):
+        return re.compile(regex % re.escape(value), *re_args, **re_kwargs)
+    wrapper.__name__ = 'safe_regex (%r)' % regex
+    return wrapper
 
 def get_databases():
     default_database = None

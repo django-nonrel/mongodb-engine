@@ -3,6 +3,8 @@ from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 from djangotoolbox.fields import ListField, DictField, SetField, RawField
 
+ON_SQLITE = settings.DATABASES['default']['ENGINE'] == 'sqlite3'
+
 class Blog(models.Model):
     title = models.CharField(max_length=200, db_index=True)
 
@@ -45,7 +47,7 @@ class DateModel(models.Model):
     datetime = models.DateTimeField(auto_now_add=True)
     time = models.TimeField(null=True)
     date = models.DateField(null=True)
-    if not settings.USE_SQLITE:
+    if not ON_SQLITE:
         _datelist_default = []
         datelist = ListField(models.DateField(), default=_datelist_default)
 
@@ -55,7 +57,7 @@ class DynamicModel(models.Model):
     def __unicode__(self):
         return "Test special field model: %s" % (self.gen)
 
-if not settings.USE_SQLITE:
+if not ON_SQLITE:
     class TestFieldModel(models.Model):
         title = models.CharField(max_length=200)
         mlist = ListField()

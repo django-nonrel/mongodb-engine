@@ -22,6 +22,12 @@ class MongoDBRouter(object):
         return model_label(model) in self.managed_models
 
     def is_managed(self, model):
+        # Extra check to prevent errors
+        # the import has to be placed here
+        # to prevent connections errors
+        from django.db.models import Model
+        if not isinstance(model, Model) and not issubclass(model, Model):
+            return None
         return self.model_app_is_managed(model) or self.model_is_managed(model)
 
     def db_for_read(self, model, **hints):
@@ -37,7 +43,6 @@ class MongoDBRouter(object):
 
     def allow_syncdb(self, db, model):
         """Make sure that a mongodb model appears on a mongodb database"""
-
         if db in self.mongodb_databases:
             return self.is_managed(model)
         elif self.is_managed(model):

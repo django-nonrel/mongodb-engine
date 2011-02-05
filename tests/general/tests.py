@@ -5,8 +5,9 @@ import datetime
 from django.test import TestCase
 from django.db.models import F, Q
 from django.db.utils import DatabaseError
+from django.contrib.sites.models import Site
 
-from pymongo.objectid import ObjectId
+from pymongo.objectid import ObjectId, InvalidId
 from django_mongodb_engine.serializer import LazyModelInstance
 
 from models import *
@@ -281,6 +282,9 @@ class MongoDjTest(TestCase):
             list(Entry.objects.filter(blog=blog1.pk)),
             [entry1, entry2]
         )
+        entry_without_blog = Entry.objects.create(title='x')
+        self.assertEqual(Entry.objects.get(blog=None), entry_without_blog)
+        self.assertEqual(Entry.objects.get(blog__isnull=True), entry_without_blog)
 
 
     def test_foreign_keys_bug(self):
@@ -419,7 +423,7 @@ class MongoDjTest(TestCase):
         obj = TestFieldModel()
         related = DynamicModel(gen=42)
         obj.mlist.append(related)
-        if settings.MONGODB_AUTOMATIC_REFERENCING:
+        if getattr(settings, 'MONGODB_AUTOMATIC_REFERENCING', False):
             obj.save()
             self.assertNotEqual(related.id, None)
             obj = TestFieldModel.objects.get()
@@ -534,4 +538,20 @@ class MongoDjTest(TestCase):
             (datetime.time(hour=3, minute=5, second=7),
              datetime.date(year=2042, month=3, day=5),
              [datetime.date(year=2001, month=1, day=2)])
+        )
+
+    def test_nice_yearmonthday_query_exception(self):
+        for x in ('year', 'month', 'day'):
+            key = 'date_published__%s' % x
+            self.assertRaisesRegexp(DatabaseError, "MongoDB does not support year/month/day queries",
+                                    lambda: Entry.objects.get(**{key : 1}))
+
+    def test_nice_int_objectid_exception(self):
+        msg = "AutoField \(default primary key\) values must be strings " \
+              "representing an ObjectId on MongoDB \(got %r instead\)"
+        self.assertRaisesRegexp(InvalidId, msg % u'helloworld...',
+                                Simple.objects.create, id='helloworldwhatsup')
+        self.assertRaisesRegexp(
+            InvalidId, (msg % u'5') + ". Please make sure your SITE_ID contains a valid ObjectId.",
+            Site.objects.get, id='5'
         )
