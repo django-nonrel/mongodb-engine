@@ -1,8 +1,12 @@
-# Run the test for 'myapp' with this setting on and off
+# Run the test for 'general' with this setting on and off
 MONGODB_AUTOMATIC_REFERENCING = True
 
 DATABASES = {
     'default': {
+        'ENGINE' : 'dbindexer',
+        'TARGET' : 'mongodb'
+    },
+    'mongodb' : {
         'ENGINE': 'django_mongodb_engine',
         'NAME': 'test',
         'USER': '',
@@ -13,9 +17,8 @@ DATABASES = {
     },
 }
 
-# 
-
-INSTALLED_APPS = 'aggregations contrib embedded general or_lookups search storage'.split()
+INSTALLED_APPS = ['dbindexer', 'djangotoolbox', 'general', 'embedded',
+                  'or_lookups', 'aggregations', 'contrib', 'search', 'storage']
 
 # shortcut to check whether tests would pass using an SQL backend
 USE_SQLITE = False
@@ -23,10 +26,13 @@ USE_SQLITE = False
 
 if USE_SQLITE:
     DATABASES = {
-            'default' : {
-                    'NAME' : 'test',
-                    'ENGINE' : 'sqlite3',
-                    }
-                }
-    INSTALLED_APPS.remove('embedded')
-    INSTALLED_APPS.remove('search')
+        'default' : {
+            'NAME' : 'test',
+            'ENGINE' : 'sqlite3',
+        }
+    }
+    for app in ['embedded', 'search', 'storage']:
+        INSTALLED_APPS.remove(app)
+
+ROOT_URLCONF = ''
+DBINDEXER_SITECONF = 'dbindexes'
