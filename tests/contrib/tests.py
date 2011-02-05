@@ -91,14 +91,15 @@ class SimpleTest(TestCase):
         for i in xrange(10):
             MapReduceModel.objects.create(n=i, m=i*2)
 
+        len(MapReduceModel.objects.raw_query({'n' : {'$gt' : 5}})) # 11
         self.assertEqual(
             list(MapReduceModel.objects.filter(n__gt=5)),
             list(MapReduceModel.objects.raw_query({'n' : {'$gt' : 5}}))
         )
 
-        self.assertRaises(TypeError,
-            lambda: len(MapReduceModel.objects.raw_query().filter(n__gt=5))
-        )
+        self.assertEqual(
+            list(MapReduceModel.objects.filter(n__lt=9, n__gt=5)),
+            list(MapReduceModel.objects.raw_query({'n' : {'$lt' : 9}}).filter(n__gt=5)))
 
         from django.db.models import Q
         MapReduceModel.objects.raw_update(Q(n__lte=3), {'$set' : {'n' : -1}})

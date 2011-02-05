@@ -21,7 +21,7 @@ from djangotoolbox.db.basecompiler import NonrelQuery, NonrelCompiler, \
 
 from .query import A
 from .aggregations import get_aggregation_class_by_name
-from .contrib import RawQuery, RawSpec
+from .contrib import RawQuery
 from .utils import safe_regex, first
 
 OPERATORS_MAP = {
@@ -63,25 +63,18 @@ def safe_call(func):
             raise DatabaseError, DatabaseError(str(e)), sys.exc_info()[2]
     return wrapper
 
-
-class DBQuery(NonrelQuery):
-    # ----------------------------------------------
-    # Public API
-    # ----------------------------------------------
+class MongoQuery(NonrelQuery):
     def __init__(self, compiler, fields):
-        super(DBQuery, self).__init__(compiler, fields)
+        super(MongoQuery, self).__init__(compiler, fields)
         db_table = self.query.get_meta().db_table
         self._collection = self.connection.db_connection[db_table]
         self._ordering = []
-        self.db_query = {}
+        self._mongo_query = compiler.query.raw_query \
+                            if isinstance(compiler.query, RawQuery) \
+                            else {}
 
-    # This is needed for debugging
     def __repr__(self):
-        return '<DBQuery: %r ORDER %r>' % (self.db_query, self._ordering)
-
-    @property
-    def collection(self):
-        return self._collection
+        return '<MongoQuery: %r ORDER %r>' % (self._mongo_query, self._ordering)
 
     def fetch(self, low_mark, high_mark):
         results = self._get_results()
@@ -98,10 +91,6 @@ class DBQuery(NonrelQuery):
         return results.count()
 
     @safe_call
-    def delete(self):
-        self._collection.remove(self.db_query)
-
-    @safe_call
     def order_by(self, ordering):
         for order in ordering:
             if order.startswith('-'):
@@ -113,15 +102,29 @@ class DBQuery(NonrelQuery):
             self._ordering.append((order, direction))
         return self
 
+    @safe_call
+    def delete(self):
+        self._collection.remove(self._mongo_query)
+
+    def _get_results(self):
+        if self.query.select_fields and not self.query.aggregates:
+            fields = dict((field.attname, 1) for field in self.query.select_fields)
+        else:
+            fields = None
+        results = self._collection.find(self._mongo_query, fields=fields)
+        if self._ordering:
+            results.sort(self._ordering)
+        if self.query.low_mark > 0:
+            results.skip(self.query.low_mark)
+        if self.query.high_mark is not None:
+            results.limit(self.query.high_mark - self.query.low_mark)
+        return results
+
     def add_filters(self, filters, query=None):
         children = self._get_children(filters.children)
 
         if query is None:
-            query = self.db_query
-
-            if len(children) == 1 and isinstance(children[0], RawQuery):
-                self.db_query = children[0].query
-                return
+            query = self._mongo_query
 
         if filters.connector is OR:
             or_conditions = query['$or'] = []
@@ -134,9 +137,6 @@ class DBQuery(NonrelQuery):
                 subquery = {}
             else:
                 subquery = query
-
-            if isinstance(child, RawQuery):
-                raise TypeError("Can not combine raw queries with regular filters")
 
             if isinstance(child, Node):
                 if filters.connector is OR and child.connector is OR:
@@ -178,7 +178,11 @@ class DBQuery(NonrelQuery):
                             return {'$not' : OPERATORS_MAP[lookup_type](value)}
                 else:
                     op_func = OPERATORS_MAP[lookup_type]
-                value = op_func(self.convert_value_for_db(db_type, value))
+
+                if lookup_type == 'isnull':
+                    value = op_func(value)
+                else:
+                    value = op_func(self.convert_value_for_db(db_type, value))
 
                 if existing is not None:
                     key = '$all' if not self._negated else '$nin'
@@ -201,25 +205,12 @@ class DBQuery(NonrelQuery):
         if filters.negated:
             self._negated = not self._negated
 
-    def _get_results(self):
-        if self.query.select_fields and not self.query.aggregates:
-            fields = dict((field.attname, 1) for field in self.query.select_fields)
-        else:
-            fields = None
-        results = self._collection.find(self.db_query, fields=fields)
-        if self._ordering:
-            results.sort(self._ordering)
-        if self.query.low_mark > 0:
-            results.skip(self.query.low_mark)
-        if self.query.high_mark is not None:
-            results.limit(self.query.high_mark - self.query.low_mark)
-        return results
-
 class SQLCompiler(NonrelCompiler):
     """
     A simple query: no joins, no distinct, etc.
     """
-    query_class = DBQuery
+    query_class = MongoQuery
+
 
     def _split_db_type(self, db_type):
         try:
@@ -347,8 +338,9 @@ class SQLCompiler(NonrelCompiler):
                 # lookup is a (table_name, column_name) tuple.
                 # Get rid of the table name as aggregations can't span
                 # multiple tables anyway
-                if lookup[0] != query.collection.name:
-                    raise DatabaseError("Aggregations can not span multiple tables (tried %r and %r)" % (lookup[0], query.collection.name))
+                if lookup[0] != query._collection.name:
+                    raise DatabaseError("Aggregations can not span multiple tables (tried %r and %r)"
+                                        % (lookup[0], query.collection.name))
                 lookup = lookup[1]
             self.query.aggregates[alias] = aggregate = aggregate_class(alias, lookup, aggregate.source)
             order.append(alias) # just to keep the right order
@@ -356,9 +348,9 @@ class SQLCompiler(NonrelCompiler):
             reduce.append(aggregate.reduce())
             finalize.append(aggregate.finalize())
 
-        reduce="function(doc, out){ %s }" % "; ".join(reduce)
-        finalize="function(out){ %s }" % "; ".join(finalize)
-        cursor = query.collection.group(None, query.db_query, initial, reduce, finalize)
+        reduce = "function(doc, out){ %s }" % "; ".join(reduce)
+        finalize = "function(out){ %s }" % "; ".join(finalize)
+        cursor = query._collection.group(None, query._mongo_query, initial, reduce, finalize)
 
         ret = []
         for alias in order:
@@ -381,17 +373,15 @@ class SQLInsertCompiler(NonrelInsertCompiler, SQLCompiler):
 # TODO: Define a common nonrel API for updates and add it to the nonrel
 # backend base classes and port this code to that API
 class SQLUpdateCompiler(NonrelUpdateCompiler, SQLCompiler):
-    query_class = DBQuery
+    query_class = MongoQuery
 
     @safe_call
+    def execute_raw(self, update_spec, multi=True):
+        return self._collection.update(self.build_query()._mongo_query,
+                                       update_spec, multi=multi)
+
     def execute_sql(self, return_id=False):
-        values = self.query.values
-        if len(values) == 1 and isinstance(values[0][2], RawSpec):
-            spec, kwargs = values[0][2].spec, values[0][2].kwargs
-            kwargs['multi'] = True
-        else:
-            spec, kwargs = self._get_update_spec()
-        return self._collection.update(self.build_query().db_query, spec, **kwargs)
+        return self.execute_raw(*self._get_update_spec())
 
     def _get_update_spec(self):
         multi = True
@@ -421,7 +411,7 @@ class SQLUpdateCompiler(NonrelUpdateCompiler, SQLCompiler):
             else:
                 spec.setdefault("$set", {})[field.column] = value
 
-        return spec, {'multi' : multi}
+        return spec, multi
 
 class SQLDeleteCompiler(NonrelDeleteCompiler, SQLCompiler):
     pass
