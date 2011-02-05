@@ -1,8 +1,15 @@
 #!/usr/bin/python
+import sys
 import subprocess
 
 import settings
-#subprocess.Popen(['./manage.py', 'test'] + settings.INSTALLED_APPS).wait()
+
+subprocess.Popen(['./manage.py', 'test'] + settings.INSTALLED_APPS).wait()
+
+if 'short' in sys.argv:
+    exit()
+
+subprocess.Popen(['./manage.py', 'syncdb', '--noinput']).wait()
 
 import settings_dbindexer
 subprocess.Popen(['./manage.py', 'test', '--settings', 'settings_dbindexer']

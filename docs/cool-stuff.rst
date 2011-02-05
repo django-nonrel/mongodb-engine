@@ -61,7 +61,7 @@ Those flags can be:
    index together, optionally containing keyword arguments to pass to
    :meth:`pymongo.Collection.ensure_index`. For example, ::
 
-      index_together = [{'fields' : ['name', ('last_name', -1)],
+      index_together = [{'fields' : ['name', ('last_name', pymongo.DESCENDING)],
                          'name' : 'name-lastname-index'}]
 
    results in this call::

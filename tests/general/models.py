@@ -71,8 +71,8 @@ if not ON_SQLITE:
 
         class MongoMeta:
             index_together = [{
-                                'fields' : [ ('title', False), 'mlist']
-                                }]
+                'fields' : [ ('title', -1), 'mlist']
+            }]
         def __unicode__(self):
             return "Test special field model: %s" % (self.title)
 

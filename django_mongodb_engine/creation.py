@@ -1,5 +1,5 @@
 from pymongo.collection import Collection
-from pymongo import ASCENDING
+from pymongo import ASCENDING, DESCENDING
 from django.db.backends.creation import TEST_DATABASE_PREFIX
 from djangotoolbox.db.base import NonrelDatabaseCreation
 from .utils import first
@@ -54,7 +54,7 @@ class DatabaseCreation(NonrelDatabaseCreation):
                 return
             indexes = [(index if isinstance(index, tuple) else (index, ASCENDING))
                        for index in indexes]
-            invalid = first(lambda name, direction: name not in field_names,
+            invalid = first(lambda (name, direction): name not in field_names,
                             indexes)
             if invalid is not None:
                 from django.db.models.fields import FieldDoesNotExist
@@ -63,9 +63,11 @@ class DatabaseCreation(NonrelDatabaseCreation):
             collection.ensure_index(indexes, **kwargs)
 
         # Django unique_together indexes
-        create_compound_indexes(getattr(meta, 'unique_together', []), unique=True)
+        for indexes in getattr(meta, 'unique_together', []):
+            create_compound_indexes(indexes, unique=True)
         # MongoDB compound indexes
-        create_compound_indexes(getattr(meta, 'index_together', []))
+        for indexes in getattr(meta, 'index_together', []):
+            create_compound_indexes(indexes.pop('fields'), **indexes)
 
         return []
 
