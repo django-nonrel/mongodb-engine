@@ -6,7 +6,7 @@ try:
 except ImportError:
     from StringIO import StringIO
 
-from djangotoolbox.fields import *
+from djangotoolbox.fields import EmbeddedModelField
 
 __all__ = ['GridFSField', 'EmbeddedModelField']
 
