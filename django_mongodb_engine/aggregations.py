@@ -53,3 +53,7 @@ class Sum(MongoAggregate):
     initial_value = 0
 
     reduce_template = '{alias} += {lookup}'
+
+_AGGREGATION_CLASSES = dict((cls.__name__, cls) for cls in MongoAggregate.__subclasses__())
+def get_aggregation_class_by_name(name):
+    return _AGGREGATION_CLASSES[name]
