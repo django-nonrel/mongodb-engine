@@ -24,14 +24,13 @@ class LegacyEmbeddedModelField(EmbeddedModelField):
             values.pop('_app', None)
             if not values.has_key('_module'):
                 values.pop('_model', None)
-                    
-                
             # Up to version 0.2, '_id's were added automatically.
             # Keep backwards compatibility to old data records.
             if "_id" in values:
                 values["id"] = values.pop("_id")
         return super(LegacyEmbeddedModelField, self).to_python(values)
 
+del EmbeddedModelField
 
 class GridFSField(models.CharField):
 
