@@ -1,7 +1,7 @@
 from djangotoolbox.fields import AbstractIterableField, EmbeddedModelField
 
 __all__ = ['A']
-        
+
 class A(object):
     def __init__(self, op, value):
         self.op = op

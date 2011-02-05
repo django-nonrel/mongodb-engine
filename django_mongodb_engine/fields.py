@@ -19,7 +19,7 @@ class LegacyEmbeddedModelField(EmbeddedModelField):
         if isinstance(values, dict):
             # In version 0.2, the layout of the serialized model instance changed.
             # Cleanup up old instances from keys that aren't used any more.
-            # Adding an if because new embeddedfields use _model key to store 
+            # Adding an if because new embeddedfields use _model key to store
             # the model class name so we'll remove _app and _model just if they exists..
             values.pop('_app', None)
             if not values.has_key('_module'):

@@ -23,7 +23,7 @@ class MongoDBRouter(object):
 
     def is_managed(self, model):
         # Extra check to prevent errors
-        # the import has to be placed here 
+        # the import has to be placed here
         # to prevent connections errors
         from django.db.models import Model
         if not isinstance(model, Model) and not issubclass(model, Model):

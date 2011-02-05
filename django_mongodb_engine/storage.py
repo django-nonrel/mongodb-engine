@@ -113,10 +113,10 @@ class GridFsStorage(Storage):
         """
         Right now it gets the collections names and filters the list to keep
         just the ones belonging to path and then gets the files inside the fs.
-        
+
         Needs to be improved
         """
-        
+
         col_name = self._get_collection_name_for(path)
         path_containing_dirs = re.compile(r"^%s(%s\w+){1}\.files$" % (re.escape(col_name), re.escape(self.sep)))
         collections = filter(lambda x: path_containing_dirs.match(x), get_default_db_connection().collection_names())

@@ -33,7 +33,7 @@ except ImportError:
         import Image, _imaging
     except ImportError:
         Image = None
-        
+
 from django.core.files.base import File
 
 import models
@@ -71,11 +71,11 @@ class GridFsStorageTest(unittest.TestCase):
     #     a file.
     #     """
     #     self.assertFalse(self.storage.exists('test.file'))
-    # 
+    #
     #     f = ContentFile('custom contents')
     #     f_name = self.storage.save('test.file', f)
     #     atime = self.storage.accessed_time(f_name)
-    # 
+    #
     #     self.assertEqual(atime, datetime.fromtimestamp(
     #         os.path.getatime(self.storage.path(f_name))))
     #     self.assertTrue(datetime.now() - self.storage.accessed_time(f_name) < timedelta(seconds=2))
@@ -101,13 +101,13 @@ class GridFsStorageTest(unittest.TestCase):
     #     a file.
     #     """
     #     self.assertFalse(self.storage.exists('test.file'))
-    # 
+    #
     #     f = ContentFile('custom contents')
     #     f_name = self.storage.save('test.file', f)
     #     mtime = self.storage.modified_time(f_name)
-    # 
+    #
     #     self.assertTrue(datetime.now() - self.storage.modified_time(f_name) < timedelta(seconds=2))
-    # 
+    #
     #     self.storage.delete(f_name)
 
     def test_file_save_without_name(self):
@@ -146,7 +146,7 @@ class GridFsStorageTest(unittest.TestCase):
     #     """
     #     self.assertEqual(self.storage.url('test.file'),
     #         '%s%s' % (self.storage.base_url, 'test.file'))
-    # 
+    #
     #     self.storage.base_url = None
     #     self.assertRaises(ValueError, self.storage.url, 'test.file')
 

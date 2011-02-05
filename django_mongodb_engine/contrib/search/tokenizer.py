@@ -2,7 +2,7 @@ import re
 
 class BaseTokenizer(object):
     """
-    Really simple tokenizer 
+    Really simple tokenizer
     """
     @staticmethod
     def tokenize(text):
@@ -18,13 +18,13 @@ class BaseTokenizer(object):
                    if item:
                        tokens.append(item)
         return tokens
-        
+
     @staticmethod
     def regex_split(regex, text):
         for item in re.split(regex, text, re.I):
             yield item
-            
-    @staticmethod       
+
+    @staticmethod
     def tokenize_item(item):
         """
         If it is an int/float it returns the item (there's no need to remove , or .)
@@ -35,6 +35,6 @@ class BaseTokenizer(object):
             return item
         except ValueError:
             pass
-            
+
         # This will keep underscores
         return re.sub(r'[^\w]', '', item)

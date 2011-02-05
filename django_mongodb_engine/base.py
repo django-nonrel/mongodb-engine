@@ -139,8 +139,8 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
                     #     "If 'HOST' is a mongodb:// URL, the 'PORT' setting " \
                     #     + "will be ignored")
                     # else:
-                    
-                    # It is possible to pass a mongodb uri like this mongodb://host1,host2,host3 and let pymongo set 
+
+                    # It is possible to pass a mongodb uri like this mongodb://host1,host2,host3 and let pymongo set
                     # the default port to each host using the port specified in the PORT setting.
                     # Reference: pymongo.connection.Connection line 84 (_parse_uri)
                     try:
