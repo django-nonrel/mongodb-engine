@@ -1,5 +1,5 @@
-import sys
 import re
+import sys
 import datetime
 
 from functools import wraps
@@ -7,13 +7,13 @@ from functools import wraps
 from django.db.utils import DatabaseError
 from django.db.models.fields import NOT_PROVIDED
 from django.db.models import F
-
 from django.db.models.sql import aggregates as sqlaggregates
 from django.db.models.sql.constants import MULTI, SINGLE
 from django.db.models.sql.where import AND, OR
 from django.utils.tree import Node
 
-import pymongo
+from pymongo.errors import PyMongoError
+from pymongo import ASCENDING, DESCENDING
 from pymongo.objectid import ObjectId, InvalidId
 
 from djangotoolbox.db.basecompiler import NonrelQuery, NonrelCompiler, \
@@ -21,12 +21,7 @@ from djangotoolbox.db.basecompiler import NonrelQuery, NonrelCompiler, \
 
 from .query import A
 from .contrib import RawQuery, RawSpec
-
-def safe_regex(regex, *re_args, **re_kwargs):
-    def wrapper(value):
-        return re.compile(regex % re.escape(value), *re_args, **re_kwargs)
-    wrapper.__name__ = 'safe_regex (%r)' % regex
-    return wrapper
+from .utils import safe_regex, first
 
 OPERATORS_MAP = {
     'exact':        lambda val: val,
@@ -44,7 +39,6 @@ OPERATORS_MAP = {
     'lt':       lambda val: {'$lt': val},
     'lte':      lambda val: {'$lte': val},
     'range':    lambda val: {'$gte': val[0], '$lte': val[1]},
-#    'year':     lambda val: {'$gte': val[0], '$lt': val[1]},
     'isnull':   lambda val: None if val else {'$ne': None},
     'in':       lambda val: {'$in': val},
 }
@@ -59,18 +53,12 @@ NEGATED_OPERATORS_MAP = {
     'in':       lambda val: val
 }
 
-
-def first(test_func, iterable):
-    for item in iterable:
-        if test_func(item):
-            return item
-
 def safe_call(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
-        except pymongo.errors.PyMongoError, e:
+        except PyMongoError, e:
             raise DatabaseError, DatabaseError(str(e)), sys.exc_info()[2]
     return wrapper
 
@@ -116,9 +104,9 @@ class DBQuery(NonrelQuery):
     def order_by(self, ordering):
         for order in ordering:
             if order.startswith('-'):
-                order, direction = order[1:], pymongo.DESCENDING
+                order, direction = order[1:], DESCENDING
             else:
-                direction = pymongo.ASCENDING
+                direction = ASCENDING
             if order == self.query.get_meta().pk.column:
                 order = '_id'
             self._ordering.append((order, direction))
