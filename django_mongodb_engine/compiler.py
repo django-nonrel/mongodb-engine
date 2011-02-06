@@ -340,7 +340,7 @@ class SQLCompiler(NonrelCompiler):
                 # multiple tables anyway
                 if lookup[0] != query._collection.name:
                     raise DatabaseError("Aggregations can not span multiple tables (tried %r and %r)"
-                                        % (lookup[0], query.collection.name))
+                                        % (lookup[0], query._collection.name))
                 lookup = lookup[1]
             self.query.aggregates[alias] = aggregate = aggregate_class(alias, lookup, aggregate.source)
             order.append(alias) # just to keep the right order
