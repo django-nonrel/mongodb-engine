@@ -11,4 +11,4 @@ DATABASES = {
 }
 
 INSTALLED_APPS = ['djangotoolbox', 'general', 'embedded', 'or_lookups',
-                  'aggregations', 'contrib', 'search', 'storage']
+                  'aggregations', 'contrib', 'storage']
