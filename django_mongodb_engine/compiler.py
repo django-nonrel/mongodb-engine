@@ -122,7 +122,7 @@ class MongoQuery(NonrelQuery):
 
     def add_filters(self, filters, query=None):
         children = self._get_children(filters.children)
-
+        
         if query is None:
             query = self._mongo_query
 
@@ -394,7 +394,7 @@ class SQLUpdateCompiler(NonrelUpdateCompiler, SQLCompiler):
             else:
                 value = field.get_db_prep_save(value, connection=self.connection)
 
-            value = self.convert_value_for_db(field.db_type(), value)
+            value = self.convert_value_for_db(field.db_type(connection=self.connection), value)
             if hasattr(value, "evaluate"):
                 assert value.connector in (value.ADD, value.SUB)
                 assert not value.negated
