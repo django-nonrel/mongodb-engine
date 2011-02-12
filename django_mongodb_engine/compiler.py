@@ -5,6 +5,7 @@ import datetime
 from functools import wraps
 
 from django.db.utils import DatabaseError
+from django.db.backends.util import logger
 from django.db.models.fields import NOT_PROVIDED
 from django.db.models import F
 from django.db.models.sql import aggregates as sqlaggregates
@@ -107,17 +108,21 @@ class MongoQuery(NonrelQuery):
         self._collection.remove(self._mongo_query)
 
     def _get_results(self):
+        fields = None
         if self.query.select_fields and not self.query.aggregates:
             fields = dict((field.attname, 1) for field in self.query.select_fields)
-        else:
-            fields = None
+        logmsg = ['find', self._mongo_query]
         results = self._collection.find(self._mongo_query, fields=fields)
         if self._ordering:
             results.sort(self._ordering)
+            logmsg.extend(('order', self._ordering))
         if self.query.low_mark > 0:
             results.skip(self.query.low_mark)
+            logmsg.extend(('skip', self.query.low_mark))
         if self.query.high_mark is not None:
             results.limit(self.query.high_mark - self.query.low_mark)
+            logmsg.extend(('limit', self.query.high_mark))
+        logger.debug(' '.join(str(x) for x in logmsg))
         return results
 
     def add_filters(self, filters, query=None):
@@ -377,8 +382,9 @@ class SQLUpdateCompiler(NonrelUpdateCompiler, SQLCompiler):
 
     @safe_call
     def execute_raw(self, update_spec, multi=True):
-        return self._collection.update(self.build_query()._mongo_query,
-                                       update_spec, multi=multi)
+        criteria = self.build_query()._mongo_query
+        logger.debug('update criteria=%s spec=%s' % (criteria, update_spec))
+        return self._collection.update(criteria, update_spec, multi=multi)
 
     def execute_sql(self, return_id=False):
         return self.execute_raw(*self._get_update_spec())
