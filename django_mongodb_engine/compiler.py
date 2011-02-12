@@ -5,7 +5,6 @@ import datetime
 from functools import wraps
 
 from django.db.utils import DatabaseError
-from django.db.backends.util import logger
 from django.db.models.fields import NOT_PROVIDED
 from django.db.models import F
 from django.db.models.sql import aggregates as sqlaggregates
@@ -68,7 +67,7 @@ class MongoQuery(NonrelQuery):
     def __init__(self, compiler, fields):
         super(MongoQuery, self).__init__(compiler, fields)
         db_table = self.query.get_meta().db_table
-        self._collection = self.connection.db_connection[db_table]
+        self.collection = self.connection.get_collection(db_table)
         self._ordering = []
         self._mongo_query = compiler.query.raw_query \
                             if isinstance(compiler.query, RawQuery) \
@@ -105,24 +104,19 @@ class MongoQuery(NonrelQuery):
 
     @safe_call
     def delete(self):
-        self._collection.remove(self._mongo_query)
+        self.collection.remove(self._mongo_query)
 
     def _get_results(self):
         fields = None
         if self.query.select_fields and not self.query.aggregates:
             fields = dict((field.attname, 1) for field in self.query.select_fields)
-        logmsg = ['find', self._mongo_query]
-        results = self._collection.find(self._mongo_query, fields=fields)
+        results = self.collection.find(self._mongo_query, fields=fields)
         if self._ordering:
             results.sort(self._ordering)
-            logmsg.extend(('order', self._ordering))
         if self.query.low_mark > 0:
             results.skip(self.query.low_mark)
-            logmsg.extend(('skip', self.query.low_mark))
         if self.query.high_mark is not None:
             results.limit(self.query.high_mark - self.query.low_mark)
-            logmsg.extend(('limit', self.query.high_mark))
-        logger.debug(' '.join(str(x) for x in logmsg))
         return results
 
     def add_filters(self, filters, query=None):
@@ -216,6 +210,9 @@ class SQLCompiler(NonrelCompiler):
     """
     query_class = MongoQuery
 
+    @property
+    def collection(self):
+        return self.connection.get_collection(self.query.get_meta().db_table)
 
     def _split_db_type(self, db_type):
         try:
@@ -302,14 +299,8 @@ class SQLCompiler(NonrelCompiler):
             params['w'] = conn.wait_for_slaves
         return params
 
-    @property
-    def _collection(self):
-        connection = self.connection.db_connection
-        db_table = self.query.get_meta().db_table
-        return connection[db_table]
-
     def _save(self, data, return_id=False):
-        primary_key = self._collection.save(data, **self.insert_params())
+        primary_key = self.collection.save(data, **self.insert_params())
         if return_id:
             return unicode(primary_key)
 
@@ -343,9 +334,9 @@ class SQLCompiler(NonrelCompiler):
                 # lookup is a (table_name, column_name) tuple.
                 # Get rid of the table name as aggregations can't span
                 # multiple tables anyway
-                if lookup[0] != query._collection.name:
+                if lookup[0] != query.collection.name:
                     raise DatabaseError("Aggregations can not span multiple tables (tried %r and %r)"
-                                        % (lookup[0], query._collection.name))
+                                        % (lookup[0], query.collection.name))
                 lookup = lookup[1]
             self.query.aggregates[alias] = aggregate = aggregate_class(alias, lookup, aggregate.source)
             order.append(alias) # just to keep the right order
@@ -355,7 +346,7 @@ class SQLCompiler(NonrelCompiler):
 
         reduce = "function(doc, out){ %s }" % "; ".join(reduce)
         finalize = "function(out){ %s }" % "; ".join(finalize)
-        cursor = query._collection.group(None, query._mongo_query, initial, reduce, finalize)
+        cursor = query.collection.group(None, query._mongo_query, initial, reduce, finalize)
 
         ret = []
         for alias in order:
@@ -383,8 +374,7 @@ class SQLUpdateCompiler(NonrelUpdateCompiler, SQLCompiler):
     @safe_call
     def execute_raw(self, update_spec, multi=True):
         criteria = self.build_query()._mongo_query
-        logger.debug('update criteria=%s spec=%s' % (criteria, update_spec))
-        return self._collection.update(criteria, update_spec, multi=multi)
+        return self.collection.update(criteria, update_spec, multi=multi)
 
     def execute_sql(self, return_id=False):
         return self.execute_raw(*self._get_update_spec())

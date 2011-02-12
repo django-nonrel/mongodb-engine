@@ -1,4 +1,4 @@
-from django.test import TestCase
+from .testcase import TestCase
 from django.db.utils import DatabaseError
 from .models import *
 from datetime import datetime

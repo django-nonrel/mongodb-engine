@@ -2,7 +2,7 @@
 Test suite for django-mongodb-engine.
 """
 import datetime
-from django.test import TestCase
+from .testcase import TestCase
 from django.db.models import F, Q
 from django.db.utils import DatabaseError
 from django.contrib.sites.models import Site

@@ -1,4 +1,3 @@
-from pymongo.collection import Collection
 from pymongo import ASCENDING, DESCENDING
 from django.db.backends.creation import TEST_DATABASE_PREFIX
 from djangotoolbox.db.base import NonrelDatabaseCreation
@@ -39,7 +38,7 @@ class DatabaseCreation(NonrelDatabaseCreation):
         print "Installing index for %s.%s model" % (meta.app_label, meta.object_name)
 
         descending_indexes = set(getattr(model._meta, 'descending_indexes', ()))
-        collection = self.connection.db_connection[meta.db_table]
+        collection = self.connection.get_collection(meta.db_table)
 
         # Ordinary indexes
         for field in meta.local_fields:
@@ -77,7 +76,7 @@ class DatabaseCreation(NonrelDatabaseCreation):
         for option in ('capped', 'collection_max', 'collection_size'):
             x = getattr(model._meta, option, None)
             if x: kwargs[option] = x
-        Collection(self.connection.db_connection, model._meta.db_table, **kwargs)
+        self.connection.get_collection(model._meta.db_table, **kwargs)
         return [], {}
 
     def set_autocommit(self):
@@ -111,4 +110,4 @@ class DatabaseCreation(NonrelDatabaseCreation):
         self.connection.settings_dict['NAME'] = old_database_name
 
     def _drop_database(self, database_name):
-        self.connection._cursor().drop_database(database_name)
+        self.connection.drop_database(database_name)

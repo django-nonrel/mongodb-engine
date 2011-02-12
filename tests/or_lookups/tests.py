@@ -2,7 +2,7 @@ from datetime import datetime
 from operator import attrgetter
 
 from django.db.models import Q
-from django.test import TestCase
+from .testcase import TestCase
 
 from models import Article
 

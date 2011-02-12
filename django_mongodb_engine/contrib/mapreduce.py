@@ -32,7 +32,7 @@ class MapReduceMixin(object):
     Mixes MapReduce support into your manager.
     """
     def _get_collection(self):
-        return connections[self.db].db_connection[self.model._meta.db_table]
+        return connections[self.db].get_collection(self.model._meta.db_table)
 
     def map_reduce(self, map_func, reduce_func, finalize_func=None,
                    limit=None, scope=None, keeptemp=False):

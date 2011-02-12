@@ -33,7 +33,7 @@ class LegacyEmbeddedModelField(EmbeddedModelField):
 del EmbeddedModelField
 
 class GridFSField(models.CharField):
-
+    # TODO: No tests for this, so I can't see whether I broke things
     def __init__(self, *args, **kwargs):
         self._as_string = kwargs.pop("as_string", False)
         self._versioning = kwargs.pop("versioning", False)
@@ -51,7 +51,7 @@ class GridFSField(models.CharField):
 
         def _get(self):
             from django.db import connections
-            gdfs = GridFS(connections[self.__class__.objects.db].db_connection.db)
+            gdfs = GridFS(connections[self.__class__.objects.db].db)
             if not hasattr(self, att_cache_name) and not getattr(self, att_val_name, None) and getattr(self, att_oid_name, None):
                 val = gdfs.get(getattr(self, att_oid_name))
                 if as_string:
@@ -89,7 +89,7 @@ class GridFSField(models.CharField):
             return oid
 
         from django.db import connections
-        gdfs = GridFS(connections[self.model.objects.db].db_connection.db)
+        gdfs = GridFS(connections[self.model.objects.db].db)
 
 
         if not self._versioning and not oid is None:

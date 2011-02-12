@@ -1,4 +1,4 @@
-from django.test import TestCase
+from .testcase import TestCase
 from datetime import datetime
 from models import Person
 

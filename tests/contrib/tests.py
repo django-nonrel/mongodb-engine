@@ -1,6 +1,6 @@
 from .models import *
 from django.db.models import Q
-from django.test import TestCase
+from .testcase import TestCase
 from django.db.utils import DatabaseError
 from django_mongodb_engine.contrib.mapreduce import MapReduceResult
 
