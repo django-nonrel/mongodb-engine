@@ -122,7 +122,7 @@ class MongoQuery(NonrelQuery):
 
     def add_filters(self, filters, query=None):
         children = self._get_children(filters.children)
-        
+
         if query is None:
             query = self._mongo_query
 

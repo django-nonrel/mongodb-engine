@@ -16,18 +16,18 @@ class TokenizedField(models.Field):
         cls.add_to_class(name, self.parent_field)
 
     def get_db_prep_lookup(self, lookup_type, value, connection, prepared=False):
-        # If for some rease value is being converted to list 
-        # by some internal processing we'll convert it back to string. 
+        # If for some rease value is being converted to list
+        # by some internal processing we'll convert it back to string.
         # For Example: When using the 'in' lookup type.
         if isinstance(value, list):
             value = "".join(value)
-            
+
         # When 'exact' is used we'll perform an exact_phrase query
-        # using the $all operator otherwhise we'll just tokenized 
+        # using the $all operator otherwhise we'll just tokenized
         # the value. Djangotoolbox will do the remaining checks
         if lookup_type == 'exact':
             return { "$all" : self._tokenizer.tokenize(value)}
         return self._tokenizer.tokenize(value)
-        
+
     def pre_save(self, model_instance, add):
         return self._tokenizer.tokenize(getattr(model_instance, self.parent_field_name))
