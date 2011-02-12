@@ -421,20 +421,23 @@ class MongoDjTest(TestCase):
 
     def test_lazy_model_instance_in_list(self):
         from django.conf import settings
+        from django.db import connections
+        from bson.errors import InvalidDocument
+
         obj = TestFieldModel()
         related = DynamicModel(gen=42)
         obj.mlist.append(related)
-        if getattr(settings, 'MONGODB_AUTOMATIC_REFERENCING', False):
-            obj.save()
-            self.assertNotEqual(related.id, None)
-            obj = TestFieldModel.objects.get()
-            self.assertEqual(obj.mlist[0]._wrapped, None)
-            # query will be done NOW:
-            self.assertEqual(obj.mlist[0].gen, 42)
-            self.assertNotEqual(obj.mlist[0]._wrapped, None)
-        else:
-            from bson.errors import InvalidDocument
-            self.assertRaises(InvalidDocument, obj.save)
+        self.assertRaises(InvalidDocument, obj.save)
+
+        settings.MONGODB_AUTOMATIC_REFERENCING = True
+        connections._connections.values()[0]._add_serializer()
+        obj.save()
+        self.assertNotEqual(related.id, None)
+        obj = TestFieldModel.objects.get()
+        self.assertEqual(obj.mlist[0]._wrapped, None)
+        # query will be done NOW:
+        self.assertEqual(obj.mlist[0].gen, 42)
+        self.assertNotEqual(obj.mlist[0]._wrapped, None)
 
     def test_regex_matchers(self):
         objs = [Blog.objects.create(title=title) for title in

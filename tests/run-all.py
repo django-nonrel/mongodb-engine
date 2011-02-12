@@ -16,9 +16,6 @@ import settings_dbindexer
 check_call(['./manage.py', 'test', '--settings', 'settings_dbindexer']
            + settings_dbindexer.INSTALLED_APPS)
 
-check_call(['./manage.py', 'test', '--settings', 'settings_ref']
-           + settings.INSTALLED_APPS)
-
 check_call(['./manage.py', 'test', '--settings', 'settings_debug']
            + settings.INSTALLED_APPS)
 
