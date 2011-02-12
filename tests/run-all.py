@@ -1,26 +1,27 @@
 #!/usr/bin/python
 import sys
 import subprocess
+check_call = subprocess.check_call
 
 import settings
 
-subprocess.Popen(['./manage.py', 'test'] + settings.INSTALLED_APPS).wait()
+check_call(['./manage.py', 'test'] + settings.INSTALLED_APPS)
 
 if 'short' in sys.argv:
     exit()
 
-subprocess.Popen(['./manage.py', 'syncdb', '--noinput']).wait()
+check_call(['./manage.py', 'syncdb', '--noinput'])
 
 import settings_dbindexer
-subprocess.Popen(['./manage.py', 'test', '--settings', 'settings_dbindexer']
-                 + settings_dbindexer.INSTALLED_APPS).wait()
+check_call(['./manage.py', 'test', '--settings', 'settings_dbindexer']
+           + settings_dbindexer.INSTALLED_APPS)
 
-subprocess.Popen(['./manage.py', 'test', '--settings', 'settings_ref']
-                 + settings.INSTALLED_APPS).wait()
+check_call(['./manage.py', 'test', '--settings', 'settings_ref']
+           + settings.INSTALLED_APPS)
 
-subprocess.Popen(['./manage.py', 'test', '--settings', 'settings_debug']
-                 + settings.INSTALLED_APPS).wait()
+check_call(['./manage.py', 'test', '--settings', 'settings_debug']
+           + settings.INSTALLED_APPS)
 
 #import settings_sqlite
-#subprocess.Popen(['./manage.py --settings settings_sqlite', 'test']
-#                 + settings_sqlite.INSTALLED_APPS).wait()
+#check_call(['./manage.py --settings settings_sqlite', 'test']
+#           + settings_sqlite.INSTALLED_APPS)

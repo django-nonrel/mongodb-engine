@@ -1,5 +1,6 @@
 from django.core.exceptions import ImproperlyConfigured
 from django.conf import settings
+from django.utils.functional import wraps
 
 import pymongo
 from .creation import DatabaseCreation
@@ -67,11 +68,19 @@ class DatabaseValidation(NonrelDatabaseValidation):
 
 class DatabaseIntrospection(NonrelDatabaseIntrospection):
     def table_names(self):
-        return self.connection.db.collection_names()
+        return self.connection.collection_names()
 
     def sequence_list(self):
         # Only required for backends that support ManyToMany relations
         pass
+
+def requires_connection(method):
+    @wraps(method)
+    def wrapper(self, *args, **kwargs):
+        if not self._connected:
+            self._connect()
+        return method(self, *args, **kwargs)
+    return wrapper
 
 class DatabaseWrapper(NonrelDatabaseWrapper):
     def __init__(self, *args, **kwargs):
@@ -87,18 +96,20 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
         self.safe_inserts = False
         self.wait_for_slaves = 0
 
+    @requires_connection
     def get_collection(self, name, **kwargs):
-        if not self._connected:
-            self._connect()
         collection = pymongo.collection.Collection(self.db, name, **kwargs)
         if settings.DEBUG:
             collection = CollectionDebugWrapper(collection)
         return collection
 
+    @requires_connection
     def drop_database(self, name):
-        if not self._connected:
-            self._connect()
         return self._connection.drop_database(name)
+
+    @requires_connection
+    def collection_names(self):
+        return self.db.collection_names()
 
     def _connect(self):
         host = self.settings_dict['HOST'] or None
