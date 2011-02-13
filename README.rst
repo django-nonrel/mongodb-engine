@@ -15,8 +15,8 @@ Requirements
 * `Django-nonrel`_
 * `djangotoolbox`_
 
-.. _Django-nonrel: http://bitbucket.org/wkornewald/django-nonrel
-.. _djangotoolbox: http://bitbucket.org/wkornedwald/djangotoolbox
+.. _Django-nonrel: https://bitbucket.org/wkornewald/django-nonrel
+.. _djangotoolbox: https://bitbucket.org/wkornewald/djangotoolbox
 
 Contributing
 ============
