@@ -1,4 +1,5 @@
 from django.core.exceptions import ImproperlyConfigured
+from django.db.backends.signals import connection_created
 from django.conf import settings
 from django.utils.functional import wraps
 
@@ -155,7 +156,7 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
                             "Invalid username or password")
         self._add_serializer()
         self._connected = True
-        # TODO: signal! (see Alex' backend)
+        connection_created.send(sender=self.__class__, connection=self)
 
     def _add_serializer(self):
         for option in ['MONGODB_AUTOMATIC_REFERENCING',
