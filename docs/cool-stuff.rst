@@ -89,7 +89,7 @@ Those flags can be:
    and the maximum number of objects of the capped collection, respectively.
 
 
-.. _model_referencing:
+.. _model-referencing:
 
 Automatic Model Instance (De)Referencing
 ----------------------------------------
@@ -98,67 +98,74 @@ your :file:`settings.py`, django-mongodb-engine automatically references
 model instances in :class:`lists <ListField>` or :class:`dicts <DictField>` on
 saves and dereferences them when you access an attribute.
 
-The model instance is stored directly in the :class:`lists <ListField>` or 
-:class:`dicts <DictField>`, not as an :class:`~djangotoolbox-fields.EmbeddedModelField`.
-For more information on embedding models inside :class:`lists <ListField>`'s 
-or :class:`dicts <DictField>`'s without automatic referencing see 
+This means that, similar to Django's ``ForeignKey``, the list will contain only
+IDs, not the instance data itself (which will go to a separate collection).
+
+If you want to embed model instances as MongoDB Embedded Objects, have a look at
 :ref:`embedded-objects-list`.
 
-   Example:
+Example
+~~~~~~~
+Here we will create an object that has a both a list with a referenced model and
+a list with an embedded model to show the difference when storing each type.
 
-   Here we will create an object that has a both a list with a referenced model and
-   a list with an embedded model to show the difference when storing each type.
+::
 
-   .. code-block:: python
-    
-      from django.db import models
-      from djangotoolbox.fields import ListField, EmbeddedModelField
-      
-      class SimpleModel(models.Model):
-         value = models.IntegerField()
+   from django.db import models
+   from djangotoolbox.fields import ListField, EmbeddedModelField
 
-      class ModelWithReferenedAndEmbeddedObjects(models.Model):
-         list_with_reference = ListField()
-         list_with_embedded_model = ListField(EmbeddedModelField(SimpleModel))
+   class SimpleModel(models.Model):
+      value = models.IntegerField()
 
-   Now lets add a ``SimpleModel`` instance to each list ::
+   class ModelWithReferencedAndEmbeddedObjects(models.Model):
+      list_with_reference = ListField()
+      list_with_embedded_model = ListField(EmbeddedModelField(SimpleModel))
 
-      >>> my_simple_model = SimpleModel(value=1)
-      >>> reference_model = ModelWithReferenedAndEmbeddedObjects()
-      >>> reference_model.list_with_reference.append(my_simple_model)
-      >>> reference_model.list_with_embedded_model.append(my_simple_model)
-      >>> reference_model.save()
+Now lets add a ``SimpleModel`` instance to each list ::
 
-   The resulting document will appear as follows:
+   >>> my_simple_model = SimpleModel(value=1)
+   >>> reference_model = ModelWithReferencedAndEmbeddedObjects()
+   >>> reference_model.list_with_reference.append(my_simple_model)
+   >>> reference_model.list_with_embedded_model.append(my_simple_model)
+   >>> reference_model.save()
 
-   .. code-block:: js
+The resulting document will appear as follows:
 
-       /* db.sample_modelwithreferenedandembeddedobjects.findOne() */
-       {
-            "_id" : ObjectId("4d604c2d93577c2d54000001"),
-            "list_with_reference" : [
-                    {
-                            "_app" : "sample",
-                            "_model" : "SimpleModel",
-                            "_type" : "django",
-                            "pk" : "4d604c2d93577c2d54000000"
-                    }
-            ],
-            "list_with_embedded_model" : [
-                    {
-                            "id" : null,
-                            "value" : 1
-                    }
-            ]
-       }
-   
-   Notice that the ``list_with_reference`` value is set to a list with a dictionary
-   containing information about the model and the ID referencing the object in another collection.
-   On the other hand, the ``list_with_embedded_model`` value will have the serialized model
-   instance contained within the list itself as an embedded model. When working with the
-   :class:`list <ListField>` in Python there will be no difference. Each model will be
-   automatically initialized and added to the :class:`list <ListField>` for you.
+.. code-block:: js
 
-   Note that adding model instances directly to a :class:`list <ListField>`
-   or :class:`dict <DictField>`, as is done here, without ``MONGODB_AUTOMATIC_REFERENCING`` set to
-   :class:`True` is not supported and you will get an error message if you try to do so.
+    /* db.sample_modelwithreferencedandembeddedobjects.findOne() */
+    {
+         "_id" : ObjectId("4d604c2d93577c2d54000001"),
+         "list_with_reference" : [
+             {
+                 "_app" : "sample",
+                 "_model" : "SimpleModel",
+                 "_type" : "django",
+                 "pk" : "4d604c2d93577c2d54000000"
+             }
+         ],
+         "list_with_embedded_model" : [
+             {
+                 "id" : null,
+                 "value" : 1
+             }
+         ]
+    }
+
+Notice that the ``list_with_reference`` value is set to a list with a dictionary
+containing information about the model and the ID referencing the object in another collection.
+On the other hand, the ``list_with_embedded_model`` value will have the serialized model
+instance contained within the list itself as an embedded model. When working with the
+:class:`list <ListField>` in Python there will be no difference between both options;
+although it's important to keep in mind that if you use automatic deferencing,
+a query for each model instance will be done on first attribute access::
+
+   >>> reference_model = ModelWithReferencedAndEmbeddedObjects.objects.get()
+   >>> reference_model.list_with_reference.value # does a SimpleModel.objects.get(id='4d604...') query
+   1
+   >>> reference_model.list_with_reference.value # further attribute accesses don't need query
+   1
+
+Note that adding model instances directly to a :class:`list <ListField>`
+or :class:`dict <DictField>`, as is done here, without ``MONGODB_AUTOMATIC_REFERENCING`` set to
+:class:`True` is not supported and you will get an error message if you try to do so.
