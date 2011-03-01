@@ -56,7 +56,8 @@ class CollectionDebugWrapper(object):
                 result = getattr(self.collection, method)(*args, **kwargs)
             finally:
                 duration = time.time() - start
-                msg = '(%.3f) %s' % (duration, ' '.join(str(x) for x in args))
+                msg = '%s.%s (%.3f) %s' % (self.collection.name, method, duration,
+                                           ' '.join(str(arg) for arg in args))
                 if any(kwargs.itervalues()):
                     msg += ' %s' % kwargs
                 logger.debug(msg, extra={'duration' : duration})
