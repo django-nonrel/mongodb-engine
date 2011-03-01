@@ -1,5 +1,6 @@
 from pymongo import ASCENDING, DESCENDING
 from django.db.backends.creation import TEST_DATABASE_PREFIX
+from django.core.exceptions import ImproperlyConfigured
 from djangotoolbox.db.base import NonrelDatabaseCreation
 from .utils import first
 
@@ -42,10 +43,13 @@ class DatabaseCreation(NonrelDatabaseCreation):
 
         # Ordinary indexes
         for field in meta.local_fields:
-            if not field.db_index:
-                continue
-            direction = DESCENDING if field.attname in descending_indexes else ASCENDING
-            collection.ensure_index([(field.name, direction)], unique=field.unique)
+            if field.attname in descending_indexes:
+                direction = DESCENDING
+            else:
+                if not field.db_index:
+                    continue
+                direction = ASCENDING
+            collection.ensure_index([(field.column, direction)], unique=field.unique)
 
         field_names = set(field.name for field in meta.local_fields)
         def create_compound_indexes(indexes, **kwargs):
@@ -66,6 +70,7 @@ class DatabaseCreation(NonrelDatabaseCreation):
             create_compound_indexes(indexes, unique=True)
         # MongoDB compound indexes
         for indexes in getattr(meta, 'index_together', []):
+            indexes = indexes.copy()
             create_compound_indexes(indexes.pop('fields'), **indexes)
 
         return []

@@ -382,7 +382,7 @@ class SQLUpdateCompiler(NonrelUpdateCompiler, SQLCompiler):
     def _get_update_spec(self):
         multi = True
         spec = {}
-        for field, o, value in self.query.values:
+        for field, _, value in self.query.values:
             if field.unique:
                 multi = False
             if hasattr(value, 'prepare_database_save'):
@@ -403,9 +403,12 @@ class SQLUpdateCompiler(NonrelUpdateCompiler, SQLCompiler):
                 else:
                     assert value.connector == value.ADD
                     rhs, lhs = lhs, rhs
-                spec.setdefault("$inc", {})[lhs.name] = rhs
+                action, column, value = '$inc', lhs.name, rhs
             else:
-                spec.setdefault("$set", {})[field.column] = value
+                action, column, value = '$set', field.column, value
+            if column == self.query.get_meta().pk.column:
+                raise DatabaseError("Can not modify _id")
+            spec.setdefault(action, {})[column] = value
 
         return spec, multi
 
