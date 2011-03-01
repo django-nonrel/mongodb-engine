@@ -21,6 +21,7 @@ class IndexTestModel(models.Model):
 
     class MongoMeta:
         descending_indexes = ['descending_index', 'descending_index_custom_column']
+        index_together = ['regular_index', 'custom_column']
 
 class Entry(models.Model):
     title = models.CharField(max_length=200, db_index=True, unique=True)
@@ -63,11 +64,7 @@ if not ON_SQLITE:
         mset_default = SetField(default=set(["a", 'b']))
 
         class MongoMeta:
-            index_together = [{
-                'fields' : [ ('title', -1), 'mlist']
-            }]
-        def __unicode__(self):
-            return "Test special field model: %s" % (self.title)
+            index_together = [{'fields' : [ ('title', -1), 'mlist']}]
 
 else:
     class TestFieldModel(models.Model):

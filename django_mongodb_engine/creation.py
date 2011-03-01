@@ -68,10 +68,18 @@ class DatabaseCreation(NonrelDatabaseCreation):
         # Django unique_together indexes
         for indexes in getattr(meta, 'unique_together', []):
             create_compound_indexes(indexes, unique=True)
+
         # MongoDB compound indexes
-        for indexes in getattr(meta, 'index_together', []):
-            indexes = indexes.copy()
-            create_compound_indexes(indexes.pop('fields'), **indexes)
+        index_together = getattr(meta, 'index_together', [])
+        if index_together:
+            if isinstance(index_together[0], dict):
+                # assume index_together = [{'fields' : [...], ...}]
+                for args in index_together:
+                    kwargs = args.copy()
+                    create_compound_indexes(kwargs.pop('fields'), **kwargs)
+            else:
+                # assume index_together = [('foo', 'bar'), ('spam', 'eggs'), ...]
+                create_compound_indexes(index_together)
 
         return []
 
