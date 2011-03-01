@@ -78,7 +78,7 @@ class DatabaseCreation(NonrelDatabaseCreation):
                     kwargs = args.copy()
                     create_compound_indexes(kwargs.pop('fields'), **kwargs)
             else:
-                # assume index_together = [('foo', 'bar'), ('spam', 'eggs'), ...]
+                # assume index_together = ['foo', 'bar', ('spam', -1), etc]
                 create_compound_indexes(index_together)
 
         return []
