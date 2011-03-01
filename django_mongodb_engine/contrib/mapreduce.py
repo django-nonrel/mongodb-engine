@@ -18,7 +18,7 @@ class MapReduceResult(object):
         Fetches the model instance with ``self.key`` as primary key from the
         database (doing a database query).
         """
-        return self.model.objects.get(**{self.model._meta.pk.attname : self.key})
+        return self.model.objects.get(**{self.model._meta.pk.column : self.key})
 
     def __repr__(self):
         return '<%s model=%r key=%r value=%r>' % \

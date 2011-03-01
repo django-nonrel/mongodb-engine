@@ -43,7 +43,7 @@ class DatabaseCreation(NonrelDatabaseCreation):
 
         # Ordinary indexes
         for field in meta.local_fields:
-            if field.attname in descending_indexes:
+            if field.column in descending_indexes:
                 direction = DESCENDING
             else:
                 if not field.db_index:

@@ -109,7 +109,7 @@ class MongoQuery(NonrelQuery):
     def _get_results(self):
         fields = None
         if self.query.select_fields and not self.query.aggregates:
-            fields = dict((field.attname, 1) for field in self.query.select_fields)
+            fields = dict((field.column, 1) for field in self.query.select_fields)
         results = self.collection.find(self._mongo_query, fields=fields)
         if self._ordering:
             results.sort(self._ordering)
@@ -166,7 +166,7 @@ class MongoQuery(NonrelQuery):
                     )
 
                 if isinstance(value, A):
-                    field = first(lambda field: field.attname == column, self.fields)
+                    field = first(lambda field: field.column == column, self.fields)
                     column, value = value.as_q(field)
 
                 if self._negated:
