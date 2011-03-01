@@ -56,9 +56,20 @@ similar to Django's :class:`Meta` class:
 Those flags can be:
 
 ``index_together`` (default: ``[]``)
-   A list of dictionaries containing an item with the key *field* and a list of
-   field names or :samp:`({field name}, {index direction})` tuples to
-   index together, optionally containing keyword arguments to pass to
+   **Form 1**: A list of field names or :samp:`({field name}, {index direction})`
+   tuples to index together. For instance, ::
+
+      index_together = ['name', ('last_name', pymongo.DESCENDING)]
+
+   results in this call::
+
+      target_collection.ensure_index([('name', 1), ('last_name', -1)])
+
+   (``pymongo.DESCENDING`` being the same as -1)
+
+   **Form 2**: A list of dictionaries containing an item with the key *field*
+   and a list of field names or :samp:`({field name}, {index direction})` tuples
+   to index together as value, optionally containing keyword arguments to pass to
    :meth:`pymongo.Collection.ensure_index`. For example, ::
 
       index_together = [{'fields' : ['name', ('last_name', pymongo.DESCENDING)],
