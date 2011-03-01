@@ -8,11 +8,19 @@ ON_SQLITE = settings.DATABASES['default']['ENGINE'] == 'sqlite3'
 class Blog(models.Model):
     title = models.CharField(max_length=200, db_index=True)
 
-    def __unicode__(self):
-        return "Blog: %s" % self.title
-
 class Simple(models.Model):
     a = models.IntegerField()
+
+class IndexTestModel(models.Model):
+    regular_index = models.IntegerField(db_index=True)
+    custom_column = models.IntegerField(db_column='foo', db_index=True)
+    descending_index = models.IntegerField()
+    descending_index_custom_column = models.IntegerField(db_column='bar')
+    foreignkey_index = models.ForeignKey(Simple, db_index=True)
+    foreignkey_custom_column = models.ForeignKey('Entry', db_column='spam')
+
+    class MongoMeta:
+        descending_indexes = ['descending_index', 'descending_index_custom_column']
 
 class Entry(models.Model):
     title = models.CharField(max_length=200, db_index=True, unique=True)
@@ -23,9 +31,6 @@ class Entry(models.Model):
     class MongoMeta:
         descending_indexes = ['title']
 
-    def __unicode__(self):
-        return "Entry: %s" % (self.title)
-
 class Person(models.Model):
     name = models.CharField(max_length=20)
     surname = models.CharField(max_length=20)
@@ -33,15 +38,6 @@ class Person(models.Model):
 
     class Meta:
         unique_together = ("name", "surname")
-
-    def __unicode__(self):
-        return u"Person: %s %s" % (self.name, self.surname)
-
-class StandardAutoFieldModel(models.Model):
-    title = models.CharField(max_length=200)
-
-    def __unicode__(self):
-        return "Standard model: %s" % (self.title)
 
 class DateModel(models.Model):
     datetime = models.DateTimeField(auto_now_add=True)
@@ -53,9 +49,6 @@ class DateModel(models.Model):
 
 class DynamicModel(models.Model):
     gen = RawField()
-
-    def __unicode__(self):
-        return "Test special field model: %s" % (self.gen)
 
 if not ON_SQLITE:
     class TestFieldModel(models.Model):
