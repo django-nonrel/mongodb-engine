@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 0.4
+-----------
+* GridFS storage backend
+* Fulltext search support
+* Query logging support
+* Numerous bug fixes and code improvements
+
 Version 0.3
 -----------
 * *OR* query support
