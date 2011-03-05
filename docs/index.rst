@@ -12,11 +12,16 @@ including support for :doc:`Embedded Objects </embedded-objects>`,
 
 Quickstart
 ~~~~~~~~~~
-Get the *latest* versions of `djangotoolbox`_, `Django-nonrel`_ and
-django-mongodb-engine from GitHub::
+First, make sure you've got the *latest* versions of `djangotoolbox`_ and `Django-nonrel`_.
+
+Then, either install the latest development version from GitHub ::
 
    git clone git://github.com/django-mongodb-engine/mongodb-engine
    cd mongodb-engine && python setup.py install
+
+or use ``pip`` to install the latest release from PyPI::
+
+   pip install django-mongodb-engine
 
 Database setup is easy (see also: `Django database setup docs`_)::
 
@@ -36,8 +41,8 @@ Database setup is easy (see also: `Django database setup docs`_)::
 as you would do with any other database.
 
 .. _Django database setup docs: http://docs.djangoproject.com/en/dev/ref/settings/#databases
-.. _djangotoolbox: http://allbuttonspressed.com/#TODO
-.. _Django-nonrel: http://allbuttonspressed.com/#TODO
+.. _djangotoolbox: http://www.allbuttonspressed.com/projects/djangotoolbox
+.. _Django-nonrel: http://www.allbuttonspressed.com/projects/django-nonrel
 
 
 This might be interesting, too:
