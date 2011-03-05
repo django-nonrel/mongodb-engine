@@ -7,7 +7,7 @@ Map/Reduce and GridFS), admin site, authentication, site, session and `caching`_
 frameworks with MongoDB
 
 `Head over to the documentation for installation and usage instructions <http://django-mongodb-engine.github.com/mongodb-engine/>`_
------------------------------------------------------------------------------------------------------------------------------------
+===================================================================================================================================
 
 .. _caching: https://github.com/django-mongodb-engine/mongodb-cache
 
