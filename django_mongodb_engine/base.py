@@ -13,6 +13,8 @@ from djangotoolbox.db.base import (
     NonrelDatabaseOperations
 )
 
+import warnings
+
 from datetime import datetime
 
 class ImproperlyConfiguredWarning(Warning):
@@ -111,9 +113,23 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
             user = self.settings_dict.get('USER', None)
             password = self.settings_dict.get('PASSWORD')
             self.db_name = self.settings_dict['NAME']
-            self.safe_inserts = self.settings_dict.get('SAFE_INSERTS', False)
-            self.wait_for_slaves = self.settings_dict.get('WAIT_FOR_SLAVES', 0)
-            slave_okay = self.settings_dict.get('SLAVE_OKAY', False)
+
+            options = {
+                'SAFE_INSERTS': False,
+                'WAIT_FOR_SLAVES': 0,
+                'SLAVE_OKAY': False,
+            }
+
+            options.update(self.settings_dict.get('OPTIONS', {}))
+
+            for option in options.keys():
+                if option in self.settings_dict:
+                    warnings.warn(
+                        'for %s please use the OPTIONS dictionary' % option, 
+                        DeprecationWarning
+                    )
+
+                    options[option] = self.settings_dict[option]
 
             try:
                 if host is not None:
@@ -130,7 +146,6 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
                         # If host starts with mongodb:// the port will be
                         # ignored so lets make sure it is None
                         port = None
-                        import warnings
                         warnings.warn(
                         "If 'HOST' is a mongodb:// URL, the 'PORT' setting "
                         "will be ignored", ImproperlyConfiguredWarning
@@ -142,10 +157,20 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
                             raise ImproperlyConfigured(
                             'If set, PORT must be an integer')
 
-                assert isinstance(self.safe_inserts, bool), \
-                'If set, SAFE_INSERTS must be True or False'
-                assert isinstance(self.wait_for_slaves, int), \
-                'If set, WAIT_FOR_SLAVES must be an integer'
+                assert isinstance(options['SAFE_INSERTS'], bool), \
+                    'If set, SAFE_INSERTS must be a boolean'
+
+                assert isinstance(options['WAIT_FOR_SLAVES'], int) \
+                    and options['WAIT_FOR_SLAVES'] > 0, \
+                    'If set, WAIT_FOR_SLAVES must be a positive integer'
+
+                assert isinstance(options['SLAVE_OKAY'], bool), \
+                    'If set, SLAVE_OKAY must be a boolean'
+
+                self.safe_inserts = options['SAFE_INSERTS']
+                self.wait_for_slaves = options['WAIT_FOR_SLAVES']
+                slave_okay = options['SLAVE_OKAY']
+
             except AssertionError, e:
                 raise ImproperlyConfigured(e)
 
