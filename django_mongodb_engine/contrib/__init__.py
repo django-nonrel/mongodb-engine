@@ -1,29 +1,29 @@
-from django.db import models
+from django.db import models, connections
+from django.db.models.query import QuerySet
 from django.db.models.sql import AND
-from mapreduce import MapReduceMixin
+from django.db.models.sql.query import Query as SQLQuery
+from .mapreduce import MapReduceMixin
 
-class RawQuery:
-    def __init__(self, query):
-        self.query = query
+class RawQuery(SQLQuery):
+    def __init__(self, model, raw_query):
+        super(RawQuery, self).__init__(model)
+        self.raw_query = raw_query
 
-class RawSpec:
-    def __init__(self, spec, kwargs):
-        self.spec, self.kwargs = spec, kwargs
+    def clone(self, *args, **kwargs):
+        clone = super(RawQuery, self).clone(*args, **kwargs)
+        clone.raw_query = self.raw_query
+        return clone
 
 class RawQueryMixin:
+    def get_raw_query_set(self, raw_query):
+        return QuerySet(self.model, RawQuery(self.model, raw_query), self._db)
+
     def raw_query(self, query=None):
         """
         Does a raw MongoDB query. The optional parameter `query` is the spec
         passed to PyMongo's :meth:`~pymongo.Collection.find` method.
-
-        Note that you can't use regular Django filters and :meth:`raw_query`
-        at the same time. Trying to do so will raise a :exc:`TypeError`.
         """
-        if query is None:
-            query = {}
-        queryset = self.get_query_set()
-        queryset.query.where.add(RawQuery(query), AND)
-        return queryset
+        return self.get_raw_query_set(query or {})
 
     def raw_update(self, spec_or_q, update_dict, **kwargs):
         """
@@ -34,13 +34,17 @@ class RawQueryMixin:
 
         Keyword arguments will be passed to :meth:`pymongo.Collection.update`.
         """
-        queryset = self.get_query_set()
         if isinstance(spec_or_q, dict):
-            queryset.query.where.add(RawQuery(spec_or_q), AND)
+            queryset = self.get_raw_query_set(spec_or_q)
         else:
-            queryset = queryset.filter(spec_or_q)
-        dummy_field = self.model._meta.pk.column
-        return queryset.update(**{dummy_field: RawSpec(update_dict, kwargs)})
+            queryset = self.filter(spec_or_q)
+        queryset._for_write = True
+        connection = connections[queryset.db]
+        compiler = connection.ops.compiler('SQLUpdateCompiler')
+        compiler = compiler(queryset.query, connection, connection.alias)
+        compiler.execute_raw(update_dict)
+
+    raw_update.alters_data = True
 
 class MongoDBManager(models.Manager, MapReduceMixin, RawQueryMixin):
     """

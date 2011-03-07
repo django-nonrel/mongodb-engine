@@ -26,7 +26,7 @@ class GridFsStorage(Storage):
     are contained inside /this/path and then lists the collection to get the files.
 
 
-    THIS IS UNDER EVALUATION. PLEASE SHARE YOUR COMMENTS AND THOUGHS.
+    THIS IS UNDER EVALUATION. PLEASE SHARE YOUR COMMENTS AND THOUGHTS.
 
     TO BE IMPROVED.
     """
@@ -43,6 +43,9 @@ class GridFsStorage(Storage):
 
     @property
     def fs(self):
+        """
+        Gets the GridFs instance and returns it.
+        """
         if not hasattr(self, '_fs'):
             self._fs = self._get_path_instance(self.location)
         return self._fs
@@ -67,12 +70,18 @@ class GridFsStorage(Storage):
         return os.path.relpath(path, self.path(""))
 
     def _get_file(self, path):
+        """
+        Gets the last version of path.
+        """
         try:
             return self.fs.get_last_version(filename=path)
         except gridfs.errors.NoFile:
             return None
 
     def _open(self, name, mode='rb'):
+        """
+        Opens a file and returns it.
+        """
         if "w" in mode and not self.exists(name):
             return self.fs.new_file(filename=name)
 
@@ -87,6 +96,9 @@ class GridFsStorage(Storage):
         return name
 
     def delete(self, name):
+        """
+        Deletes the doc if it exists.
+        """
         doc = self._get_file(name)
         if doc:
             self.fs.delete(doc._id)
@@ -98,6 +110,13 @@ class GridFsStorage(Storage):
         return self.fs.exists(filename=name)
 
     def listdir(self, path):
+        """
+        Right now it gets the collections names and filters the list to keep
+        just the ones belonging to path and then gets the files inside the fs.
+
+        Needs to be improved
+        """
+
         col_name = self._get_collection_name_for(path)
         path_containing_dirs = re.compile(r"^%s(%s\w+){1}\.files$" % (re.escape(col_name), re.escape(self.sep)))
         collections = filter(lambda x: path_containing_dirs.match(x), get_default_db_connection().collection_names())

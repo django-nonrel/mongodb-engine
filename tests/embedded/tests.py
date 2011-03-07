@@ -1,9 +1,9 @@
-from django.test import TestCase
-from django.db.utils import DatabaseError
-from .models import *
 from datetime import datetime
-import time
+from django.db.utils import DatabaseError
 from django_mongodb_engine.query import A
+
+from .utils import TestCase, get_collection
+from .models import *
 
 class EmbeddedModelFieldTestCase(TestCase):
     def test_field_docstring(self):
@@ -57,7 +57,6 @@ class EmbeddedModelFieldTestCase(TestCase):
         self.assertEqual(obj.dict_emb['lala'].datetime, foodate)
         obj.dict_emb['blah'].charfield = "Some Change"
         obj.dict_emb['foo'] = EmbeddedModel(charfield='bar')
-        time.sleep(1) # sorry for that, FIXME!
         obj.save()
         obj = Model.objects.get()
         self.assertEqual(obj.dict_emb['blah'].charfield, 'Some Change')
@@ -65,15 +64,14 @@ class EmbeddedModelFieldTestCase(TestCase):
         self.assertEqual(obj.dict_emb['foo'].charfield, 'bar')
 
     def test_legacy_field(self):
-        # LegacyLegacyModelField should behave like EmbeddedLegacyModelField for
+        # LegacyModelField should behave like EmbeddedLegacyModelField for
         # "new-style" data sets
         LegacyModel.objects.create(legacy=EmbeddedModel(charfield='blah'))
         self.assertEqual(LegacyModel.objects.get().legacy.charfield, u'blah')
 
-        # LegacyLegacyModelField should keep the embedded model's 'id' if the data
+        # LegacyModelField should keep the embedded model's 'id' if the data
         # set contains it. To add one, we have to do a manual update here:
-        from utils import get_pymongo_collection
-        collection = get_pymongo_collection('embedded_legacymodel')
+        collection = get_collection(LegacyModel)
         collection.update({}, {'$set' : {'legacy._id' : 42}}, safe=True)
         self.assertEqual(LegacyModel.objects.get().legacy.id, 42)
 

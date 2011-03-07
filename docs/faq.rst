@@ -24,7 +24,13 @@ Does it support query debugging?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Yep! Set ``DEBUG`` to :const:`True` in your :file:`settings.py` and
 `configure <http://docs.djangoproject.com/en/dev/topics/logging/#configuring-logging>`_
-the ``django.db.backends`` logger, for example like this::
+the ``django.db.backends`` logger (example follows).
+
+Please keep in mind that :ref:`Map/Reduce <mapreduce>` and aggregation queries
+are not logged because they involve lots of JavaScript code (aggregations are
+implemented with `group` internally).
+
+::
 
    LOGGING = {
        'version' : 1,

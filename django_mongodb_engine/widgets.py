@@ -4,6 +4,10 @@ from django.db import models
 
 from django.utils.safestring import mark_safe
 
+import warnings
+warnings.warn("django_mongodb_engine.widgets is deprecated and will be removed "
+              "in version 0.5", DeprecationWarning)
+
 class DictWidget(widgets.Widget):
     def value_from_datadict(self, data, files, name):
         if data.has_key("%s_rows" % name):

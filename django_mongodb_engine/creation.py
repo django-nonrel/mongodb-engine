@@ -1,20 +1,13 @@
-from pymongo.collection import Collection
+from pymongo import ASCENDING, DESCENDING
+from django.db.backends.creation import TEST_DATABASE_PREFIX
+from django.core.exceptions import ImproperlyConfigured
 from djangotoolbox.db.base import NonrelDatabaseCreation
-
-TEST_DATABASE_PREFIX = 'test_'
+from .utils import first
 
 class DatabaseCreation(NonrelDatabaseCreation):
-    """Database Creation class.
-    """
-    data_types = {
-        'DateTimeField':                'datetime',
-        'DateField':                    'date',
-        'TimeField':                    'time',
-        'FloatField':                   'float',
+    data_types = dict(NonrelDatabaseCreation.data_types, **{
         'EmailField':                   'unicode',
         'URLField':                     'unicode',
-        'BooleanField':                 'bool',
-        'NullBooleanField':             'bool',
         'CharField':                    'unicode',
         'CommaSeparatedIntegerField':   'unicode',
         'IPAddressField':               'unicode',
@@ -34,150 +27,83 @@ class DatabaseCreation(NonrelDatabaseCreation):
         'RelatedAutoField':             'objectid',
         'OneToOneField':                'int',
         'DecimalField':                 'float',
-    }
+    })
 
-    def sql_indexes_for_field(self, model, field, **kwargs):
-        """Create Indexes for field in model. Returns an empty List. (Django Compatibility)
+    def sql_indexes_for_model(self, model, termstyle):
+        """ Creates indexes for all fields in ``model``. """
+        meta = model._meta
 
-        :param model: The model containing field
-        :param f: The field to create indexes to.
-        :param \*\*kwargs: Extra kwargs not used in this engine.
-        """
+        if not meta.managed or meta.proxy:
+            return []
 
-        if field.db_index:
-            kwargs = {}
-            opts = model._meta
-            col = getattr(self.connection.db_connection, opts.db_table)
-            descending = getattr(opts, "descending_indexes", [])
-            direction =  (field.attname in descending and -1) or 1
-            kwargs["unique"] = field.unique
-            col.ensure_index([(field.name, direction)], **kwargs)
-        return []
+        print "Installing index for %s.%s model" % (meta.app_label, meta.object_name)
 
-    def index_fields_group(self, model, group, **kwargs):
-        """Create indexes for fields in group that belong to model.
-            This method is used to do compound indexes.
+        descending_indexes = set(getattr(model._meta, 'descending_indexes', ()))
+        collection = self.connection.get_collection(meta.db_table)
 
-        :param model: The model containing the fields inside group.
-        :param group: A ``dict`` containing the fields map to index.
-        :param \*\*kwargs: Extra kwargs not used in this engine.
+        # Ordinary indexes
+        for field in meta.local_fields:
+            if field.name in descending_indexes or field.column in descending_indexes:
+                direction = DESCENDING
+            else:
+                if not field.db_index:
+                    continue
+                direction = ASCENDING
+            collection.ensure_index([(field.column, direction)], unique=field.unique)
 
-
-        Example
-
-            >>> class TestFieldModel(Task):
-            ...
-            ...     class MongoMeta:
-            ...         index_together = [{
-            ...             'fields' : [ ('title', False), 'mlist']
-            ...             }]
-            ...
-        """
-        if not isinstance(group, dict):
-            raise TypeError("Indexes group has to be instance of dict")
-
-        fields = group.pop("fields")
-
-        if not isinstance(fields, (list, tuple)):
-            raise TypeError("index_together fields has to be instance of list")
-
-        opts = model._meta
-        col = getattr(self.connection.db_connection, opts.db_table)
-        checked_fields = []
-        model_fields = [ f.name for f in opts.local_fields]
-
-        for field in fields:
-            field_name = field
-            direction = 1
-            if isinstance(field, (tuple, list)):
-                field_name = field[0]
-                direction = (field[1] and 1) or -1
-            if not field_name in model_fields:
+        field_names = set(field.name for field in meta.local_fields)
+        def create_compound_indexes(indexes, **kwargs):
+            if not indexes:
+                return
+            indexes = [(index if isinstance(index, tuple) else (index, ASCENDING))
+                       for index in indexes]
+            invalid = first(lambda (name, direction): name not in field_names,
+                            indexes)
+            if invalid is not None:
                 from django.db.models.fields import FieldDoesNotExist
-                raise FieldDoesNotExist('%s has no field named %r' % (opts.object_name, field_name))
-            checked_fields.append((field_name, direction))
-        col.ensure_index(checked_fields, **group)
+                raise FieldDoesNotExist("%r has no field named %r" %
+                                        (meta.object_name, invalid))
+            collection.ensure_index(indexes, **kwargs)
 
-    def sql_indexes_for_model(self, model, *args, **kwargs):
-        """Creates ``model`` indexes.
+        # Django unique_together indexes
+        for indexes in getattr(meta, 'unique_together', []):
+            create_compound_indexes(indexes, unique=True)
 
-        :param model: The model containing the fields inside group.
-        :param \*args: Extra args not used in this engine.
-        :param \*\*kwargs: Extra kwargs not used in this engine.
-        """
-        if not model._meta.managed or model._meta.proxy:
-            return []
-        fields = [f for f in model._meta.local_fields if f.db_index]
-        if not fields and not hasattr(model._meta, "index_together") and not hasattr(model._meta, "unique_together"):
-            return []
-        print "Installing index for %s.%s model" % (model._meta.app_label, model._meta.object_name)
-        for field in fields:
-            self.sql_indexes_for_field(model, field)
-        for group in getattr(model._meta, "index_together", []):
-            self.index_fields_group(model, group)
+        # MongoDB compound indexes
+        index_together = getattr(meta, 'index_together', [])
+        if index_together:
+            if isinstance(index_together[0], dict):
+                # assume index_together = [{'fields' : [...], ...}]
+                for args in index_together:
+                    kwargs = args.copy()
+                    create_compound_indexes(kwargs.pop('fields'), **kwargs)
+            else:
+                # assume index_together = ['foo', 'bar', ('spam', -1), etc]
+                create_compound_indexes(index_together)
 
-        #unique_together support
-        unique_together = getattr(model._meta, "unique_together", [])
-        # Django should do this, I just wanted to be REALLY sure.
-        if len(unique_together) > 0 and isinstance(unique_together[0], basestring):
-            unique_together = (unique_together,)
-        for fields in unique_together:
-            group = { "fields" : fields, "unique" : True}
-            self.index_fields_group(model, group)
         return []
 
-    def sql_create_model(self, model, *args, **kwargs):
-        """Creates the collection for model. Mostly used for capped collections.
-
-        :param model: The model that should be created.
-        :param \*args: Extra args not used in this engine.
-        :param \*\*kwargs: Extra kwargs not used in this engine.
-
-        Example
-
-            >>> class TestFieldModel(Task):
-            ...
-            ...     class MongoMeta:
-            ...         capped = True
-            ...         collection_max = 100000
-            ...         collection_size = 10
-        """
-        opts = model._meta
+    def sql_create_model(self, model, *unused):
+        """ Creates the collection for model. Mostly used for capped collections. """
         kwargs = {}
-        kwargs["capped"] = getattr(opts, "capped", False)
-        if hasattr(opts, "collection_max") and opts.collection_max:
-            kwargs["max"] = opts.collection_max
-        if hasattr(opts, "collection_size") and opts.collection_size:
-            kwargs["size"] = opts.collection_size
-        col = Collection(self.connection.db_connection, model._meta.db_table, **kwargs)
+        for option in ('capped', 'collection_max', 'collection_size'):
+            x = getattr(model._meta, option, None)
+            if x: kwargs[option] = x
+        self.connection.get_collection(model._meta.db_table, **kwargs)
         return [], {}
 
     def set_autocommit(self):
-        "Make sure a connection is in autocommit mode."
-        pass
+        """ There's no such thing in MongoDB """
 
     def create_test_db(self, verbosity=1, autoclobber=False):
-        # No need to create databases in mongoDB :)
+        # No need to create databases in MongoDB :)
         # but we can make sure that if the database existed is emptied
-        if self.connection.settings_dict.get('TEST_NAME'):
-            test_database_name = self.connection.settings_dict['TEST_NAME']
-        elif 'NAME' in self.connection.settings_dict:
-            test_database_name = TEST_DATABASE_PREFIX + self.connection.settings_dict['NAME']
-        elif 'DATABASE_NAME' in self.connection.settings_dict:
-            if self.connection.settings_dict['DATABASE_NAME'].startswith(TEST_DATABASE_PREFIX):
-                # already been set up
-                # must be because this is called from a setUp() instead of something formal.
-                # suspect this Django 1.1
-                test_database_name = self.connection.settings_dict['DATABASE_NAME']
-            else:
-                test_database_name = TEST_DATABASE_PREFIX + \
-                  self.connection.settings_dict['DATABASE_NAME']
-        else:
-            raise ValueError("Name for test database not defined")
+
+        test_database_name = self._get_test_db_name()
 
         self.connection.settings_dict['NAME'] = test_database_name
         # This is important. Here we change the settings so that all other code
-        # things that the chosen database is now the test database. This means
+        # thinks that the chosen database is now the test database. This means
         # that nothing needs to change in the test code for working with
         # connections, databases and collections. It will appear the same as
         # when working with non-test code.
@@ -187,11 +113,9 @@ class DatabaseCreation(NonrelDatabaseCreation):
         # was never dropped at the end of the tests
         self._drop_database(test_database_name)
 
+        return test_database_name
+
     def destroy_test_db(self, old_database_name, verbosity=1):
-        """
-        Destroy a test database, prompting the user for confirmation if the
-        database already exists. Returns the name of the test database created.
-        """
         if verbosity >= 1:
             print "Destroying test database '%s'..." % self.connection.alias
         test_database_name = self.connection.settings_dict['NAME']
@@ -199,8 +123,4 @@ class DatabaseCreation(NonrelDatabaseCreation):
         self.connection.settings_dict['NAME'] = old_database_name
 
     def _drop_database(self, database_name):
-        """Drops the database with name database_name
-
-        :param database_name: The name of the database to drop.
-        """
-        self.connection._cursor().drop_database(database_name)
+        self.connection.drop_database(database_name)
