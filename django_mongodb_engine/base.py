@@ -121,9 +121,24 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
         user = self.settings_dict.get('USER', None)
         password = self.settings_dict.get('PASSWORD')
         self.db_name = self.settings_dict['NAME']
-        self.safe_inserts = self.settings_dict.get('SAFE_INSERTS', False)
-        self.wait_for_slaves = self.settings_dict.get('WAIT_FOR_SLAVES', 0)
-        slave_okay = self.settings_dict.get('SLAVE_OKAY', False)
+
+        options = {
+            'SAFE_INSERTS': False,
+            'WAIT_FOR_SLAVES': 0,
+            'SLAVE_OKAY': False,
+        }
+
+        options.update(self.settings_dict.get('OPTIONS', {}))
+
+        for option in options.keys():
+            if option in self.settings_dict:
+                import warnings
+                warnings.warn(
+                    'for %s please use the OPTIONS dictionary' % option, 
+                    DeprecationWarning
+                )
+
+                options[option] = self.settings_dict[option]
 
         def complain_unless(condition, message):
             if not condition:
@@ -144,10 +159,16 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
                 raise ImproperlyConfigured("If set, PORT must be an integer"
                                            " (got %r instead)" % port)
 
-        complain_unless(isinstance(self.safe_inserts, bool),
+        complain_unless(isinstance(options['SAFE_INSERTS'], bool),
             "If set, SAFE_INSERTS must be True or False")
-        complain_unless(isinstance(self.wait_for_slaves, int),
+        complain_unless(isinstance(options['SLAVE_OKAY'], bool),
+            "If set, SLAVE_OKAY must be True or False")
+        complain_unless(isinstance(options['WAIT_FOR_SLAVES'], int),
             "If set, WAIT_FOR_SLAVES must be an integer")
+
+        self.safe_inserts = options['SAFE_INSERTS']
+        self.wait_for_slaves = options['WAIT_FOR_SLAVES']
+        slave_okay = options['SLAVE_OKAY']
 
         self._connection = pymongo.Connection(host=host, port=port, slave_okay=slave_okay)
         self.db = self._connection[self.db_name]
