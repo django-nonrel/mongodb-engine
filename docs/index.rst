@@ -33,7 +33,14 @@ Database setup is easy (see also: `Django database setup docs`_)::
          # optional:
          'HOST' : 'localhost',
          'PORT' : 27017,
-         'SUPPORTS_TRANSACTIONS' : False
+         'SUPPORTS_TRANSACTIONS' : False,
+         # uncommon settings (high traffic|scalability|durability requirements)
+         'OPTIONS' : {
+             'SAFE_INSERTS' : False, # fsync after insert / update
+             'SLAVE_OKAY' : False,   # allow connecting to a slave
+             'WAIT_FOR_SLAVES' :  0  # wait for writes to be present on
+                                     # WAIT_FOR_SLAVES hosts (including master)
+         }
       }
    }
 
