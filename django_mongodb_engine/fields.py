@@ -38,7 +38,6 @@ class GridFSField(models.CharField):
         kwargs["max_length"] = 255
         super(GridFSField, self).__init__(*args, **kwargs)
 
-
     def contribute_to_class(self, cls, name):
         super(GridFSField, self).contribute_to_class(cls, name)
 
@@ -71,7 +70,6 @@ class GridFSField(models.CharField):
                 setattr(self, att_val_name, val)
 
         setattr(cls, self.attname, property(_get, _set))
-
 
     def db_type(self, connection):
         return "gridfs"

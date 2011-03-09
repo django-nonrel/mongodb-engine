@@ -88,7 +88,8 @@ class DatabaseCreation(NonrelDatabaseCreation):
         kwargs = {}
         for option in ('capped', 'collection_max', 'collection_size'):
             x = getattr(model._meta, option, None)
-            if x: kwargs[option] = x
+            if x:
+                kwargs[option] = x
         self.connection.get_collection(model._meta.db_table, **kwargs)
         return [], {}
 

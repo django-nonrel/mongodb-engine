@@ -139,7 +139,7 @@ class MongoQuery(NonrelQuery):
 
             if isinstance(child, Node):
                 if filters.connector is OR and child.connector is OR:
-                   if len(child.children) > 1:
+                    if len(child.children) > 1:
                         raise DatabaseError("Nested ORs are not supported")
 
                 if filters.connector is OR and filters.negated:

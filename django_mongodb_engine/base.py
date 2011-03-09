@@ -134,7 +134,7 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
             if option in self.settings_dict:
                 import warnings
                 warnings.warn(
-                    'for %s please use the OPTIONS dictionary' % option, 
+                    'for %s please use the OPTIONS dictionary' % option,
                     DeprecationWarning
                 )
 

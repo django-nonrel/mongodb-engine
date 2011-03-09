@@ -65,7 +65,7 @@ class CollectionDebugWrapper(object):
         return wrapper
 
     find = logging_wrapper('find')
-    save =  logging_wrapper('save')
+    save = logging_wrapper('save')
     remove = logging_wrapper('remove')
     update = logging_wrapper('update', npositional=2)
 
