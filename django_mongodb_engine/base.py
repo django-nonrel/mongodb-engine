@@ -126,6 +126,7 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
             'SAFE_INSERTS': False,
             'WAIT_FOR_SLAVES': 0,
             'SLAVE_OKAY': False,
+            'TZ_AWARE': False
         }
 
         options.update(self.settings_dict.get('OPTIONS', {}))
@@ -165,12 +166,18 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
             "If set, SLAVE_OKAY must be True or False")
         complain_unless(isinstance(options['WAIT_FOR_SLAVES'], int),
             "If set, WAIT_FOR_SLAVES must be an integer")
+        complain_unless(isinstance(options['TZ_AWARE'], bool),
+            "If set, TZ_AWARE must be an True or False")
 
         self.safe_inserts = options['SAFE_INSERTS']
         self.wait_for_slaves = options['WAIT_FOR_SLAVES']
         slave_okay = options['SLAVE_OKAY']
+        tz_aware = options['TZ_AWARE']
 
-        self._connection = pymongo.Connection(host=host, port=port, slave_okay=slave_okay)
+        if pymongo.version >= '1.8':
+            self._connection = pymongo.Connection(host=host, port=port, slave_okay=slave_okay, tz_aware=tz_aware)
+        else:
+            self._connection = pymongo.Connection(host=host, port=port, slave_okay=slave_okay)
         self.db = self._connection[self.db_name]
         if user and password:
             complain_unless(self.db.authenticate(user, password),
