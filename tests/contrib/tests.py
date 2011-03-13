@@ -5,7 +5,7 @@ from django_mongodb_engine.contrib.mapreduce import MapReduceResult
 from .utils import TestCase
 from .models import *
 
-class SimpleTest(TestCase):
+class MapReduceTests(TestCase):
     def test_map_reduce(self):
         mapfunc = """
             function map() {
@@ -85,20 +85,22 @@ class SimpleTest(TestCase):
         self.assert_(not hasattr(obj, 'id') and not hasattr(obj, '_id'))
         self.assertEqual(obj, MapReduceModelWithCustomPrimaryKey(pk='bar', data='yo?'))
 
-    def test_raw_query(self):
+class RawQueryTests(TestCase):
+    def setUp(self):
         for i in xrange(10):
             MapReduceModel.objects.create(n=i, m=i*2)
 
+    def test_raw_query(self):
         len(MapReduceModel.objects.raw_query({'n' : {'$gt' : 5}})) # 11
         self.assertEqual(
             list(MapReduceModel.objects.filter(n__gt=5)),
             list(MapReduceModel.objects.raw_query({'n' : {'$gt' : 5}}))
         )
-
         self.assertEqual(
             list(MapReduceModel.objects.filter(n__lt=9, n__gt=5)),
             list(MapReduceModel.objects.raw_query({'n' : {'$lt' : 9}}).filter(n__gt=5)))
 
+    def test_raw_update(self):
         from django.db.models import Q
         MapReduceModel.objects.raw_update(Q(n__lte=3), {'$set' : {'n' : -1}})
         self.assertEqual([o.n for o in MapReduceModel.objects.all()],
@@ -109,7 +111,6 @@ class SimpleTest(TestCase):
 
 
 class FullTextTest(TestCase):
-
     def test_simple_fulltext(self):
         blog = Post(content="simple, full text.... search? test")
         blog.save()
