@@ -3,12 +3,14 @@
     plus tests for django-mongodb-engine specific features
 """
 import datetime
+from django.db import connections
 from django.db.models import F, Q
 from django.db.utils import DatabaseError
 from django.contrib.sites.models import Site
 
 from pymongo.objectid import ObjectId, InvalidId
 from pymongo import ASCENDING, DESCENDING
+from django_mongodb_engine.base import DatabaseWrapper
 from django_mongodb_engine.serializer import LazyModelInstance
 
 from .utils import TestCase, get_collection
@@ -305,8 +307,10 @@ class QueryTests(TestCase):
              [datetime.date(year=2001, month=1, day=2)])
         )
 
+
 class MongoDBEngineTests(TestCase):
     """ Tests for mongodb-engine specific features """
+
     def test_mongometa(self):
         self.assertEqual(Entry._meta.descending_indexes, ['title'])
 
@@ -326,7 +330,6 @@ class MongoDBEngineTests(TestCase):
 
     def test_lazy_model_instance_in_list(self):
         from django.conf import settings
-        from django.db import connections
         from bson.errors import InvalidDocument
 
         obj = TestFieldModel()
@@ -364,6 +367,92 @@ class MongoDBEngineTests(TestCase):
         for obj in [['foo'], {'bar' : 'buzz'}]:
             id = DynamicModel.objects.create(gen=obj).id
             self.assertEqual(DynamicModel.objects.get(id=id).gen, obj)
+
+class DatabaseOptionTests(TestCase):
+    """ Tests for MongoDB-specific database options """
+
+    class custom_database_wrapper(object):
+        def __init__(self, settings, **kwargs):
+            self.new_wrapper = DatabaseWrapper(
+                dict(connections['default'].settings_dict, **settings),
+                **kwargs
+            )
+
+        def __enter__(self):
+            self._old_connection = connections._connections['default']
+            connections._connections['default'] = self.new_wrapper
+            self.new_wrapper._connect()
+            return self.new_wrapper
+
+        def __exit__(self, *exc_info):
+            self.new_wrapper._connection.disconnect()
+            connections._connections['default'] = self._old_connection
+
+    def test_pymongo_connection_args(self):
+        class foodict(dict):
+            pass
+
+        with self.custom_database_wrapper({
+            'OPTIONS' : {
+                'SLAVE_OKAY' : True,
+                'NETWORK_TIMEOUT' : 42,
+                'TZ_AWARE' : True,
+                'DOCUMENT_CLASS' : foodict
+            }
+        }) as connection:
+            for name, value in connection.settings_dict['OPTIONS'].iteritems():
+                name = '_Connection__%s' % name.lower()
+                self.assertEqual(connection._connection.__dict__[name], value)
+
+    def test_operation_flags(self):
+        from textwrap import dedent
+        from pymongo.collection import Collection as PyMongoCollection
+
+        def test_setup(flags, **method_kwargs):
+            class Collection(PyMongoCollection):
+                _method_kwargs = {}
+                for name in method_kwargs:
+                    exec dedent('''
+                    def {0}(self, *a, **k):
+                        assert '{0}' not in self._method_kwargs
+                        self._method_kwargs['{0}'] = k
+                        super(self.__class__, self).{0}(*a, **k)'''.format(name))
+
+            options = {'OPTIONS' : {'OPERATIONS' : flags}}
+            with self.custom_database_wrapper(options, collection_class=Collection):
+                Simple.objects.create(a=42)
+                Simple.objects.update(a=42)
+                Simple.objects.all().delete()
+
+            for name in method_kwargs:
+                self.assertEqual(method_kwargs[name],
+                                 Collection._method_kwargs[name])
+
+        test_setup({}, save={}, update={'multi' : True}, remove={})
+        test_setup(
+            {'safe' : True, 'w' : True},
+            save={'safe' : True, 'w' : True},
+            update={'safe' : True, 'w' : True, 'multi' : True},
+            remove={'safe' : True, 'w' : True}
+        )
+        test_setup(
+            {'delete' : {'safe' : True}, 'update' : {}},
+            save={},
+            update={'multi' : True},
+            remove={'safe' : True}
+        )
+        test_setup(
+            {'insert' : {'fsync' : True}, 'delete' : {'w' : True, 'fsync' : True}},
+            save={},
+            update={'multi' : True},
+            remove={'w' : True, 'fsync' : True}
+        )
+
+    def test_legacy_flags(self):
+        options = {'SAFE_INSERTS' : True, 'WAIT_FOR_SLAVES' : 5}
+        with self.custom_database_wrapper(options) as wrapper:
+            self.assertTrue(wrapper.operation_flags['save']['safe'])
+            self.assertEqual(wrapper.operation_flags['save']['w'], 5)
 
 class IndexTests(TestCase):
     def setUp(self):

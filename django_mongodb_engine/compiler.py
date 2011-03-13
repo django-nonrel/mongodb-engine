@@ -104,7 +104,8 @@ class MongoQuery(NonrelQuery):
 
     @safe_call
     def delete(self):
-        self.collection.remove(self._mongo_query)
+        options = self.connection.operation_flags.get('delete', {})
+        self.collection.remove(self._mongo_query, **options)
 
     def _get_results(self):
         fields = None
@@ -292,15 +293,9 @@ class SQLCompiler(NonrelCompiler):
                                  value.microsecond)
         return value
 
-    def insert_params(self):
-        conn = self.connection
-        params = {'safe': conn.safe_inserts}
-        if conn.wait_for_slaves:
-            params['w'] = conn.wait_for_slaves
-        return params
-
     def _save(self, data, return_id=False):
-        primary_key = self.collection.save(data, **self.insert_params())
+        options = self.connection.operation_flags.get('save', {})
+        primary_key = self.collection.save(data, **options)
         if return_id:
             return unicode(primary_key)
 
@@ -374,7 +369,8 @@ class SQLUpdateCompiler(NonrelUpdateCompiler, SQLCompiler):
     @safe_call
     def execute_raw(self, update_spec, multi=True):
         criteria = self.build_query()._mongo_query
-        return self.collection.update(criteria, update_spec, multi=multi)
+        options = self.connection.operation_flags.get('update', {})
+        return self.collection.update(criteria, update_spec, multi=multi, **options)
 
     def execute_sql(self, return_id=False):
         return self.execute_raw(*self._get_update_spec())

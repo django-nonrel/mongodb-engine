@@ -3,10 +3,14 @@ Changelog
 
 Version 0.4
 -----------
-* GridFS storage backend
-* Fulltext search support
-* Query logging support
-* Numerous bug fixes and code improvements
+* GridFS storage backend TODO docs
+* Fulltext search support TODO docs
+* :ref:`Query debugging support <query-debugging>`
+* Database settings specific to MongoDB were moved into the ``OPTIONS`` dict.
+  (see :ref:`settings`)
+  Furthermore, the `SAFE_INSERTS` and `WAIT_FOR_SLAVES` flags are now deprecated
+  in favor of the new ``OPERATIONS`` setting (see :ref:`operations-setting`)
+* Numerous bug fixes, new tests, code improvements and deprecations
 
 Version 0.3
 -----------

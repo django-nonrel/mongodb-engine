@@ -39,7 +39,7 @@ def get_default_database():
     return get_databases()[0]
 
 def get_default_db_connection():
-    return connections[get_default_database()].db
+    return connections[get_default_database()].database
 
 class CollectionDebugWrapper(object):
     def __init__(self, collection):

@@ -23,7 +23,7 @@ or use ``pip`` to install the latest release from PyPI::
 
    pip install django-mongodb-engine
 
-Database setup is easy (see also: `Django database setup docs`_)::
+Database setup is easy (see also: `Django database setup docs`_ and :ref:`settings`)::
 
    DATABASES = {
       'default' : {
@@ -32,15 +32,7 @@ Database setup is easy (see also: `Django database setup docs`_)::
 
          # optional:
          'HOST' : 'localhost',
-         'PORT' : 27017,
-         'SUPPORTS_TRANSACTIONS' : False,
-         # uncommon settings (high traffic|scalability|durability requirements)
-         'OPTIONS' : {
-             'SAFE_INSERTS' : False, # fsync after insert / update
-             'SLAVE_OKAY' : False,   # allow connecting to a slave
-             'WAIT_FOR_SLAVES' :  0  # wait for writes to be present on
-                                     # WAIT_FOR_SLAVES hosts (including master)
-         }
+         'PORT' : 27017
       }
    }
 
@@ -61,4 +53,5 @@ This might be interesting, too:
    Lists and Dicts Instead of JOINS <lists-and-dicts>
    cool-stuff
    faq
+   settings
    changelog

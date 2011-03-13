@@ -3,7 +3,9 @@ from django.db.backends.signals import connection_created
 from django.conf import settings
 from django.utils.functional import wraps
 
-import pymongo
+from pymongo.connection import Connection
+from pymongo.collection import Collection
+
 from .creation import DatabaseCreation
 from .client import DatabaseClient
 from .utils import CollectionDebugWrapper
@@ -17,9 +19,6 @@ from djangotoolbox.db.base import (
 )
 
 from datetime import datetime
-
-class ImproperlyConfiguredWarning(Warning):
-    pass
 
 class DatabaseFeatures(NonrelDatabaseFeatures):
     string_based_auto_field = True
@@ -45,12 +44,12 @@ class DatabaseOperations(NonrelDatabaseOperations):
         all `tables`. No SQL in MongoDB, so just drop all tables here and
         return an empty list.
         """
-        tables = self.connection.db.collection_names()
+        tables = self.connection.collection_names()
         for table in tables:
             if table.startswith('system.'):
-                # no do not system collections
+                # do not try to drop system collections
                 continue
-            self.connection.db.drop_collection(table)
+            self.connection.database.drop_collection(table)
         return []
 
     def value_to_db_date(self, value):
@@ -85,6 +84,7 @@ def requires_connection(method):
 
 class DatabaseWrapper(NonrelDatabaseWrapper):
     def __init__(self, *args, **kwargs):
+        self.collection_class = kwargs.pop('collection_class', Collection)
         super(DatabaseWrapper, self).__init__(*args, **kwargs)
         self.features = DatabaseFeatures(self)
         self.ops = DatabaseOperations(self)
@@ -92,14 +92,11 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
         self.creation = DatabaseCreation(self)
         self.introspection = DatabaseIntrospection(self)
         self.validation = DatabaseValidation(self)
-
         self._connected = False
-        self.safe_inserts = False
-        self.wait_for_slaves = 0
 
     @requires_connection
     def get_collection(self, name, **kwargs):
-        collection = pymongo.collection.Collection(self.db, name, **kwargs)
+        collection = self.collection_class(self.database, name, **kwargs)
         if settings.DEBUG:
             collection = CollectionDebugWrapper(collection)
         return collection
@@ -110,78 +107,56 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
 
     @requires_connection
     def collection_names(self):
-        return self.db.collection_names()
+        return self.database.collection_names()
 
     def _connect(self):
-        host = self.settings_dict['HOST'] or None
-        port = self.settings_dict.get('PORT', None) or None
-        # If PORT is not specified it is set to '' which makes PyMongo fail.
-        # Even if PyMongo sets the port to 27017 I think we should ensure it
-        # is never '' (but None instead) and let PyMongo do the change.
-        user = self.settings_dict.get('USER', None)
-        password = self.settings_dict.get('PASSWORD')
-        self.db_name = self.settings_dict['NAME']
-
-        options = {
-            'SAFE_INSERTS': False,
-            'WAIT_FOR_SLAVES': 0,
-            'SLAVE_OKAY': False,
-            'TZ_AWARE': False
-        }
-
-        options.update(self.settings_dict.get('OPTIONS', {}))
-
-        for option in options.keys():
-            if option in self.settings_dict:
-                import warnings
-                warnings.warn(
-                    'for %s please use the OPTIONS dictionary' % option,
-                    DeprecationWarning
-                )
-
-                options[option] = self.settings_dict[option]
-
-        def complain_unless(condition, message):
-            if not condition:
-                raise ImproperlyConfigured(message)
-
-        if host is not None:
-            if pymongo.version >= '1.8':
-                complain_unless(isinstance(host, (basestring, list)),
-                    "If set, HOST must be a string or a list of strings")
-            else:
-                complain_unless(isinstance(host, basestring),
-                    "If set, HOST must be a string")
+        settings = self.settings_dict.copy()
+        db_name = settings.pop('NAME')
+        host = settings.pop('HOST', None)
+        port = settings.pop('PORT', None)
+        user = settings.pop('USER', None)
+        password = settings.pop('PASSWORD')
+        options = settings.pop('OPTIONS', {})
 
         if port:
             try:
                 port = int(port)
             except ValueError:
-                raise ImproperlyConfigured("If set, PORT must be an integer"
-                                           " (got %r instead)" % port)
-
-        complain_unless(isinstance(options['SAFE_INSERTS'], bool),
-            "If set, SAFE_INSERTS must be True or False")
-        complain_unless(isinstance(options['SLAVE_OKAY'], bool),
-            "If set, SLAVE_OKAY must be True or False")
-        complain_unless(isinstance(options['WAIT_FOR_SLAVES'], int),
-            "If set, WAIT_FOR_SLAVES must be an integer")
-        complain_unless(isinstance(options['TZ_AWARE'], bool),
-            "If set, TZ_AWARE must be an True or False")
-
-        self.safe_inserts = options['SAFE_INSERTS']
-        self.wait_for_slaves = options['WAIT_FOR_SLAVES']
-        slave_okay = options['SLAVE_OKAY']
-        tz_aware = options['TZ_AWARE']
-
-        if pymongo.version >= '1.8':
-            self._connection = pymongo.Connection(host=host, port=port, slave_okay=slave_okay, tz_aware=tz_aware)
+                raise ImproperlyConfigured("If set, PORT must be an integer "
+                                           "(got %r instead)" % port)
         else:
-            self._connection = pymongo.Connection(host=host, port=port, slave_okay=slave_okay)
-        self.db = self._connection[self.db_name]
+            # If PORT is not specified Django sets it to '' which makes
+            # PyMongo fail, so make sure it's None in that case
+            port = None
+
+        self.operation_flags = options.pop('OPERATIONS', {})
+        if not any(k in ['save', 'delete', 'update'] for k in self.operation_flags):
+            # flags apply to all operations
+            flags = self.operation_flags
+            self.operation_flags = {'save' : flags, 'delete' : flags, 'update' : flags}
+
+        # Compatibility to version < 0.4
+        if 'SAFE_INSERTS' in settings:
+            self.operation_flags['save']['safe'] = settings['SAFE_INSERTS']
+        if 'WAIT_FOR_SLAVES' in settings:
+            self.operation_flags['save']['w'] = settings['WAIT_FOR_SLAVES']
+
+        # lower-case all remaining OPTIONS
+        for key, value in options.items():
+            options[key.lower()] = options.pop(key)
+
+        try:
+            self._connection = Connection(host=host, port=port, **options)
+            self.database = self._connection[db_name]
+        except TypeError:
+            import sys
+            exc_info = sys.exc_info()
+            raise ImproperlyConfigured, exc_info[1], exc_info[2]
+
         if user and password:
-            complain_unless(self.db.authenticate(user, password),
-                            "Invalid username or password")
+            if not self.database.authenticate(user, password):
+                raise ImproperlyConfigured("Invalid username or password")
+
         self._add_serializer()
         self._connected = True
         connection_created.send(sender=self.__class__, connection=self)
@@ -191,5 +166,5 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
                        'MONGODB_ENGINE_ENABLE_MODEL_SERIALIZATION']:
             if getattr(settings, option, False):
                 from .serializer import TransformDjango
-                self.db.add_son_manipulator(TransformDjango())
+                self.database.add_son_manipulator(TransformDjango())
                 return
