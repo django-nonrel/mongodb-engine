@@ -211,8 +211,7 @@ class SQLCompiler(NonrelCompiler):
     """
     query_class = MongoQuery
 
-    @property
-    def collection(self):
+    def get_collection(self):
         return self.connection.get_collection(self.query.get_meta().db_table)
 
     def _split_db_type(self, db_type):
@@ -294,8 +293,9 @@ class SQLCompiler(NonrelCompiler):
         return value
 
     def _save(self, data, return_id=False):
+        collection = self.get_collection()
         options = self.connection.operation_flags.get('save', {})
-        primary_key = self.collection.save(data, **options)
+        primary_key = collection.save(data, **options)
         if return_id:
             return unicode(primary_key)
 
@@ -368,9 +368,10 @@ class SQLUpdateCompiler(NonrelUpdateCompiler, SQLCompiler):
 
     @safe_call
     def execute_raw(self, update_spec, multi=True):
+        collection = self.get_collection()
         criteria = self.build_query()._mongo_query
         options = self.connection.operation_flags.get('update', {})
-        return self.collection.update(criteria, update_spec, multi=multi, **options)
+        return collection.update(criteria, update_spec, multi=multi, **options)
 
     def execute_sql(self, return_id=False):
         return self.execute_raw(*self._get_update_spec())
