@@ -1,7 +1,15 @@
 #!/usr/bin/python
+import os
 import sys
 import subprocess
 check_call = subprocess.check_call
+
+# Run some basic tests outside Django's test environment
+check_call(['python', '-c', 'from general.models import Blog\n'
+                            'Blog.objects.create()\n'
+                            'Blog.objects.all().delete()\n'
+                            'Blog.objects.update()'],
+           env=dict(os.environ, DJANGO_SETTINGS_MODULE='settings', PYTHONPATH='..'))
 
 import settings
 
