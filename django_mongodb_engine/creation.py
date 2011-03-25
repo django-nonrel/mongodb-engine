@@ -36,10 +36,15 @@ class DatabaseCreation(NonrelDatabaseCreation):
         if not meta.managed or meta.proxy:
             return []
 
-        print "Installing index for %s.%s model" % (meta.app_label, meta.object_name)
-
         descending_indexes = set(getattr(model._meta, 'descending_indexes', ()))
         collection = self.connection.get_collection(meta.db_table)
+
+        def ensure_index(*args, **kwargs):
+            if ensure_index.first_index:
+                print "Installing index for %s.%s model" % (meta.app_label, meta.object_name)
+                ensure_index.first_index = False
+            return collection.ensure_index(*args, **kwargs)
+        ensure_index.first_index = True
 
         # Ordinary indexes
         for field in meta.local_fields:
@@ -48,8 +53,11 @@ class DatabaseCreation(NonrelDatabaseCreation):
             else:
                 if not field.db_index:
                     continue
+                if field.column == '_id':
+                    # Indices on _id are automatically created
+                    continue
                 direction = ASCENDING
-            collection.ensure_index([(field.column, direction)], unique=field.unique)
+            ensure_index([(field.column, direction)], unique=field.unique)
 
         field_names = set(field.name for field in meta.local_fields)
         def create_compound_indexes(indexes, **kwargs):
@@ -63,7 +71,7 @@ class DatabaseCreation(NonrelDatabaseCreation):
                 from django.db.models.fields import FieldDoesNotExist
                 raise FieldDoesNotExist("%r has no field named %r" %
                                         (meta.object_name, invalid))
-            collection.ensure_index(indexes, **kwargs)
+            ensure_index(indexes, **kwargs)
 
         # Django unique_together indexes
         for indexes in getattr(meta, 'unique_together', []):
