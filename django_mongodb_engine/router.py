@@ -31,7 +31,7 @@ class MongoDBRouter(object):
         return self.model_app_is_managed(model) or self.model_is_managed(model)
 
     def db_for_read(self, model, **hints):
-        """Point all operations on mongodb models to a mongodb database"""
+        """Point all operations on MongoDB models to a MongoDB database"""
         if self.is_managed(model):
             return self.mongodb_database
 
@@ -42,12 +42,11 @@ class MongoDBRouter(object):
         return self.is_managed(obj2) or None
 
     def allow_syncdb(self, db, model):
-        """Make sure that a mongodb model appears on a mongodb database"""
+        """Make sure that a MongoDB model appears on a MongoDB database"""
         if db in self.mongodb_databases:
             return self.is_managed(model)
         elif self.is_managed(model):
             return db in self.mongodb_databases
-
         return None
 
     def valid_for_db_engine(self, driver, model):
