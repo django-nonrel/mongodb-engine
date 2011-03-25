@@ -111,12 +111,14 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
 
     def _connect(self):
         settings = self.settings_dict.copy()
-        db_name = settings.pop('NAME')
-        host = settings.pop('HOST', None)
-        port = settings.pop('PORT', None)
-        user = settings.pop('USER', None)
-        password = settings.pop('PASSWORD')
-        options = settings.pop('OPTIONS', {})
+        def pop(name, default=None):
+            return settings.pop(name) or default
+        db_name = pop('NAME')
+        host = pop('HOST')
+        port = pop('PORT')
+        user = pop('USER')
+        password = pop('PASSWORD')
+        options = pop('OPTIONS', {})
 
         if port:
             try:
@@ -124,10 +126,6 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
             except ValueError:
                 raise ImproperlyConfigured("If set, PORT must be an integer "
                                            "(got %r instead)" % port)
-        else:
-            # If PORT is not specified Django sets it to '' which makes
-            # PyMongo fail, so make sure it's None in that case
-            port = None
 
         self.operation_flags = options.pop('OPERATIONS', {})
         if not any(k in ['save', 'delete', 'update'] for k in self.operation_flags):
