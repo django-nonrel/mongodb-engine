@@ -17,5 +17,8 @@ def skip_all_except(*tests):
             return type.__new__(cls, name, bases, dict)
     return meta
 
+def skip(test):
+    pass
+
 def get_collection(model):
     return connections['default'].get_collection(model._meta.db_table)
