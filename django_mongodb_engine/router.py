@@ -4,7 +4,7 @@ from django.core.exceptions import ImproperlyConfigured
 from django_mongodb_engine.utils import get_databases
 
 def model_label(model):
-    return '%s.%s' % (model._meta.app_label, model._meta.module_name)
+    return '%s.%s' % (model._meta.app_label, model._meta.object_name)
 
 class MongoDBRouter(object):
     """
