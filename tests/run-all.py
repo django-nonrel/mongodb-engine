@@ -4,6 +4,8 @@ import sys
 import subprocess
 check_call = subprocess.check_call
 
+short = 'short' in sys.argv
+
 # Run some basic tests outside Django's test environment
 check_call(['python', '-c', 'from general.models import Blog\n'
                             'Blog.objects.create()\n'
@@ -13,9 +15,10 @@ check_call(['python', '-c', 'from general.models import Blog\n'
 
 import settings
 
-check_call(['./manage.py', 'test'] + settings.INSTALLED_APPS)
+failfast = ['--failfast'] if short else []
+check_call(['./manage.py', 'test'] + settings.INSTALLED_APPS + failfast)
 
-if 'short' in sys.argv:
+if short:
     exit()
 
 check_call(['./manage.py', 'syncdb', '--noinput'])
@@ -26,6 +29,10 @@ check_call(['./manage.py', 'test', '--settings', 'settings_dbindexer']
 
 check_call(['./manage.py', 'test', '--settings', 'settings_debug']
            + settings.INSTALLED_APPS)
+
+import settings_slow_tests
+check_call(['./manage.py', 'test', '--settings', 'settings_slow_tests']
+           + settings_slow_tests.INSTALLED_APPS)
 
 #import settings_sqlite
 #check_call(['./manage.py --settings settings_sqlite', 'test']

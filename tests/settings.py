@@ -1,13 +1,12 @@
 DATABASES = {
     'default' : {
         'ENGINE': 'django_mongodb_engine',
-        'NAME': 'test',
-        'USER': '',
-        'PASSWORD': '',
-        'HOST': 'localhost',
-        'PORT': '27017',
-        'SUPPORTS_TRANSACTIONS': False,
+        'NAME' : 'test'
     },
+    'other' : {
+        'ENGINE' : 'django_mongodb_engine',
+        'NAME' : 'test2'
+    }
 }
 
 INSTALLED_APPS = ['djangotoolbox', 'general', 'embedded', 'or_lookups',
