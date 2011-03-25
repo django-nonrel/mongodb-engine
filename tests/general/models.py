@@ -3,7 +3,7 @@ from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 from djangotoolbox.fields import ListField, DictField, SetField, RawField
 
-ON_SQLITE = settings.DATABASES['default']['ENGINE'] == 'sqlite3'
+ON_SQLITE = 'sqlite' in settings.DATABASES['default']['ENGINE']
 
 class Blog(models.Model):
     title = models.CharField(max_length=200, db_index=True)
@@ -48,10 +48,10 @@ class DateModel(models.Model):
         _datelist_default = []
         datelist = ListField(models.DateField(), default=_datelist_default)
 
-class DynamicModel(models.Model):
-    gen = RawField()
-
 if not ON_SQLITE:
+    class DynamicModel(models.Model):
+        gen = RawField()
+
     class TestFieldModel(models.Model):
         title = models.CharField(max_length=200)
         mlist = ListField()
@@ -65,7 +65,3 @@ if not ON_SQLITE:
 
         class MongoMeta:
             index_together = [{'fields' : [ ('title', -1), 'mlist']}]
-
-else:
-    class TestFieldModel(models.Model):
-        pass
