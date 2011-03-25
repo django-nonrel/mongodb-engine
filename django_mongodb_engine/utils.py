@@ -1,5 +1,7 @@
 import re
 import time
+
+from django.core.exceptions import ImproperlyConfigured
 from django.conf import settings
 from django.db import connections
 from django.db.backends.util import logger
