@@ -69,33 +69,33 @@ class QueryTests(TestCase):
         now = datetime.datetime.now()
         before = now - datetime.timedelta(days=1)
 
-        entry1 = Entry.objects.create(title="entry 1", date_published=now)
-        entry2 = Entry.objects.create(title="entry 2", date_published=before)
+        entry1 = Post.objects.create(title="entry 1", date_published=now)
+        entry2 = Post.objects.create(title="entry 2", date_published=before)
 
-        self.assertQuerysetEqual(Entry.objects.order_by('-date_published'),
+        self.assertQuerysetEqual(Post.objects.order_by('-date_published'),
                                  [entry1, entry2])
-        self.assertQuerysetEqual(Entry.objects.order_by('date_published'),
+        self.assertQuerysetEqual(Post.objects.order_by('date_published'),
                                  [entry2, entry1])
 
     def test_skip_limit(self):
         now = datetime.datetime.now()
         before = now - datetime.timedelta(days=1)
 
-        Entry(title="entry 1", date_published=now).save()
-        Entry(title="entry 2", date_published=before).save()
-        Entry(title="entry 3", date_published=before).save()
+        Post(title="entry 1", date_published=now).save()
+        Post(title="entry 2", date_published=before).save()
+        Post(title="entry 3", date_published=before).save()
 
-        self.assertEqual(len(Entry.objects.order_by('-date_published')[:2]), 2)
+        self.assertEqual(len(Post.objects.order_by('-date_published')[:2]), 2)
         # With step
-        self.assertEqual(len(Entry.objects.order_by('date_published')[1:2:1]), 1)
-        self.assertEqual(len(Entry.objects.order_by('date_published')[1:2]), 1)
+        self.assertEqual(len(Post.objects.order_by('date_published')[1:2:1]), 1)
+        self.assertEqual(len(Post.objects.order_by('date_published')[1:2]), 1)
 
     def test_values_query(self):
         blog = Blog.objects.create(title='fooblog')
-        entry = Entry.objects.create(blog=blog, title='footitle', content='foocontent')
-        entry2 = Entry.objects.create(blog=blog, title='footitle2', content='foocontent2')
+        entry = Post.objects.create(blog=blog, title='footitle', content='foocontent')
+        entry2 = Post.objects.create(blog=blog, title='footitle2', content='foocontent2')
         self.assertQuerysetEqual(
-            Entry.objects.values(),
+            Post.objects.values(),
             [{'blog_id' : blog.id, 'title' : u'footitle', 'id' : entry.id,
               'content' : u'foocontent', 'date_published' : None},
              {'blog_id' : blog.id, 'title' : u'footitle2', 'id' : entry2.id,
@@ -103,15 +103,15 @@ class QueryTests(TestCase):
             ]
         )
         self.assertQuerysetEqual(
-            Entry.objects.values('blog'),
+            Post.objects.values('blog'),
             [{'blog' : blog.id}, {'blog' : blog.id}]
         )
         self.assertQuerysetEqual(
-            Entry.objects.values_list('blog_id', 'date_published'),
+            Post.objects.values_list('blog_id', 'date_published'),
             [(blog.id, None), (blog.id, None)]
         )
         self.assertQuerysetEqual(
-            Entry.objects.values('title', 'content'),
+            Post.objects.values('title', 'content'),
             [{'title' : u'footitle', 'content' : u'foocontent'},
              {'title' : u'footitle2', 'content' : u'foocontent2'}]
         )
@@ -121,13 +121,13 @@ class QueryTests(TestCase):
         before = now + datetime.timedelta(days=1)
         after = now - datetime.timedelta(days=1)
 
-        entry1 = Entry.objects.create(title="entry 1", date_published=now)
-        entry2 = Entry.objects.create(title="entry 2", date_published=before)
-        entry3 = Entry.objects.create(title="entry 3", date_published=after)
+        entry1 = Post.objects.create(title="entry 1", date_published=now)
+        entry2 = Post.objects.create(title="entry 2", date_published=before)
+        entry3 = Post.objects.create(title="entry 3", date_published=after)
 
-        self.assertQuerysetEqual(Entry.objects.filter(date_published=now), [entry1])
-        self.assertQuerysetEqual(Entry.objects.filter(date_published__lt=now), [entry3])
-        self.assertQuerysetEqual(Entry.objects.filter(date_published__gt=now), [entry2])
+        self.assertQuerysetEqual(Post.objects.filter(date_published=now), [entry1])
+        self.assertQuerysetEqual(Post.objects.filter(date_published__lt=now), [entry3])
+        self.assertQuerysetEqual(Post.objects.filter(date_published__gt=now), [entry2])
 
     def test_mongodb_fields(self):
         t1 = TestFieldModel.objects.create(
@@ -150,50 +150,50 @@ class QueryTests(TestCase):
 
     def test_simple_foreign_keys(self):
         blog1 = Blog.objects.create(title="Blog")
-        entry1 = Entry.objects.create(title="entry 1", blog=blog1)
-        entry2 = Entry.objects.create(title="entry 2", blog=blog1)
-        self.assertEqual(Entry.objects.count(), 2)
-        for entry in Entry.objects.all():
+        entry1 = Post.objects.create(title="entry 1", blog=blog1)
+        entry2 = Post.objects.create(title="entry 2", blog=blog1)
+        self.assertEqual(Post.objects.count(), 2)
+        for entry in Post.objects.all():
             self.assertEqual(
                 blog1,
                 entry.blog
             )
         blog2 = Blog.objects.create(title="Blog")
-        Entry.objects.create(title="entry 3", blog=blog2)
-        self.assertQuerysetEqual(Entry.objects.filter(blog=blog1.pk),
+        Post.objects.create(title="entry 3", blog=blog2)
+        self.assertQuerysetEqual(Post.objects.filter(blog=blog1.pk),
                                  [entry1, entry2])
         # XXX Uncomment this if the corresponding Django has been fixed
-        #entry_without_blog = Entry.objects.create(title='x')
-        #self.assertEqual(Entry.objects.get(blog=None), entry_without_blog)
-        #self.assertEqual(Entry.objects.get(blog__isnull=True), entry_without_blog)
+        #entry_without_blog = Post.objects.create(title='x')
+        #self.assertEqual(Post.objects.get(blog=None), entry_without_blog)
+        #self.assertEqual(Post.objects.get(blog__isnull=True), entry_without_blog)
 
     def test_foreign_keys_bug(self):
         blog1 = Blog.objects.create(title="Blog")
-        entry1 = Entry.objects.create(title="entry 1", blog=blog1)
-        self.assertQuerysetEqual(Entry.objects.filter(blog=blog1), [entry1])
+        entry1 = Post.objects.create(title="entry 1", blog=blog1)
+        self.assertQuerysetEqual(Post.objects.filter(blog=blog1), [entry1])
 
     def test_update(self):
         blog1 = Blog.objects.create(title="Blog")
         blog2 = Blog.objects.create(title="Blog 2")
-        entry1 = Entry.objects.create(title="entry 1", blog=blog1)
+        entry1 = Post.objects.create(title="entry 1", blog=blog1)
 
-        Entry.objects.filter(pk=entry1.pk).update(blog=blog2)
-        self.assertQuerysetEqual(Entry.objects.filter(blog=blog2), [entry1])
+        Post.objects.filter(pk=entry1.pk).update(blog=blog2)
+        self.assertQuerysetEqual(Post.objects.filter(blog=blog2), [entry1])
 
-        Entry.objects.filter(blog=blog2).update(title="Title has been updated")
-        self.assertQuerysetEqual(Entry.objects.filter()[0].title, "Title has been updated")
+        Post.objects.filter(blog=blog2).update(title="Title has been updated")
+        self.assertQuerysetEqual(Post.objects.filter()[0].title, "Title has been updated")
 
-        Entry.objects.filter(blog=blog2).update(title="Last Update Test", blog=blog1)
-        self.assertQuerysetEqual(Entry.objects.filter()[0].title, "Last Update Test")
+        Post.objects.filter(blog=blog2).update(title="Last Update Test", blog=blog1)
+        self.assertQuerysetEqual(Post.objects.filter()[0].title, "Last Update Test")
 
-        self.assertEqual(Entry.objects.filter(blog=blog1).count(), 1)
+        self.assertEqual(Post.objects.filter(blog=blog1).count(), 1)
         self.assertEqual(Blog.objects.filter(title='Blog').count(), 1)
         Blog.objects.update(title='Blog')
         self.assertEqual(Blog.objects.filter(title='Blog').count(), 2)
 
     def test_update_id(self):
         self.assertRaisesRegexp(DatabaseError, "Can not modify _id",
-                                Entry.objects.update, id=ObjectId())
+                                Post.objects.update, id=ObjectId())
 
     def test_update_with_F(self):
         john = Person.objects.create(name='john', surname='nhoj', age=42)
@@ -267,26 +267,27 @@ class QueryTests(TestCase):
         )
 
     def test_simple_or_queries(self):
-        obj1 = Simple.objects.create(a=1)
-        obj2 = Simple.objects.create(a=1)
-        obj3 = Simple.objects.create(a=2)
-        obj4 = Simple.objects.create(a=3)
+        obj1 = Blog.objects.create(title='1')
+        obj2 = Blog.objects.create(title='1')
+        obj3 = Blog.objects.create(title='2')
+        obj4 = Blog.objects.create(title='3')
 
         self.assertQuerysetEqual(
-            Simple.objects.filter(a=1),
+            Blog.objects.filter(title='1'),
             [obj1, obj2]
         )
         self.assertQuerysetEqual(
-            Simple.objects.filter(a=1) | Simple.objects.filter(a=2),
+            Blog.objects.filter(title='1') | Blog.objects.filter(title='2'),
             [obj1, obj2, obj3]
         )
         self.assertQuerysetEqual(
-            Simple.objects.filter(Q(a=2) | Q(a=3)),
+            Blog.objects.filter(Q(title='2') | Q(title='3')),
             [obj3, obj4]
         )
 
         self.assertQuerysetEqual(
-            Simple.objects.filter(Q(Q(a__lt=4) & Q(a__gt=2)) | Q(a=1)).order_by('id'),
+            Blog.objects.filter(Q(Q(title__lt='4') & Q(title__gt='2'))
+                                  | Q(title='1')).order_by('id'),
             [obj1, obj2, obj4]
         )
 
@@ -312,18 +313,18 @@ class MongoDBEngineTests(TestCase):
     """ Tests for mongodb-engine specific features """
 
     def test_mongometa(self):
-        self.assertEqual(Entry._meta.descending_indexes, ['title'])
+        self.assertEqual(Post._meta.descending_indexes, ['title'])
 
     def test_lazy_model_instance(self):
-        l1 = LazyModelInstance(Entry, 'some-pk')
-        l2 = LazyModelInstance(Entry, 'some-pk')
+        l1 = LazyModelInstance(Post, 'some-pk')
+        l2 = LazyModelInstance(Post, 'some-pk')
 
         self.assertEqual(l1, l2)
 
-        obj = Entry(title='foobar')
+        obj = Post(title='foobar')
         obj.save()
 
-        l3 = LazyModelInstance(Entry, obj.id)
+        l3 = LazyModelInstance(Post, obj.id)
         self.assertEqual(l3._wrapped, None)
         self.assertEqual(obj, l3)
         self.assertNotEqual(l3._wrapped, None)
@@ -351,13 +352,13 @@ class MongoDBEngineTests(TestCase):
         for x in ('year', 'month', 'day'):
             key = 'date_published__%s' % x
             self.assertRaisesRegexp(DatabaseError, "MongoDB does not support year/month/day queries",
-                                    lambda: Entry.objects.get(**{key : 1}))
+                                    lambda: Post.objects.get(**{key : 1}))
 
     def test_nice_int_objectid_exception(self):
         msg = "AutoField \(default primary key\) values must be strings " \
               "representing an ObjectId on MongoDB \(got %r instead\)"
         self.assertRaisesRegexp(InvalidId, msg % u'helloworld...',
-                                Simple.objects.create, id='helloworldwhatsup')
+                                Blog.objects.create, id='helloworldwhatsup')
         self.assertRaisesRegexp(
             InvalidId, (msg % u'5') + ". Please make sure your SITE_ID contains a valid ObjectId.",
             Site.objects.get, id='5'
@@ -420,9 +421,9 @@ class DatabaseOptionTests(TestCase):
 
             options = {'OPTIONS' : {'OPERATIONS' : flags}}
             with self.custom_database_wrapper(options, collection_class=Collection):
-                Simple.objects.create(a=42)
-                Simple.objects.update(a=42)
-                Simple.objects.all().delete()
+                Blog.objects.create(title='foo')
+                Blog.objects.update(title='foo')
+                Blog.objects.all().delete()
 
             for name in method_kwargs:
                 self.assertEqual(method_kwargs[name],
