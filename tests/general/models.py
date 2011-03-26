@@ -1,6 +1,6 @@
 from django.db import models
 from django.conf import settings
-from djangotoolbox.fields import ListField, DictField, SetField, RawField
+from djangotoolbox.fields import ListField, RawField
 
 class Blog(models.Model):
     title = models.CharField(max_length=200, db_index=True)
@@ -29,22 +29,8 @@ class DateModel(models.Model):
     _datelist_default = []
     datelist = ListField(models.DateField(), default=_datelist_default)
 
-class DynamicModel(models.Model):
-    gen = RawField()
-
-class TestFieldModel(models.Model):
-    title = models.CharField(max_length=200)
-    mlist = ListField()
-    mlist_default = ListField(default=["a", "b"])
-    slist = ListField(ordering=lambda x:x)
-    slist_default = ListField(default=["b", "a"], ordering=lambda x:x)
-    mdict = DictField()
-    mdict_default = DictField(default={"a": "a", 'b':1})
-    mset = SetField()
-    mset_default = SetField(default=set(["a", 'b']))
-
-    class MongoMeta:
-        index_together = [{'fields' : [ ('title', -1), 'mlist']}]
+class RawFieldModel(models.Model):
+    raw = RawField()
 
 class IndexTestModel(models.Model):
     regular_index = models.IntegerField(db_index=True)

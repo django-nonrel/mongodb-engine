@@ -129,24 +129,14 @@ class QueryTests(TestCase):
         self.assertQuerysetEqual(Post.objects.filter(date_published__lt=now), [entry3])
         self.assertQuerysetEqual(Post.objects.filter(date_published__gt=now), [entry2])
 
-    def test_mongodb_fields(self):
-        t1 = TestFieldModel.objects.create(
-            title="p1", mlist=["ab", {'a':23, "b":True  }], slist=["bc", "ab"],
-            mdict = {'a':23, "b":True  }, mset=["a", 'b', "b"]
-        )
-        t = TestFieldModel.objects.get(id=t1.id)
-        self.assertEqual(t.mlist, ["ab", {'a':23, "b":True  }])
-        self.assertEqual(t.mlist_default, ["a", "b"])
-        self.assertEqual(t.slist, ["ab", "bc"])
-        self.assertEqual(t.slist_default, ["a", "b"])
-        self.assertEqual(t.mdict, {'a':23, "b":True  })
-        self.assertEqual(t.mdict_default, {"a": "a", 'b':1})
-        self.assertEqual(sorted(t.mset), ["a", 'b'])
-        self.assertEqual(sorted(t.mset_default), ["a", 'b'])
-
+    def test_A_query(self):
         from django_mongodb_engine.query import A
-        t2 = TestFieldModel.objects.get(mlist=A("a", 23))
-        self.assertEqual(t1.pk, t2.pk)
+        obj1 = RawFieldModel.objects.create(raw=[{'a' : 1, 'b' : 2}])
+        obj2 = RawFieldModel.objects.create(raw=[{'a' : 1, 'b' : 3}])
+        self.assertQuerysetEqual(RawFieldModel.objects.filter(raw=A('a', 1)),
+                                 [obj1, obj2])
+        self.assertEqual(RawFieldModel.objects.get(raw=A('b', 2)), obj1)
+        self.assertEqual(RawFieldModel.objects.get(raw=A('b', 3)), obj2)
 
     def test_simple_foreign_keys(self):
         blog1 = Blog.objects.create(title="Blog")
@@ -333,20 +323,20 @@ class MongoDBEngineTests(TestCase):
         from django.conf import settings
         from bson.errors import InvalidDocument
 
-        obj = TestFieldModel()
-        related = DynamicModel(gen=42)
-        obj.mlist.append(related)
+        obj = RawFieldModel(raw=[])
+        related = Blog(title='foo')
+        obj.raw.append(related)
         self.assertRaises(InvalidDocument, obj.save)
 
         settings.MONGODB_AUTOMATIC_REFERENCING = True
         connections._connections.values()[0]._add_serializer()
         obj.save()
         self.assertNotEqual(related.id, None)
-        obj = TestFieldModel.objects.get()
-        self.assertEqual(obj.mlist[0]._wrapped, None)
+        obj = RawFieldModel.objects.get()
+        self.assertEqual(obj.raw[0]._wrapped, None)
         # query will be done NOW:
-        self.assertEqual(obj.mlist[0].gen, 42)
-        self.assertNotEqual(obj.mlist[0]._wrapped, None)
+        self.assertEqual(obj.raw[0].title, 'foo')
+        self.assertNotEqual(obj.raw[0]._wrapped, None)
 
     def test_nice_yearmonthday_query_exception(self):
         for x in ('year', 'month', 'day'):
@@ -366,8 +356,8 @@ class MongoDBEngineTests(TestCase):
 
     def test_generic_field(self):
         for obj in [['foo'], {'bar' : 'buzz'}]:
-            id = DynamicModel.objects.create(gen=obj).id
-            self.assertEqual(DynamicModel.objects.get(id=id).gen, obj)
+            id = RawFieldModel.objects.create(raw=obj).id
+            self.assertEqual(RawFieldModel.objects.get(id=id).raw, obj)
 
 class DatabaseOptionTests(TestCase):
     """ Tests for MongoDB-specific database options """
