@@ -492,7 +492,13 @@ class GridFSFieldTests(TestCase):
         self.assertEqual(obj.gridfile.read(), fh.read())
 
     def test_deletion(self):
-        raise NotImplementedError
+        from gridfs import NoFile
+        obj = GridFSFieldTestModel.objects.create(gridstring='foobar')
+        gridstringfield = GridFSFieldTestModel._meta.fields[-1]
+        file_id = gridstringfield._get_meta(obj)[0]
+        gridfs = gridstringfield._get_gridfs(obj)
+        obj.delete()
+        self.assertRaises(NoFile, gridfs.get, file_id)
 
     def test_gridstring(self):
         data = open(__file__).read()

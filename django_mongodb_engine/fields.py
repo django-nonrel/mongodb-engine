@@ -39,12 +39,13 @@ class GridFSField(models.Field):
     def contribute_to_class(self, model, name):
         super(GridFSField, self).contribute_to_class(model, name)
         setattr(model, self.attname, property(self._property_get, self._property_set))
+        models.signals.pre_delete.connect(self._on_pre_delete, sender=model)
 
     def _property_get(self, model_instance):
         meta = self._get_meta(model_instance)
         id, file, _ = meta
         if file is None and id is not None:
-            gridfs = GridFS(connections[model_instance.__class__.objects.db].database)
+            gridfs = self._get_gridfs(model_instance)
             file = gridfs.get(id)
             meta[FILE] = file = gridfs.get(id)
         return file
@@ -60,11 +61,14 @@ class GridFSField(models.Field):
     def pre_save(self, model_instance, add):
         id, file, should_save = self._get_meta(model_instance)
         if should_save:
-            gridfs = GridFS(connections[self.model.objects.db].database)
+            gridfs = self._get_gridfs(model_instance)
             if not self._versioning and id is not None:
                 gridfs.delete(id)
             return gridfs.put(file)
         return id
+
+    def _on_pre_delete(self, sender, instance, using, signal):
+        self._get_gridfs(instance).delete(self._get_meta(instance)[ID])
 
     def _get_meta(self, model_instance):
         meta_name = '_%s_meta' % self.attname
@@ -73,6 +77,9 @@ class GridFSField(models.Field):
             meta = [None, None, None]
             setattr(model_instance, meta_name, meta)
         return meta
+
+    def _get_gridfs(self, model_instance):
+        return GridFS(connections[model_instance.__class__.objects.db].database)
 
 class GridFSString(GridFSField):
     def _property_get(self, model):
