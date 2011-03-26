@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from djangotoolbox.fields import ListField, RawField
+from django_mongodb_engine.fields import GridFSField, GridFSString
 
 class Blog(models.Model):
     title = models.CharField(max_length=200, db_index=True)
@@ -43,3 +44,7 @@ class IndexTestModel(models.Model):
     class MongoMeta:
         descending_indexes = ['descending_index', 'descending_index_custom_column']
         index_together = ['regular_index', 'custom_column']
+
+class GridFSFieldTestModel(models.Model):
+    gridfile = GridFSField()
+    gridstring = GridFSString()

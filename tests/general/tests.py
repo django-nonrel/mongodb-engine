@@ -3,17 +3,20 @@
     plus tests for django-mongodb-engine specific features
 """
 import datetime
+
 from django.db import connections
 from django.db.models import F, Q
 from django.db.utils import DatabaseError
 from django.contrib.sites.models import Site
 
+from gridfs import GridOut
 from pymongo.objectid import ObjectId, InvalidId
 from pymongo import ASCENDING, DESCENDING
+
 from django_mongodb_engine.base import DatabaseWrapper
 from django_mongodb_engine.serializer import LazyModelInstance
 
-from .utils import TestCase, get_collection
+from .utils import TestCase, get_collection, skip
 from models import *
 
 class QueryTests(TestCase):
@@ -469,3 +472,33 @@ class IndexTests(TestCase):
     def test_descending(self):
         self.assertHaveIndex('descending_index', DESCENDING)
         self.assertHaveIndex('bar', DESCENDING)
+
+class GridFSFieldTests(TestCase):
+    def test_empty(self):
+        obj = GridFSFieldTestModel.objects.create()
+        self.assertEqual(obj.gridfile, None)
+        #self.assertEqual(obj.gridstring, '')
+
+    def test_gridfile(self):
+        fh = open(__file__)
+        fh.seek(42)
+        obj = GridFSFieldTestModel(gridfile=fh)
+        self.assert_(obj.gridfile is fh)
+        obj.save()
+        self.assert_(obj.gridfile is fh)
+        obj = GridFSFieldTestModel.objects.get()
+        self.assertIsInstance(obj.gridfile, GridOut)
+        fh.seek(42)
+        self.assertEqual(obj.gridfile.read(), fh.read())
+
+    def test_deletion(self):
+        raise NotImplementedError
+
+    def test_gridstring(self):
+        data = open(__file__).read()
+        obj = GridFSFieldTestModel(gridstring=data)
+        self.assert_(obj.gridstring is data)
+        obj.save()
+        self.assert_(obj.gridstring is data)
+        obj = GridFSFieldTestModel.objects.get()
+        self.assertEqual(obj.gridstring, data)
