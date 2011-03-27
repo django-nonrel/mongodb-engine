@@ -1,41 +1,54 @@
 #!/usr/bin/python
 import os
-import sys
-import subprocess
-check_call = subprocess.check_call
+from types import ModuleType
+from subprocess import check_call
 
-short = 'short' in sys.argv
+def runtests(foo, settings='settings', extra=[]):
+    if isinstance(foo, ModuleType):
+        settings = foo.__name__
+        apps = foo.INSTALLED_APPS
+    else:
+        apps = foo
+    check_call(['./manage.py', 'test', '--settings', settings] + extra + apps)
 
-# Run some basic tests outside Django's test environment
-check_call(['python', '-c', 'from general.models import Blog\n'
-                            'Blog.objects.create()\n'
-                            'Blog.objects.all().delete()\n'
-                            'Blog.objects.update()'],
-           env=dict(os.environ, DJANGO_SETTINGS_MODULE='settings', PYTHONPATH='..'))
 
-import settings
+def main(short):
+    # Run some basic tests outside Django's test environment
+    check_call(
+        ['python', '-c', 'from general.models import Blog\n'
+                         'Blog.objects.create()\n'
+                         'Blog.objects.all().delete()\n'
+                         'Blog.objects.update()'],
+        env=dict(os.environ, DJANGO_SETTINGS_MODULE='settings', PYTHONPATH='..')
+    )
 
-failfast = ['--failfast'] if short else []
-check_call(['./manage.py', 'test'] + settings.INSTALLED_APPS + failfast)
+    import settings
+    import settings_dbindexer
+    import settings_slow_tests
 
-if short:
-    exit()
+    runtests(settings, extra=['--failfast'] if short else [])
 
-check_call(['./manage.py', 'syncdb', '--noinput'])
+    if short:
+        exit()
 
-import settings_dbindexer
-check_call(['./manage.py', 'test', '--settings', 'settings_dbindexer']
-           + settings_dbindexer.INSTALLED_APPS)
+    # Make sure we can syncdb.
+    check_call(['./manage.py', 'syncdb', '--noinput'])
 
-check_call(['./manage.py', 'test', '--settings', 'settings_router', 'router'])
+    runtests(settings_dbindexer)
+    runtests(['router'], 'settings_router')
+    runtests(settings.INSTALLED_APPS, 'settings_debug')
+    runtests(settings_slow_tests)
 
-check_call(['./manage.py', 'test', '--settings', 'settings_debug']
-           + settings.INSTALLED_APPS)
 
-import settings_slow_tests
-check_call(['./manage.py', 'test', '--settings', 'settings_slow_tests']
-           + settings_slow_tests.INSTALLED_APPS)
-
-#import settings_sqlite
-#check_call(['./manage.py --settings settings_sqlite', 'test']
-#           + settings_sqlite.INSTALLED_APPS)
+if __name__ == '__main__':
+    import sys
+    if 'coverage' in sys.argv:
+        def _new_check_call_closure(old_check_call):
+            def _new_check_call(cmd, **kwargs):
+                if cmd[0] != 'python':
+                    cmd = ['coverage', 'run', '-a', '--source',
+                           '../django_mongodb_engine'] + cmd
+                return old_check_call(cmd, **kwargs)
+            return _new_check_call
+        check_call = _new_check_call_closure(check_call)
+    main('short' in sys.argv)
