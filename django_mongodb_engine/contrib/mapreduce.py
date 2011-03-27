@@ -43,8 +43,6 @@ class MapReduceMixin(object):
         Returns a list of :class:`.MapReduceResult` instances, one instance for
         each item in the array the MapReduce query returns.
 
-        MongoDB >= 1.1 and PyMongo >= 1.2 are required for using this feature.
-
         :param map_func: JavaScript map function as string
         :param reduce_func: The JavaScript reduce function as string
         :param finalize_func: (optional) JavaScript finalize function as string
@@ -54,9 +52,6 @@ class MapReduceMixin(object):
                          (boolean, defaults to :const:`False`)
         """
         collection = self._get_collection()
-
-        if not hasattr(collection, 'map_reduce'):
-            raise NotImplementedError('map/reduce requires MongoDB >= 1.1.1')
 
         mapreduce_kwargs = {'keeptemp' : keeptemp}
 
