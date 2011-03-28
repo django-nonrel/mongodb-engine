@@ -44,7 +44,7 @@ class DatabaseOperations(NonrelDatabaseOperations):
         all `tables`. No SQL in MongoDB, so just drop all tables here and
         return an empty list.
         """
-        tables = self.connection.collection_names()
+        tables = self.connection.introspection.table_names()
         for table in tables:
             if table.startswith('system.'):
                 # do not try to drop system collections
@@ -68,19 +68,11 @@ class DatabaseValidation(NonrelDatabaseValidation):
 
 class DatabaseIntrospection(NonrelDatabaseIntrospection):
     def table_names(self):
-        return self.connection.collection_names()
+        return self.connection.database.collection_names()
 
     def sequence_list(self):
         # Only required for backends that support ManyToMany relations
         pass
-
-def requires_connection(method):
-    @wraps(method)
-    def wrapper(self, *args, **kwargs):
-        if not self._connected:
-            self._connect()
-        return method(self, *args, **kwargs)
-    return wrapper
 
 class DatabaseWrapper(NonrelDatabaseWrapper):
     def __init__(self, *args, **kwargs):
@@ -92,22 +84,23 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
         self.creation = DatabaseCreation(self)
         self.introspection = DatabaseIntrospection(self)
         self.validation = DatabaseValidation(self)
-        self._connected = False
+        self.connected = False
+        del self.connection
 
-    @requires_connection
+    # Public API: connection, database, get_collection
+
     def get_collection(self, name, **kwargs):
         collection = self.collection_class(self.database, name, **kwargs)
         if settings.DEBUG:
             collection = CollectionDebugWrapper(collection)
         return collection
 
-    @requires_connection
-    def drop_database(self, name):
-        return self._connection.drop_database(name)
-
-    @requires_connection
-    def collection_names(self):
-        return self.database.collection_names()
+    def __getattr__(self, attr):
+        if attr in ['connection', 'database']:
+            assert not self.connected
+            self._connect()
+            return getattr(self, attr)
+        raise AttributeError(attr)
 
     def _connect(self):
         settings = self.settings_dict.copy()
@@ -144,8 +137,8 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
             options[key.lower()] = options.pop(key)
 
         try:
-            self._connection = Connection(host=host, port=port, **options)
-            self.database = self._connection[db_name]
+            self.connection = Connection(host=host, port=port, **options)
+            self.database = self.connection[db_name]
         except TypeError:
             import sys
             exc_info = sys.exc_info()
@@ -156,7 +149,7 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
                 raise ImproperlyConfigured("Invalid username or password")
 
         self._add_serializer()
-        self._connected = True
+        self.connected = True
         connection_created.send(sender=self.__class__, connection=self)
 
     def _add_serializer(self):
@@ -166,3 +159,12 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
                 from .serializer import TransformDjango
                 self.database.add_son_manipulator(TransformDjango())
                 return
+
+    def _commit(self):
+        pass
+
+    def _rollback(self):
+        pass
+
+    def close(self):
+        pass

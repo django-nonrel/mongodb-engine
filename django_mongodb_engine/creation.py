@@ -132,4 +132,4 @@ class DatabaseCreation(NonrelDatabaseCreation):
         self.connection.settings_dict['NAME'] = old_database_name
 
     def _drop_database(self, database_name):
-        self.connection.drop_database(database_name)
+        self.connection.connection.drop_database(database_name)

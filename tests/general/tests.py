@@ -364,6 +364,25 @@ class MongoDBEngineTests(TestCase):
             id = RawFieldModel.objects.create(raw=obj).id
             self.assertEqual(RawFieldModel.objects.get(id=id).raw, obj)
 
+    def test_databasewrapper_api(self):
+        from pymongo.connection import Connection
+        from pymongo.database import Database
+        from pymongo.collection import Collection
+        from random import shuffle
+
+        for wrapper in (
+            connections['default'],
+            DatabaseWrapper(connections['default'].settings_dict.copy())
+        ):
+            calls = [
+                lambda: self.assertIsInstance(wrapper.get_collection('foo'), Collection),
+                lambda: self.assertIsInstance(wrapper.database, Database),
+                lambda: self.assertIsInstance(wrapper.connection, Connection)
+            ]
+            shuffle(calls)
+            for call in calls:
+                call()
+
 class DatabaseOptionTests(TestCase):
     """ Tests for MongoDB-specific database options """
 
@@ -381,7 +400,7 @@ class DatabaseOptionTests(TestCase):
             return self.new_wrapper
 
         def __exit__(self, *exc_info):
-            self.new_wrapper._connection.disconnect()
+            self.new_wrapper.connection.disconnect()
             connections._connections['default'] = self._old_connection
 
     def test_pymongo_connection_args(self):
@@ -398,7 +417,7 @@ class DatabaseOptionTests(TestCase):
         }) as connection:
             for name, value in connection.settings_dict['OPTIONS'].iteritems():
                 name = '_Connection__%s' % name.lower()
-                self.assertEqual(connection._connection.__dict__[name], value)
+                self.assertEqual(connection.connection.__dict__[name], value)
 
     def test_operation_flags(self):
         from textwrap import dedent
