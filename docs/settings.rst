@@ -8,16 +8,18 @@ in ``OPTIONS`` dictionary in your ``DATABASES`` configuration.
 
 All of these settings directly mirror PyMongo settings.
 In fact, all Django MongoDB Engine does is lower-casing the names before passing
-the flags to :class:`pymongo.Connection`. 
-For a list of possible options head over to the `PyMongo documentation on connection options`_.
+the flags to :class:`pymongo.connection.Connection`.
+For a list of possible options head over to the
+`PyMongo documentation on connection options`_.
 
 .. _operations-setting:
 
 Setting Consistency Requirements for Database Operations
 --------------------------------------------------------
 Use the ``OPERATIONS`` dict to specify extra flags passed to
-:meth:`pymongo.Collection.save`, :meth:`pymongo.Collection.update` or
-:meth:`pymongo.Collection.remove`::
+:meth:`pymongo.collection.Collection.save`,
+:meth:`pymongo.collection.Collection.update` or
+:meth:`pymongo.collection.Collection.remove`::
 
    'OPTIONS' : {
       ...
@@ -25,8 +27,9 @@ Use the ``OPERATIONS`` dict to specify extra flags passed to
    }
 
 This passes ``safe=True, w=3`` as keyword arguments to each of
-:meth:`~pymongo.Collection.save`, :meth:`~pymongo.Collection.update` and
-:meth:`~pymongo.Collection.remove`.
+:meth:`~pymongo.collection.Collection.save`,
+:meth:`~pymongo.collection.Collection.update` and
+:meth:`~pymongo.collection.Collection.remove`.
 
 Get a more fine-grained setup by introducing another layer to this dict::
 

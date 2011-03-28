@@ -23,7 +23,7 @@ or use ``pip`` to install the latest release from PyPI::
 
    pip install django-mongodb-engine
 
-Database setup is easy (see also: `Django database setup docs`_ and :ref:`settings`)::
+Database setup is easy (see also: `Django database setup docs`_ and :doc:`settings`)::
 
    DATABASES = {
       'default' : {
@@ -52,6 +52,6 @@ This might be interesting, too:
    Embedded Objects Instead of JOINs <embedded-objects>
    Lists and Dicts Instead of JOINS <lists-and-dicts>
    cool-stuff
-   faq
+   qa
    settings
    changelog

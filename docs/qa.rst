@@ -1,5 +1,5 @@
-Frequently Asked Questions
-==========================
+Q & A
+=====
 
 Does it support JOINs?
 ~~~~~~~~~~~~~~~~~~~~~~
