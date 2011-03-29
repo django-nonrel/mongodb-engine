@@ -67,7 +67,7 @@ class GridFSField(models.Field):
             return gridfs.put(file)
         return id
 
-    def _on_pre_delete(self, sender, instance, using, signal):
+    def _on_pre_delete(self, sender, instance, using, signal, **kwargs):
         self._get_gridfs(instance).delete(self._get_meta(instance)[ID])
 
     def _get_meta(self, model_instance):
