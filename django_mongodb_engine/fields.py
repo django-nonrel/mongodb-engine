@@ -26,6 +26,10 @@ class LegacyEmbeddedModelField(_EmbeddedModelField):
         return super(LegacyEmbeddedModelField, self).to_python(values)
 
 class GridFSField(models.Field):
+    """
+    GridFS Field to use in models in order.
+    """
+    
     def __init__(self, *args, **kwargs):
         self._versioning = kwargs.pop('versioning', False)
         kwargs['max_length'] = 24
@@ -42,15 +46,27 @@ class GridFSField(models.Field):
         models.signals.pre_delete.connect(self._on_pre_delete, sender=model)
 
     def _property_get(self, model_instance):
+        """
+        Gets the file from gridfs using the
+        id stored in the model.
+        """
         meta = self._get_meta(model_instance)
-        id, file, _ = meta
-        if file is None and id is not None:
+        oid, f, _ = meta
+        if f is None and oid is not None:
             gridfs = self._get_gridfs(model_instance)
-            file = gridfs.get(id)
-            meta[FILE] = file = gridfs.get(id)
-        return file
+            f = gridfs.get(oid)
+            meta[f] = f = gridfs.get(oid)
+        return f
 
     def _property_set(self, model_instance, value):
+        """
+        Sets a new value.
+        
+        If value is an ObjectID it just updates the id stored 
+        in the model, otherwise it checks sets the value and
+        checks whether a save is needed or not.
+        """
+        ID, FILE, SHOULD_SAVE = [0, 1, 2]
         meta = self._get_meta(model_instance)
         if isinstance(value, ObjectId) and meta[ID] is None:
             meta[ID] = value
@@ -59,13 +75,13 @@ class GridFSField(models.Field):
             meta[FILE] = value
 
     def pre_save(self, model_instance, add):
-        id, file, should_save = self._get_meta(model_instance)
+        oid, f, should_save = self._get_meta(model_instance)
         if should_save:
             gridfs = self._get_gridfs(model_instance)
-            if not self._versioning and id is not None:
-                gridfs.delete(id)
-            return gridfs.put(file)
-        return id
+            if not self._versioning and oid is not None:
+                gridfs.delete(oid)
+            return gridfs.put(f)
+        return oid
 
     def _on_pre_delete(self, sender, instance, using, signal, **kwargs):
         self._get_gridfs(instance).delete(self._get_meta(instance)[ID])
@@ -83,9 +99,9 @@ class GridFSField(models.Field):
 
 class GridFSString(GridFSField):
     def _property_get(self, model):
-        file = super(GridFSString, self)._property_get(model)
-        if hasattr(file, 'read'):
-            return file.read()
-        return file
+        f = super(GridFSString, self)._property_get(model)
+        if hasattr(f, 'read'):
+            return f.read()
+        return f
 
 ID, FILE, SHOULD_SAVE = range(3)
