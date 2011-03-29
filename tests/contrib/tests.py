@@ -116,7 +116,7 @@ class FullTextTest(TestCase):
         blog.save()
 
         self.assertEqual(Post.objects.get(content="simple, full text.... search? test"), blog)
-        self.assertEqual(Post.objects.get(content_analyzed="simple, search? test"), blog)
+        self.assertEqual(Post.objects.get(content_tokenized="simple, search? test"), blog)
 
     def test_simple_fulltext_filter(self):
         Post(content="simple, fulltext search test").save()
@@ -125,23 +125,23 @@ class FullTextTest(TestCase):
         Post(content="I would like to use MongoDB for FULL text search").save()
 
 
-        self.assertEqual(len(Post.objects.filter(content_analyzed="full text")), 2)
-        self.assertEqual(len(Post.objects.filter(content_analyzed="search")), 3)
-        self.assertEqual(len(Post.objects.filter(content_analyzed="It-... GoiNg")), 1)
+        self.assertEqual(len(Post.objects.filter(content_tokenized="full text")), 2)
+        self.assertEqual(len(Post.objects.filter(content_tokenized="search")), 3)
+        self.assertEqual(len(Post.objects.filter(content_tokenized="It-... GoiNg")), 1)
 
     def test_int_fulltext_lookup(self):
         Post(content="this full text search... seems to work... pretty? WELL").save()
         Post(content="I would like to use MongoDB for FULL text search").save()
         Post(content="just some TEXT without the f u l l  word").save()
 
-        self.assertEqual(len(Post.objects.filter(content_analyzed__in="full text")), 3)
+        self.assertEqual(len(Post.objects.filter(content_tokenized__in="full text")), 3)
 
     def test_or_fulltext_queries(self):
         Post(content="Happy New Year Post.... Enjoy").save()
         Post(content="So, Django is amazing, we all know that but django and mongodb is event better ;)").save()
         Post(content="Testing the full text django + mongodb implementation").save()
 
-        self.assertEqual(len(Post.objects.filter(Q(content_analyzed="django mongodb better?") | Q(content_analyzed='full text mongodb'))), 2)
+        self.assertEqual(len(Post.objects.filter(Q(content_tokenized="django mongodb better?") | Q(content_tokenized='full text mongodb'))), 2)
 
     def test_and_fulltext_queries(self):
         Post(content="Happy New Year Post.... Enjoy").save()
@@ -149,7 +149,7 @@ class FullTextTest(TestCase):
         post = Post(content="Testing the full text django + mongodb implementation")
         post.save()
 
-        self.assertEqual(Post.objects.get(Q(content_analyzed="django mongodb") & Q(content_analyzed='testing')).pk, post.pk)
+        self.assertEqual(Post.objects.get(Q(content_tokenized="django mongodb") & Q(content_tokenized='testing')).pk, post.pk)
 
     def test_for_wrong_lookups(self):
         # This because because full text queries run over 
@@ -159,5 +159,5 @@ class FullTextTest(TestCase):
         # could be passed to the tokenized in order to support Case Sensitive 
         # Case Insensitive queries.
         with self.assertRaises(DatabaseError):
-            Post.objects.get(content_analyzed__iexact="django mongodb")
-            Post.objects.get(content_analyzed__icontains="django mongodb")
+            Post.objects.get(content_tokenized__iexact="django mongodb")
+            Post.objects.get(content_tokenized__icontains="django mongodb")

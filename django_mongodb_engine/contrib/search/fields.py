@@ -11,7 +11,7 @@ class TokenizedField(models.Field):
         self.parent_field = models.CharField(*args, **kwargs)
 
     def contribute_to_class(self, cls, name):
-        super(TokenizedField, self).contribute_to_class(cls, "%s_analyzed" % name)
+        super(TokenizedField, self).contribute_to_class(cls, "%s_tokenized" % name)
         setattr(self, 'parent_field_name', name)
         cls.add_to_class(name, self.parent_field)
 
