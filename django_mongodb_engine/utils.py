@@ -17,6 +17,16 @@ def safe_regex(regex, *re_args, **re_kwargs):
     wrapper.__name__ = 'safe_regex (%r)' % regex
     return wrapper
 
+def make_struct(*attrs):
+    class _Struct(object):
+        __slots__ = attrs
+        def __init__(self, *args):
+            for attr, arg in zip(self.__slots__, args):
+                setattr(self, attr, arg)
+    return _Struct
+
+# MongoDB related stuff:
+
 def get_databases():
     default_database = None
     databases = []

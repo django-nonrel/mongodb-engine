@@ -5,10 +5,9 @@ from pymongo.objectid import ObjectId
 from gridfs import GridFS
 
 from djangotoolbox.fields import EmbeddedModelField as _EmbeddedModelField
+from django_mongodb_engine.utils import make_struct
 
 __all__ = ['LegacyEmbeddedModelField', 'GridFSField', 'GridFSString']
-
-ID, FILE, SHOULD_SAVE = range(3)
 
 class LegacyEmbeddedModelField(_EmbeddedModelField):
     """
@@ -72,11 +71,10 @@ class GridFSField(models.Field):
         Gets the file from GridFS using the id stored in the model.
         """
         meta = self._get_meta(model_instance)
-        oid, filelike, _ = meta
-        if filelike is None and oid is not None:
+        if meta.filelike is None and meta.oid is not None:
             gridfs = self._get_gridfs(model_instance)
-            meta[FILE] = filelike = gridfs.get(oid)
-        return filelike
+            meta.filelike = gridfs.get(meta.oid)
+        return meta.filelike
 
     def _property_set(self, model_instance, value):
         """
@@ -88,31 +86,32 @@ class GridFSField(models.Field):
         Otherwise it sets the value and checks whether a save is needed or not.
         """
         meta = self._get_meta(model_instance)
-        if isinstance(value, ObjectId) and meta[ID] is None:
-            meta[ID] = value
+        if isinstance(value, ObjectId) and meta.oid is None:
+            meta.oid = value
         else:
-            meta[SHOULD_SAVE] = meta[FILE] != value
-            meta[FILE] = value
+            meta.should_save = meta.filelike != value
+            meta.filelike = value
 
     def pre_save(self, model_instance, add):
-        oid, filelike, should_save = self._get_meta(model_instance)
-        if should_save:
+        meta = self._get_meta(model_instance)
+        if meta.should_save:
             gridfs = self._get_gridfs(model_instance)
-            if not self._versioning and oid is not None:
+            if not self._versioning and meta.oid is not None:
                 # We're putting a new GridFS file, so get rid of the old one
                 # if we weren't explicitly asked to keep it.
-                gridfs.delete(oid)
-            return gridfs.put(filelike)
-        return oid
+                gridfs.delete(meta.oid)
+            return gridfs.put(meta.filelike)
+        return meta.oid
 
     def _on_pre_delete(self, sender, instance, using, signal, **kwargs):
-        self._get_gridfs(instance).delete(self._get_meta(instance)[ID])
+        self._get_gridfs(instance).delete(self._get_meta(instance).oid)
 
     def _get_meta(self, model_instance):
         meta_name = '_%s_meta' % self.attname
         meta = getattr(model_instance, meta_name, None)
         if meta is None:
-            meta = [None, None, None]
+            meta_cls = make_struct('filelike', 'oid', 'should_save')
+            meta = meta_cls(None, None, None)
             setattr(model_instance, meta_name, meta)
         return meta
 
