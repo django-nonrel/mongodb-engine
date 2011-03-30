@@ -126,6 +126,8 @@ class GridFSString(GridFSField):
     """
     def _property_get(self, model):
         filelike = super(GridFSString, self)._property_get(model)
+        if filelike is None:
+            return ''
         if hasattr(filelike, 'read'):
             return filelike.read()
         return filelike

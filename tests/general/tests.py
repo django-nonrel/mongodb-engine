@@ -526,7 +526,7 @@ class GridFSFieldTests(TestCase):
     def test_empty(self):
         obj = GridFSFieldTestModel.objects.create()
         self.assertEqual(obj.gridfile, None)
-        #self.assertEqual(obj.gridstring, '')
+        self.assertEqual(obj.gridstring, '')
 
     def test_gridfile(self):
         fh = open(__file__)
