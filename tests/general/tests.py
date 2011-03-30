@@ -479,19 +479,19 @@ class IndexTests(TestCase):
         index_name = field_name + ['_1', '_-1'][direction==DESCENDING]
         self.assertIn(index_name, info)
         self.assertIn((field_name, direction), info[index_name]['key'])
-        
-    # Assomues fields as [(name, direction), (name, direction)]
-    def assertCompoundIndex(self, fields):
-        info = get_collection(IndexTestModel).index_information()
+
+    # Assumes fields as [(name, direction), (name, direction)]
+    def assertCompoundIndex(self, fields, model=IndexTestModel):
+        info = get_collection(model).index_information()
         index_names = [field[0] + ['_1', '_-1'][field[1]==DESCENDING] for field in fields]
         index_name = "_".join(index_names)
         self.assertIn(index_name, info)
         self.assertEqual(fields, info[index_name]['key'])
-        
-    def assertIndexProperty(self, field_name, property, direction=ASCENDING):
+
+    def assertIndexProperty(self, field_name, name, direction=ASCENDING):
         info = get_collection(IndexTestModel).index_information()
         index_name = field_name + ['_1', '_-1'][direction==DESCENDING]
-        self.assertTrue(info.get(index_name, {}).get('sparse', False))
+        self.assertTrue(info.get(index_name, {}).get(name, False))
 
     def test_regular_indexes(self):
         self.assertHaveIndex('regular_index')
@@ -503,17 +503,18 @@ class IndexTests(TestCase):
     def test_sparse_index(self):
         self.assertHaveIndex('sparse_index')
         self.assertIndexProperty('sparse_index', 'sparse')
-        
+
         self.assertHaveIndex('sparse_index_unique')
         self.assertIndexProperty('sparse_index_unique', 'sparse')
         self.assertIndexProperty('sparse_index_unique', 'unique')
-        
+
         self.assertCompoundIndex([('sparse_index_cmp_1', 1), ('sparse_index_cmp_2', 1)])
         self.assertCompoundIndex([('sparse_index_cmp_1', 1), ('sparse_index_cmp_2', 1)])
-        
-    def test_coumpound(self):
+
+    def test_compound(self):
         self.assertCompoundIndex([('regular_index', 1), ('custom_column', 1)])
-        
+        self.assertCompoundIndex([('a', 1), ('b', -1)], IndexTestModel2)
+
     def test_foreignkey(self):
         self.assertHaveIndex('foreignkey_index_id')
 
