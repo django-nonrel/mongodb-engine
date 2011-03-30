@@ -44,8 +44,8 @@ class GridFSField(models.Field):
     """
     def __init__(self, *args, **kwargs):
         self._versioning = kwargs.pop('versioning', False)
-        self._autodelete = kwargs.pop('delete', True)
-        if self._versioning and self._delete:
+        self._autodelete = kwargs.pop('delete', not self._versioning)
+        if self._versioning and self._autodelete:
             raise ImproperlyConfigured("Can have only one of 'versioning' and 'delete'")
 
         kwargs['max_length'] = 24
