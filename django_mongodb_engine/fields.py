@@ -31,8 +31,8 @@ class GridFSField(models.Field):
     """
     GridFS field to store large chunks of data in GridFS.
 
-    Model instances keep references (ObjectIds) to GridFS files which are fetched
-    on first attribute access.
+    Model instances keep references (ObjectIds) to GridFS files
+    (:class:`grifs.GridOut`) which are fetched on first attribute access.
 
     :param delete:
         Whether to delete the data stored in the GridFS (as GridFS files) when
@@ -119,6 +119,11 @@ class GridFSField(models.Field):
         return GridFS(connections[model_instance.__class__.objects.db].database)
 
 class GridFSString(GridFSField):
+    """
+    Similar to :class:`GridFSField`, but the data is represented as a bytestring
+    on Python side. This implies that all data has to be copied **into memory**,
+    so :class:`GridFSString` is more smaller chunks of data only.
+    """
     def _property_get(self, model):
         filelike = super(GridFSString, self)._property_get(model)
         if hasattr(filelike, 'read'):
