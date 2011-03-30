@@ -1,3 +1,4 @@
+from django.core.exceptions import ImproperlyConfigured
 from django.db import connections, models
 
 from pymongo.objectid import ObjectId
@@ -29,10 +30,25 @@ class LegacyEmbeddedModelField(_EmbeddedModelField):
 
 class GridFSField(models.Field):
     """
-    GridFS Field to use in models in order.
+    GridFS field to store large chunks of data in GridFS.
+
+    Model instances keep references (ObjectIds) to GridFS files which are fetched
+    on first attribute access.
+
+    :param delete:
+        Whether to delete the data stored in the GridFS (as GridFS files) when
+        model instances are deleted (default: :const:`True`).
+    :param versioning:
+        Whether to keep old versions of the data when new data is written to the
+        GridFS (default: :const:`False`).
+        `delete` and `versioning` are mutually exclusive.
     """
     def __init__(self, *args, **kwargs):
         self._versioning = kwargs.pop('versioning', False)
+        self._autodelete = kwargs.pop('delete', True)
+        if self._versioning and self._delete:
+            raise ImproperlyConfigured("Can have only one of 'versioning' and 'delete'")
+
         kwargs['max_length'] = 24
         kwargs.setdefault('default', None)
         kwargs.setdefault('null', True)
@@ -42,14 +58,18 @@ class GridFSField(models.Field):
         return 'gridfs'
 
     def contribute_to_class(self, model, name):
+        # GridFSFields are represented as properties in the model class.
+        # Let 'foo' be an instance of a model that has the GridFSField 'gridf'.
+        # 'foo.gridf' then calls '_property_get' and 'foo.gridfs = bar' calls
+        # '_property_set(bar)'.
         super(GridFSField, self).contribute_to_class(model, name)
         setattr(model, self.attname, property(self._property_get, self._property_set))
-        models.signals.pre_delete.connect(self._on_pre_delete, sender=model)
+        if self._autodelete:
+            models.signals.pre_delete.connect(self._on_pre_delete, sender=model)
 
     def _property_get(self, model_instance):
         """
-        Gets the file from gridfs using the
-        id stored in the model.
+        Gets the file from GridFS using the id stored in the model.
         """
         meta = self._get_meta(model_instance)
         oid, filelike, _ = meta
@@ -62,9 +82,10 @@ class GridFSField(models.Field):
         """
         Sets a new value.
 
-        If value is an ObjectID it just updates the id stored
-        in the model, otherwise it checks sets the value and
-        checks whether a save is needed or not.
+        If value is an ObjectID it must be coming from Django's ORM internals
+        being the value fetched from the database on query. In that case just
+        update the id stored in the model instance.
+        Otherwise it sets the value and checks whether a save is needed or not.
         """
         meta = self._get_meta(model_instance)
         if isinstance(value, ObjectId) and meta[ID] is None:
@@ -78,6 +99,8 @@ class GridFSField(models.Field):
         if should_save:
             gridfs = self._get_gridfs(model_instance)
             if not self._versioning and oid is not None:
+                # We're putting a new GridFS file, so get rid of the old one
+                # if we weren't explicitly asked to keep it.
                 gridfs.delete(oid)
             return gridfs.put(filelike)
         return oid
