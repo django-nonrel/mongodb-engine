@@ -7,6 +7,8 @@ from djangotoolbox.fields import EmbeddedModelField as _EmbeddedModelField
 
 __all__ = ['LegacyEmbeddedModelField', 'GridFSField', 'GridFSString']
 
+ID, FILE, SHOULD_SAVE = range(3)
+
 class LegacyEmbeddedModelField(_EmbeddedModelField):
     """
     Wrapper around djangotoolbox' :class:`EmbeddedModelField` that keeps
@@ -51,12 +53,12 @@ class GridFSField(models.Field):
         id stored in the model.
         """
         meta = self._get_meta(model_instance)
-        oid, f, _ = meta
-        if f is None and oid is not None:
+        oid, _file, _ = meta
+        if _file is None and oid is not None:
             gridfs = self._get_gridfs(model_instance)
-            f = gridfs.get(oid)
-            meta[f] = f = gridfs.get(oid)
-        return f
+            _file = gridfs.get(oid)
+            meta[FILE] = _file = gridfs.get(oid)
+        return _file
 
     def _property_set(self, model_instance, value):
         """
@@ -66,7 +68,6 @@ class GridFSField(models.Field):
         in the model, otherwise it checks sets the value and
         checks whether a save is needed or not.
         """
-        ID, FILE, SHOULD_SAVE = [0, 1, 2]
         meta = self._get_meta(model_instance)
         if isinstance(value, ObjectId) and meta[ID] is None:
             meta[ID] = value
@@ -75,12 +76,12 @@ class GridFSField(models.Field):
             meta[FILE] = value
 
     def pre_save(self, model_instance, add):
-        oid, f, should_save = self._get_meta(model_instance)
+        oid, _file, should_save = self._get_meta(model_instance)
         if should_save:
             gridfs = self._get_gridfs(model_instance)
             if not self._versioning and oid is not None:
                 gridfs.delete(oid)
-            return gridfs.put(f)
+            return gridfs.put(_file)
         return oid
 
     def _on_pre_delete(self, sender, instance, using, signal, **kwargs):
@@ -99,9 +100,7 @@ class GridFSField(models.Field):
 
 class GridFSString(GridFSField):
     def _property_get(self, model):
-        f = super(GridFSString, self)._property_get(model)
-        if hasattr(f, 'read'):
-            return f.read()
-        return f
-
-ID, FILE, SHOULD_SAVE = range(3)
+        _file = super(GridFSString, self)._property_get(model)
+        if hasattr(_file, 'read'):
+            return _file.read()
+        return _file
