@@ -36,9 +36,14 @@ class DatabaseCreation(NonrelDatabaseCreation):
         if not meta.managed or meta.proxy:
             return []
 
-        descending_indexes = set(getattr(model._meta, 'descending_indexes', ()))
+        sparse_indexes = []
         collection = self.connection.get_collection(meta.db_table)
+        descending_indexes = set(getattr(model._meta, 'descending_indexes', ()))
 
+        # Lets normalize the sparse_index values changing [], set() to ()
+        for idx in set(getattr(model._meta, 'sparse_indexes', ())):
+            sparse_indexes.append(isinstance(idx, (tuple, set, list)) and tuple(idx) or idx )
+            
         def ensure_index(*args, **kwargs):
             if ensure_index.first_index:
                 print "Installing index for %s.%s model" % (meta.app_label, meta.object_name)
@@ -57,10 +62,14 @@ class DatabaseCreation(NonrelDatabaseCreation):
                     # Indices on _id are automatically created
                     continue
                 direction = ASCENDING
-            ensure_index([(field.column, direction)], unique=field.unique)
+            ensure_index([(field.column, direction)], unique=field.unique, sparse=field.name in sparse_indexes)
 
         field_names = set(field.name for field in meta.local_fields)
         def create_compound_indexes(indexes, **kwargs):
+            # if (field1, field2) in the sparse_indexes list
+            # then set sparse to true
+            kwargs['sparse'] = tuple(indexes) in sparse_indexes
+            
             if not indexes:
                 return
             indexes = [(index if isinstance(index, tuple) else (index, ASCENDING))

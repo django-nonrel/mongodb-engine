@@ -40,10 +40,17 @@ class IndexTestModel(models.Model):
     descending_index_custom_column = models.IntegerField(db_column='bar')
     foreignkey_index = models.ForeignKey(Blog, db_index=True)
     foreignkey_custom_column = models.ForeignKey('Post', db_column='spam')
+    sparse_index = models.IntegerField(db_index=True)
+    sparse_index_unique = models.IntegerField(db_index=True, unique=True)
+    sparse_index_cmp_1 = models.IntegerField(db_index=True)
+    sparse_index_cmp_2 = models.IntegerField(db_index=True)
 
     class MongoMeta:
+        sparse_indexes = ["sparse_index", "sparse_index_unique", ('sparse_index_cmp_1', 'sparse_index_cmp_2')]
         descending_indexes = ['descending_index', 'descending_index_custom_column']
-        index_together = ['regular_index', 'custom_column']
+        index_together = [ { 'fields' : ['regular_index', 'custom_column']},
+                           { 'fields' : ['sparse_index_cmp_1', 'sparse_index_cmp_2']},
+                        ]
 
 class GridFSFieldTestModel(models.Model):
     gridfile = GridFSField()
