@@ -31,7 +31,6 @@ class GridFSField(models.Field):
     """
     GridFS Field to use in models in order.
     """
-    
     def __init__(self, *args, **kwargs):
         self._versioning = kwargs.pop('versioning', False)
         kwargs['max_length'] = 24
@@ -53,18 +52,17 @@ class GridFSField(models.Field):
         id stored in the model.
         """
         meta = self._get_meta(model_instance)
-        oid, _file, _ = meta
-        if _file is None and oid is not None:
+        oid, filelike, _ = meta
+        if filelike is None and oid is not None:
             gridfs = self._get_gridfs(model_instance)
-            _file = gridfs.get(oid)
-            meta[FILE] = _file = gridfs.get(oid)
-        return _file
+            meta[FILE] = filelike = gridfs.get(oid)
+        return filelike
 
     def _property_set(self, model_instance, value):
         """
         Sets a new value.
-        
-        If value is an ObjectID it just updates the id stored 
+
+        If value is an ObjectID it just updates the id stored
         in the model, otherwise it checks sets the value and
         checks whether a save is needed or not.
         """
@@ -76,12 +74,12 @@ class GridFSField(models.Field):
             meta[FILE] = value
 
     def pre_save(self, model_instance, add):
-        oid, _file, should_save = self._get_meta(model_instance)
+        oid, filelike, should_save = self._get_meta(model_instance)
         if should_save:
             gridfs = self._get_gridfs(model_instance)
             if not self._versioning and oid is not None:
                 gridfs.delete(oid)
-            return gridfs.put(_file)
+            return gridfs.put(filelike)
         return oid
 
     def _on_pre_delete(self, sender, instance, using, signal, **kwargs):
@@ -100,7 +98,7 @@ class GridFSField(models.Field):
 
 class GridFSString(GridFSField):
     def _property_get(self, model):
-        _file = super(GridFSString, self)._property_get(model)
-        if hasattr(_file, 'read'):
-            return _file.read()
-        return _file
+        filelike = super(GridFSString, self)._property_get(model)
+        if hasattr(filelike, 'read'):
+            return filelike.read()
+        return filelike
