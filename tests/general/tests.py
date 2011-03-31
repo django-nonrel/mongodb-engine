@@ -16,7 +16,7 @@ from pymongo import ASCENDING, DESCENDING
 from django_mongodb_engine.base import DatabaseWrapper
 from django_mongodb_engine.serializer import LazyModelInstance
 
-from .utils import TestCase, get_collection, skip
+from .utils import *
 from models import *
 
 class QueryTests(TestCase):

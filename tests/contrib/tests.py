@@ -2,7 +2,7 @@ from django.db.models import Q
 from django.db.utils import DatabaseError
 from django_mongodb_engine.contrib.mapreduce import MapReduceResult
 
-from .utils import TestCase
+from .utils import TestCase, get_collection
 from .models import *
 
 class MapReduceTests(TestCase):
@@ -23,48 +23,55 @@ class MapReduceTests(TestCase):
             }
         """
 
-        finalizefunc = """ function(key, value) { return value * 2 } """
-
         random_numbers = [
             (3, 4),
             (6, 19),
             (5, 8),
             (0, 20), # this instance won't be emitted by `map`
-            (300, 10),
-            (2, 77)
+            (2, 77),
+            (300, 10)
         ]
 
         for n, m in random_numbers:
             MapReduceModel(n=n, m=m).save()
 
         # Test mapfunc + reducefunc
-        documents = list(MapReduceModel.objects.map_reduce(mapfunc, reducefunc))
+        documents = MapReduceModel.objects.map_reduce(mapfunc, reducefunc,
+                                                      out='m/r-out')
+        documents = list(documents)
         self.assertEqual(len(documents), len(random_numbers)-1)
         self.assertEqual(sum(doc.value for doc in documents),
                          sum(n*m for n, m in random_numbers))
 
+        # Test MapReduceResult
         obj = documents[0].get_object()
         self.assert_(isinstance(obj, MapReduceModel))
         self.assertEqual((obj.n, obj.m), random_numbers[0])
         self.assert_(obj.id)
 
-        # Test finalizefunc and limit
-        documents = list(MapReduceModel.objects.map_reduce(
-                            mapfunc, reducefunc, finalizefunc, limit=3))
+        # Collection should not have been perished
+        result_collection = get_collection('m/r-out')
+        self.assertEqual(result_collection.count(), len(random_numbers)-1)
+        result_collection.drop()
+
+        # Test drop_collection
+        MapReduceModel.objects.map_reduce(mapfunc, reducefunc, out='m/r-out')
+        self.assertEqual(get_collection('m/r-out').count(), 0)
+
+        # Test arbitrary kwargs
+        documents = MapReduceModel.objects.map_reduce(mapfunc, reducefunc,
+                                                      out='m/r-out', limit=3)
+        documents = list(documents)
         self.assertEqual(len(documents), 3)
         self.assertEqual(sum(doc.value for doc in documents),
-                         sum((n*m)*2 for n, m in random_numbers[:3]))
+                         sum(n*m for n, m in random_numbers[:3]))
 
-        # Test scope
-        mapfunc = """
-            function() { emit(this._id, this.n * x) } """
-        reducefunc = """
-            function(key, values) { return values[0] * y } """
-        scope = {'x' : 5, 'y' : 10}
-        documents = list(MapReduceModel.objects.map_reduce(mapfunc, reducefunc,
-                                                           scope=scope))
-        self.assertEqual([document.value for document in documents],
-                         [(n*scope['x']) * scope['y'] for n, m in random_numbers])
+        # Test with .filter(...)
+        qs = MapReduceModel.objects.filter(n__lt=300).filter(~Q(m__in=[4]))
+        documents = list(qs.map_reduce(mapfunc, reducefunc, out='m/r-out'))
+        self.assertEqual(len(documents), len(random_numbers)-2-1)
+        self.assertEqual(sum(doc.value for doc in documents),
+                         sum(n*m for n, m in random_numbers[1:-1]))
 
     def test_map_reduce_with_custom_primary_key(self):
         mapfunc = """ function() { emit(this._id, null) } """
@@ -77,8 +84,8 @@ class MapReduceTests(TestCase):
             MapReduceModelWithCustomPrimaryKey(primarykey=pk, data=data).save()
 
         documents = MapReduceModelWithCustomPrimaryKey.objects.map_reduce(
-            mapfunc, reducefunc)
-        somedoc = documents[0]
+            mapfunc, reducefunc, out='m/r-out')
+        somedoc = documents.next()
         self.assertEqual(somedoc.key, 'bar') # ordered by pk
         self.assertEqual(somedoc.value, None)
         obj = somedoc.get_object()

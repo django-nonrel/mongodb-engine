@@ -49,15 +49,63 @@ class RawQueryMixin:
 
     raw_update.alters_data = True
 
-class MongoDBManager(models.Manager, MapReduceMixin, RawQueryMixin):
+
+class MapReduceResult(object):
     """
-    Example usage::
+    Represents one item of a MapReduce result array.
 
-        from django_mongodb_engine.contrib import MongoDBManager
-
-        class MyModel(models.Model):
-            objects = MongoDBManager()
-
-        MyModel.objects.map_reduce(...) # See `MapReduceMixin` documentation
-        MyModel.objects.raw_query(...)  # See `RawQueryMixin` documentation
+    :param model: the model on that query the MapReduce was performed
+    :param key: the *key* from the result item
+    :param value: the *value* from the result item
     """
+    def __init__(self, model, key, value):
+        self.model = model
+        self.key = key
+        self.value = value
+
+    def get_object(self):
+        """
+        Fetches the model instance with ``self.key`` as primary key from the
+        database (doing a database query).
+        """
+        return self.model.objects.get(**{self.model._meta.pk.column : self.key})
+
+    def __repr__(self):
+        return '<%s model=%r key=%r value=%r>' % \
+                (self.__class__.__name__, self.model.__name__, self.key, self.value)
+
+class MongoDBQuerySet(QuerySet):
+    def map_reduce(self, *args, **kwargs):
+        """
+        Performs a Map/Reduce on the server.
+
+        Returns a list of :class:`.MapReduceResult` instances, one instance for
+        each item in the array the MapReduce query returns.
+
+        TODO docs
+
+        .. versionchanged:: 0.4 TODO
+        """
+        # TODO: Field name substitution (e.g. id -> _id)
+        drop_collection = kwargs.pop('drop_collection', False)
+        compiler = _compiler_for_queryset(self)
+        query = compiler.build_query()
+        kwargs.setdefault('query', query._mongo_query)
+        result_collection = query.collection.map_reduce(*args, **kwargs)
+        try:
+            for entity in result_collection.find():
+                yield MapReduceResult(self.model, entity['_id'], entity['value'])
+        finally:
+            if drop_collection:
+                result_collection.drop()
+
+
+class MongoDBManager(models.Manager, RawQueryMixin):
+    """
+    TODO docs
+    """
+    def map_reduce(self, *args, **kwargs):
+        return self.get_query_set().map_reduce(*args, **kwargs)
+
+    def get_query_set(self):
+        return MongoDBQuerySet(self.model, using=self._db)

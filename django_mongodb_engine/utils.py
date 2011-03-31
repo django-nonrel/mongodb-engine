@@ -62,7 +62,8 @@ class CollectionDebugWrapper(object):
 
     def logging_wrapper(method, npositional=1):
         def wrapper(self, *args, **kwargs):
-            assert len(args) == npositional
+            if npositional is not None:
+                assert len(args) == npositional
             start = time.time()
             try:
                 result = getattr(self.collection, method)(*args, **kwargs)
@@ -80,5 +81,6 @@ class CollectionDebugWrapper(object):
     save = logging_wrapper('save')
     remove = logging_wrapper('remove')
     update = logging_wrapper('update', npositional=2)
+    map_reduce = logging_wrapper('map_reduce', npositional=None)
 
     del logging_wrapper
