@@ -110,6 +110,7 @@ class RawQueryTests(TestCase):
                          [1, 1, 1, 1, 4, 5, 6, 7, 8, 9])
 
 
+# TODO line breaks
 class FullTextTest(TestCase):
     def test_simple_fulltext(self):
         blog = Post(content="simple, full text.... search? test")

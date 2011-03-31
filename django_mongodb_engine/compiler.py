@@ -320,6 +320,7 @@ class SQLCompiler(NonrelCompiler):
             if isinstance(aggregate, sqlaggregates.Count):
                 order.append(None)
                 # Needed to keep the iteration order which is important in the returned value.
+                # XXX this actually does a separate query... performance?
                 counts.append(self.get_count())
                 continue
 
