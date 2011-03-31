@@ -618,9 +618,7 @@ class GridFSFieldTests(TestCase):
             GridFSFieldTestModel.objects.all().delete()
 
     def test_update(self):
-        GridFSFieldTestModel.objects.create(gridfile='foo')
-        self.assertIsInstance(GridFSFieldTestModel.objects.get().gridfile, GridOut)
-        self.assertEqual(GridFSFieldTestModel.objects.get().gridfile.read(), 'foo')
-        GridFSFieldTestModel.objects.update(gridfile='bar')
-        self.assertIsInstance(GridFSFieldTestModel.objects.get().gridfile, GridOut)
-        self.assertEqual(GridFSFieldTestModel.objects.get().gridfile.read(), 'bar')
+        self.assertRaisesRegexp(
+            DatabaseError, "Updates on GridFSFields are not allowed",
+            GridFSFieldTestModel.objects.update, gridfile='x'
+        )

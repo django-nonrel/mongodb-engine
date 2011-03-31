@@ -42,6 +42,8 @@ class GridFSField(models.Field):
         GridFS (default: :const:`False`).
         `delete` and `versioning` are mutually exclusive.
     """
+    forbids_updates = True
+
     def __init__(self, *args, **kwargs):
         self._versioning = kwargs.pop('versioning', False)
         self._autodelete = kwargs.pop('delete', not self._versioning)

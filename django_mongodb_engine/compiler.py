@@ -382,6 +382,9 @@ class SQLUpdateCompiler(NonrelUpdateCompiler, SQLCompiler):
         multi = True
         spec = {}
         for field, _, value in self.query.values:
+            if getattr(field, 'forbids_updates', False):
+                raise DatabaseError("Updates on %ss are not allowed" %
+                                    field.__class__.__name__)
             if field.unique:
                 multi = False
             if hasattr(value, 'prepare_database_save'):
