@@ -4,6 +4,11 @@ from django.db.models.sql import AND
 from django.db.models.sql.query import Query as SQLQuery
 from .mapreduce import MapReduceMixin
 
+def _compiler_for_queryset(qs, which='SQLCompiler'):
+    connection = connections[qs.db]
+    Compiler = connection.ops.compiler(which)
+    return Compiler(qs.query, connection, connection.alias)
+
 class RawQuery(SQLQuery):
     def __init__(self, model, raw_query):
         super(RawQuery, self).__init__(model)
@@ -39,10 +44,8 @@ class RawQueryMixin:
         else:
             queryset = self.filter(spec_or_q)
         queryset._for_write = True
-        connection = connections[queryset.db]
-        compiler = connection.ops.compiler('SQLUpdateCompiler')
-        compiler = compiler(queryset.query, connection, connection.alias)
-        compiler.execute_raw(update_dict)
+        compiler = _compiler_for_queryset(queryset, 'SQLUpdateCompiler')
+        compiler.execute_raw(update_dict, **kwargs)
 
     raw_update.alters_data = True
 

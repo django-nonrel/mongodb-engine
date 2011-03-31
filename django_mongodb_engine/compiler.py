@@ -368,10 +368,11 @@ class SQLUpdateCompiler(NonrelUpdateCompiler, SQLCompiler):
     query_class = MongoQuery
 
     @safe_call
-    def execute_raw(self, update_spec, multi=True):
+    def execute_raw(self, update_spec, multi=True, **kwargs):
         collection = self.get_collection()
         criteria = self.build_query()._mongo_query
         options = self.connection.operation_flags.get('update', {})
+        options = dict(options, **kwargs)
         return collection.update(criteria, update_spec, multi=multi, **options)
 
     def execute_sql(self, return_id=False):
