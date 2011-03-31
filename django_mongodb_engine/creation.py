@@ -43,7 +43,7 @@ class DatabaseCreation(NonrelDatabaseCreation):
         # Lets normalize the sparse_index values changing [], set() to ()
         for idx in set(getattr(model._meta, 'sparse_indexes', ())):
             sparse_indexes.append(isinstance(idx, (tuple, set, list)) and tuple(idx) or idx )
-            
+
         def ensure_index(*args, **kwargs):
             if ensure_index.first_index:
                 print "Installing index for %s.%s model" % (meta.app_label, meta.object_name)
@@ -69,7 +69,7 @@ class DatabaseCreation(NonrelDatabaseCreation):
             # if (field1, field2) in the sparse_indexes list
             # then set sparse to true
             kwargs['sparse'] = tuple(indexes) in sparse_indexes
-            
+
             if not indexes:
                 return
             indexes = [(index if isinstance(index, tuple) else (index, ASCENDING))
