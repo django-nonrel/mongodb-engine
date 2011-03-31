@@ -1,7 +1,6 @@
 #!/usr/bin/python
 import os
 from types import ModuleType
-from subprocess import check_call
 
 def runtests(foo, settings='settings', extra=[]):
     if isinstance(foo, ModuleType):
@@ -9,12 +8,12 @@ def runtests(foo, settings='settings', extra=[]):
         apps = foo.INSTALLED_APPS
     else:
         apps = foo
-    check_call(['./manage.py', 'test', '--settings', settings] + extra + apps)
+    execute(['./manage.py', 'test', '--settings', settings] + extra + apps)
 
 
 def main(short):
     # Run some basic tests outside Django's test environment
-    check_call(
+    execute(
         ['python', '-c', 'from general.models import Blog\n'
                          'Blog.objects.create()\n'
                          'Blog.objects.all().delete()\n'
@@ -32,7 +31,7 @@ def main(short):
         exit()
 
     # Make sure we can syncdb.
-    check_call(['./manage.py', 'syncdb', '--noinput'])
+    execute(['./manage.py', 'syncdb', '--noinput'])
 
     runtests(settings_dbindexer)
     runtests(['router'], 'settings_router')
@@ -42,6 +41,10 @@ def main(short):
 
 if __name__ == '__main__':
     import sys
+    if 'ignorefailures' in sys.argv:
+        from subprocess import call as execute
+    else:
+        from subprocess import check_call as execute
     if 'coverage' in sys.argv:
         def _new_check_call_closure(old_check_call):
             def _new_check_call(cmd, **kwargs):
