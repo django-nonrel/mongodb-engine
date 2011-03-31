@@ -478,7 +478,7 @@ class DatabaseOptionTests(TestCase):
 class IndexTests(TestCase):
     def setUp(self):
         from django.core.management import call_command
-        call_command('sqlindexes', 'general')
+        call_command('sqlindexes', 'general', verbosity=0)
 
     def assertHaveIndex(self, field_name, direction=ASCENDING):
         info = get_collection(IndexTestModel).index_information()
