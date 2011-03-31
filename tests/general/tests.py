@@ -376,6 +376,9 @@ class MongoDBEngineTests(TestCase):
         from pymongo.collection import Collection
         from random import shuffle
 
+        if settings.DEBUG:
+            from django_mongodb_engine.utils import CollectionDebugWrapper as Collection
+
         for wrapper in (
             connections['default'],
             DatabaseWrapper(connections['default'].settings_dict.copy())
