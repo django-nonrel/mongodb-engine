@@ -22,6 +22,6 @@ def skip(test):
     pass
 
 def get_collection(model_or_name):
-    if isinstance(model_or_name, Model):
-        model_or_name = model._meta.db_table
+    if isinstance(model_or_name, type) and issubclass(model_or_name, Model):
+        model_or_name = model_or_name._meta.db_table
     return connections['default'].get_collection(model_or_name)
