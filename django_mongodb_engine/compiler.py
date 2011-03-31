@@ -51,7 +51,7 @@ NEGATED_OPERATORS_MAP = {
     'lt':       lambda val: {'$gte': val},
     'lte':      lambda val: {'$gt': val},
     'isnull':   lambda val: {'$ne': None} if val else None,
-    'in':       lambda val: val
+    'in':       lambda val: {'$nin' : val}
 }
 
 def safe_call(func):

@@ -261,6 +261,12 @@ class QueryTests(TestCase):
             blogs[0]
         )
 
+    def test_nin(self):
+        Blog.objects.create(title='a')
+        Blog.objects.create(title='b')
+        self.assertEqual(Blog.objects.get(~Q(title__in='b')),
+                         Blog.objects.get(title='a'))
+
     def test_simple_or_queries(self):
         obj1 = Blog.objects.create(title='1')
         obj2 = Blog.objects.create(title='1')
