@@ -2,7 +2,6 @@ from django.db import models, connections
 from django.db.models.query import QuerySet
 from django.db.models.sql import AND
 from django.db.models.sql.query import Query as SQLQuery
-from .mapreduce import MapReduceMixin
 
 def _compiler_for_queryset(qs, which='SQLCompiler'):
     connection = connections[qs.db]
