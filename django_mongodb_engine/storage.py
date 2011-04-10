@@ -10,10 +10,10 @@ from .utils import get_default_connection
 
 class GridFSStorage(Storage):
     """
-    GridFs Storage Backend for django.
+    GridFS Storage Backend for Django.
 
-    This backend aims to add a gridfs storage to upload files to
-    using django file fields.
+    This backend aims to add a GridFS storage to upload files to
+    using Django file fields.
 
     The reason why a folders are converted into collections names is to
     improve performance. For example:
@@ -43,7 +43,7 @@ class GridFSStorage(Storage):
     @property
     def fs(self):
         """
-        Gets the GridFs instance and returns it.
+        Gets the GridFS instance and returns it.
         """
         if not hasattr(self, '_fs'):
             self._fs = self._get_gridfs_for_path(self.location)
