@@ -6,8 +6,6 @@ import gridfs
 from django.conf import settings
 from django.core.files.storage import Storage
 
-from .utils import get_default_connection
-
 class GridFSStorage(Storage):
     """
     GridFS Storage Backend for Django.
@@ -41,6 +39,13 @@ class GridFSStorage(Storage):
         self.prefix = prefix
 
     @property
+    def database(self):
+        if not hasattr(self, '_database'):
+            from django_mongodb_engine.utils import get_default_connection
+            self._database = get_default_connection().database
+        return self._database
+
+    @property
     def fs(self):
         """
         Gets the GridFS instance and returns it.
@@ -50,8 +55,7 @@ class GridFSStorage(Storage):
         return self._fs
 
     def _get_gridfs_for_path(self, path):
-        return gridfs.GridFS(get_default_connection().database,
-                             self._get_collection_name_for(path))
+        return gridfs.GridFS(self.database, self._get_collection_name_for(path))
 
     def _get_collection_name_for(self, path="/"):
         collection_name = self.path(path).replace(os.sep, self.sep)
@@ -119,7 +123,7 @@ class GridFSStorage(Storage):
         col_name = self._get_collection_name_for(path)
         path_containing_dirs = re.compile(r"^%s(%s\w+){1}\.files$" % (re.escape(col_name), re.escape(self.sep)))
         collections = filter(path_containing_dirs.match,
-                             get_default_connection().database.collection_names())
+                             self.database.collection_names())
         return [self._get_rel_path_name_for(col) for col in collections], self.fs.list()
 
     def size(self, name):
