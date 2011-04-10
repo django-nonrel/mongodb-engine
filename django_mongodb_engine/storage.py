@@ -8,7 +8,7 @@ from django.core.files.storage import Storage
 
 from .utils import get_default_connection
 
-class GridFsStorage(Storage):
+class GridFSStorage(Storage):
     """
     GridFs Storage Backend for django.
 

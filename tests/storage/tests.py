@@ -3,15 +3,15 @@ import os
 import tempfile
 from datetime import datetime, timedelta
 from django.core.files.base import ContentFile, File
-from django_mongodb_engine.storage import GridFsStorage
+from django_mongodb_engine.storage import GridFSStorage
 
 from .utils import TestCase
 import models
 
 FILES_PATH = os.path.join(os.path.dirname(models.__file__), 'to_import')
 
-class GridFsStorageTest(TestCase):
-    storage_class = GridFsStorage
+class GridFSStorageTest(TestCase):
+    storage_class = GridFSStorage
 
     def setUp(self):
         self.temp_dir = tempfile.mktemp()
@@ -148,7 +148,7 @@ class GridFsStorageTest(TestCase):
 
         f = self.storage.save('storage_test_1', ContentFile('custom content'))
         f = self.storage.save('storage_test_2', ContentFile('custom content'))
-        storage = GridFsStorage(location=os.path.join(self.temp_dir, 'storage_dir_1'))
+        storage = GridFSStorage(location=os.path.join(self.temp_dir, 'storage_dir_1'))
         f = storage.save('storage_test_3', ContentFile('custom content'))
 
         dirs, files = self.storage.listdir('')
