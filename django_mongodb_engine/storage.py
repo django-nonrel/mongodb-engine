@@ -53,7 +53,8 @@ class GridFSStorage(Storage):
         return gridfs.GridFS(self.database, self._get_collection_name_for(path))
 
     def _get_collection_name_for(self, path="/"):
-        collection_name = self.path(path).replace(os.sep, self.sep)
+        abspath = os.path.abspath(os.path.join(self.location, path))
+        collection_name = abspath.replace(os.sep, self.sep)
         if collection_name == self.sep:
             collection_name = ""
         return "%s%s" % (self.prefix, collection_name)
@@ -66,7 +67,7 @@ class GridFSStorage(Storage):
 
     def _get_rel_path_name_for(self, collection):
         path = self._get_abs_path_name_for(collection)
-        return os.path.relpath(path, self.path(""))
+        return os.path.relpath(os.path.abspath(path), self.location)
 
     def _get_file(self, path):
         """
@@ -101,9 +102,6 @@ class GridFSStorage(Storage):
         doc = self._get_file(name)
         if doc:
             self.fs.delete(doc._id)
-
-    def path(self, name):
-        return os.path.abspath(os.path.join(self.location, name))
 
     def exists(self, name):
         return self.fs.exists(filename=name)
