@@ -28,13 +28,8 @@ class GridFSStorage(Storage):
     TO BE IMPROVED.
     """
 
-    def __init__(self, location=None, base_url=None, prefix='storage', sep='/'):
-        if location is None:
-            location = settings.MEDIA_ROOT
-        if base_url is None:
-            base_url = settings.MEDIA_URL
+    def __init__(self, location='', prefix='storage', sep='/'):
         self.location = os.path.abspath(location)
-        self.base_url = base_url
         self.sep = sep
         self.prefix = prefix
 
