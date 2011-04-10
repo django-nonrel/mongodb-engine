@@ -2,7 +2,6 @@ import os
 import re
 
 import gridfs
-from pymongo.objectid import ObjectId
 
 from django.conf import settings
 from django.core.files.storage import Storage
