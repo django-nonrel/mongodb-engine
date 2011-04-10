@@ -6,7 +6,7 @@ import gridfs
 from django.conf import settings
 from django.core.files.storage import Storage
 
-from .utils import get_default_db_connection
+from .utils import get_default_connection
 
 class GridFsStorage(Storage):
     """
