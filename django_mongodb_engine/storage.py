@@ -46,23 +46,24 @@ class GridFSStorage(Storage):
         Gets the GridFs instance and returns it.
         """
         if not hasattr(self, '_fs'):
-            self._fs = self._get_path_instance(self.location)
+            self._fs = self._get_gridfs_for_path(self.location)
         return self._fs
 
-    def _get_path_instance(self, path):
-        return gridfs.GridFS(get_default_db_connection(), self._get_collection_name_for(path))
+    def _get_gridfs_for_path(self, path):
+        return gridfs.GridFS(get_default_connection().database,
+                             self._get_collection_name_for(path))
 
     def _get_collection_name_for(self, path="/"):
-        col_name = self.path(path).replace(os.sep, self.sep)
-        if col_name == self.sep:
-            col_name = ""
-        return "%s%s" % (self.prefix, col_name)
+        collection_name = self.path(path).replace(os.sep, self.sep)
+        if collection_name == self.sep:
+            collection_name = ""
+        return "%s%s" % (self.prefix, collection_name)
 
     def _get_abs_path_name_for(self, collection):
         if collection.endswith(".files"):
             collection = collection[:-6]
         path = collection.replace(self.sep, os.sep)[len(self.prefix):]
-        return path and path or "/"
+        return path or "/"
 
     def _get_rel_path_name_for(self, collection):
         path = self._get_abs_path_name_for(collection)
@@ -115,10 +116,10 @@ class GridFSStorage(Storage):
 
         Needs to be improved
         """
-
         col_name = self._get_collection_name_for(path)
         path_containing_dirs = re.compile(r"^%s(%s\w+){1}\.files$" % (re.escape(col_name), re.escape(self.sep)))
-        collections = filter(lambda x: path_containing_dirs.match(x), get_default_db_connection().collection_names())
+        collections = filter(path_containing_dirs.match,
+                             get_default_connection().database.collection_names())
         return [self._get_rel_path_name_for(col) for col in collections], self.fs.list()
 
     def size(self, name):
