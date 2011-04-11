@@ -40,7 +40,7 @@ class GridFSStorage(Storage):
     """
 
     def __init__(self, location='', collection='storage'):
-        self.location = location.strip('/')
+        self.location = location.strip(os.sep)
         self.collection = collection
         if not self.collection:
             raise ImproperlyConfigured("'collection' may not be empty")
@@ -113,7 +113,7 @@ class GridFSStorage(Storage):
         Returns a :class:`~gridfs.GridFS` using the sub-collection for `path`.
         """
         path, filename = os.path.split(path)
-        path = os.path.join(self.collection, self.location, path)
+        path = os.path.join(self.collection, self.location, path.strip(os.sep))
         collection_name = path.replace(os.sep, '.').strip('.')
 
         if not hasattr(self, '_db'):
