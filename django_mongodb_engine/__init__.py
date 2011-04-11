@@ -5,7 +5,7 @@ __version__ = (0, 3, 0)
 __author__ = "Flavio Percoco Premoli, Alberto Paro, " + \
              "Jonas Haag and contributors"
 __contact__ = "django-non-relational@googlegroups.com"
-__homepage__ = "http://github.com/django-mongodb-engine/mongodb-engine"
+__homepage__ = "https://github.com/django-mongodb-engine/mongodb-engine"
 __docformat__ = "restructuredtext"
 
 try:
