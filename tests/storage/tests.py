@@ -12,10 +12,13 @@ FILES_PATH = os.path.join(os.path.dirname(models.__file__), 'to_import')
 
 class GridFSStorageTest(TestCase):
     storage_class = GridFSStorage
+    temp_dir = tempfile.mktemp()
 
     def setUp(self):
-        self.temp_dir = tempfile.mktemp()
-        self.storage = self.storage_class(location=self.temp_dir, base_url='/test_media_url/')
+        self.storage = self.get_storage(self.temp_dir)
+
+    def get_storage(self, location):
+        return self.storage_class(location=location)
 
     def test_file_access_options(self):
         """
@@ -94,19 +97,19 @@ class GridFSStorageTest(TestCase):
 
         self.storage.delete(storage_f_name)
 
-    def test_file_path(self):
-        """
-        File storage returns the full path of a file
-        """
-        self.assertFalse(self.storage.exists('test.file'))
-
-        f = ContentFile('custom contents')
-        f_name = self.storage.save('test.file', f)
-
-        self.assertEqual(self.storage.path(f_name),
-            os.path.join(self.temp_dir, f_name))
-
-        self.storage.delete(f_name)
+    # def test_file_path(self):
+    #     """
+    #     File storage returns the full path of a file
+    #     """
+    #     self.assertFalse(self.storage.exists('test.file'))
+    #
+    #     f = ContentFile('custom contents')
+    #     f_name = self.storage.save('test.file', f)
+    #
+    #     self.assertEqual(self.storage.path(f_name),
+    #         os.path.join(self.temp_dir, f_name))
+    #
+    #     self.storage.delete(f_name)
 
     # def test_file_url(self):
     #     """
@@ -148,7 +151,7 @@ class GridFSStorageTest(TestCase):
 
         f = self.storage.save('storage_test_1', ContentFile('custom content'))
         f = self.storage.save('storage_test_2', ContentFile('custom content'))
-        storage = GridFSStorage(location=os.path.join(self.temp_dir, 'storage_dir_1'))
+        storage = self.get_storage(location=os.path.join(self.temp_dir, 'storage_dir_1'))
         f = storage.save('storage_test_3', ContentFile('custom content'))
 
         dirs, files = self.storage.listdir('')
@@ -158,3 +161,7 @@ class GridFSStorageTest(TestCase):
 
         self.storage.delete('storage_test_1')
         self.storage.delete('storage_test_2')
+
+class GridFSStorageTestWithoutLocation(GridFSStorageTest):
+    # Now test everything without passing a location argument
+    temp_dir = ''

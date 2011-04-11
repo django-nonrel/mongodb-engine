@@ -118,6 +118,7 @@ class GridFSField(models.Field):
         return meta
 
     def _get_gridfs(self, model_instance):
+        # XXX shouldn't we use the model's collection here?
         return GridFS(connections[model_instance.__class__.objects.db].database)
 
 class GridFSString(GridFSField):
