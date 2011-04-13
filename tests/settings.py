@@ -11,6 +11,8 @@ DATABASES = {
 
 DEFAULT_APPS = [
     'django.contrib.auth',
+    'django.contrib.sessions',
+    'django.contrib.messages'
 ]
 INSTALLED_APPS = [
     'djangotoolbox',
@@ -21,6 +23,8 @@ INSTALLED_APPS = [
     'contrib',
     'storage'
 ]
+
+SERIALIZATION_MODULES = {'json' : 'tests.deserializer'}
 
 LOGGING = {
     'version' : 1,
