@@ -12,6 +12,8 @@ class MongoDBRouter(object):
     
     MongoDBRouter uses the MONGODB_MANAGED_APPS and MONGODB_MANAGED_MODELS settings vars
     to know which models/apps should be stored inside mongodb.
+    
+    See: http://docs.djangoproject.com/en/dev/topics/db/multi-db/#topics-db-multi-db-routing
     """
     def __init__(self):
         self.managed_apps = [app.split('.')[-1] for app in getattr(settings, 'MONGODB_MANAGED_APPS', [])]
