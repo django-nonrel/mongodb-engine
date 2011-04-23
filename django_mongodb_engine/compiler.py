@@ -295,6 +295,12 @@ class SQLCompiler(NonrelCompiler):
     def _save(self, data, return_id=False):
         collection = self.get_collection()
         options = self.connection.operation_flags.get('save', {})
+        if data.get('_id', NOT_PROVIDED) is None:
+            if len(data) == 1:
+                # insert with empty model
+                data = {}
+            else:
+                raise DatabaseError("Can't save entity with _id set to None")
         primary_key = collection.save(data, **options)
         if return_id:
             return unicode(primary_key)

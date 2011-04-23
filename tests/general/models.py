@@ -3,6 +3,9 @@ from django.conf import settings
 from djangotoolbox.fields import ListField, RawField
 from django_mongodb_engine.fields import GridFSField, GridFSString
 
+class Empty(models.Model):
+    pass
+
 class Blog(models.Model):
     title = models.CharField(max_length=200, db_index=True)
 

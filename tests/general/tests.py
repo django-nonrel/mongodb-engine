@@ -309,6 +309,12 @@ class QueryTests(TestCase):
              [datetime.date(year=2001, month=1, day=2)])
         )
 
+    def test_can_save_empty_model(self):
+        obj = Empty.objects.create()
+        self.assertNotEqual(obj.id, None)
+        self.assertNotEqual(obj.id, 'None')
+        self.assertEqual(obj, Empty.objects.get(id=obj.id))
+
 
 class MongoDBEngineTests(TestCase):
     """ Tests for mongodb-engine specific features """
