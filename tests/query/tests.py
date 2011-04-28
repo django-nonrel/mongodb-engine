@@ -190,6 +190,9 @@ class QueryTests(TestCase):
         Person.objects.filter(name='john').update(age=F('age')-10)
         self.assertEqual(Person.objects.get(name='john').age, 39)
 
+    def test_invalid_update_with_F(self):
+        self.assertRaises(DatabaseError, Person.objects.update, age=F('name')+1)
+
     def test_regex_matchers(self):
         objs = [Blog.objects.create(title=title) for title in
                 ('Hello', 'worLd', '[(', '**', '\\')]

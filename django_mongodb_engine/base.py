@@ -127,6 +127,7 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
             self.operation_flags = {'save' : flags, 'delete' : flags, 'update' : flags}
 
         # Compatibility to version < 0.4
+        # TODO deprecation
         if 'SAFE_INSERTS' in settings:
             self.operation_flags['save']['safe'] = settings['SAFE_INSERTS']
         if 'WAIT_FOR_SLAVES' in settings:
