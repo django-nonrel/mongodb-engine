@@ -25,7 +25,7 @@ class RawQueryMixin:
     def raw_query(self, query=None):
         """
         Does a raw MongoDB query. The optional parameter `query` is the spec
-        passed to PyMongo's :meth:`~pymongo.Collection.find` method.
+        passed to PyMongo's :meth:`<Collection.find> pymongo.Collection.find`.
         """
         return self.get_raw_query_set(query or {})
 
@@ -76,14 +76,14 @@ class MapReduceResult(object):
 class MongoDBQuerySet(QuerySet):
     def map_reduce(self, *args, **kwargs):
         """
-        Performs a Map/Reduce on the server.
+        Performs a Map/Reduce operation on all documents matching the query,
+        yielding :class:`MapReduceResult` objects for each result entity.
 
-        Returns a list of :class:`.MapReduceResult` instances, one instance for
-        each item in the array the MapReduce query returns.
+        If the optional keyword argument `drop_collection` is ``True``, the
+        result collection will be dropped after fetching all results.
 
-        TODO docs
-
-        .. versionchanged:: 0.4 TODO
+        Any other arguments are passed to
+        :meth:`Collection.map_reduce <pymongo.collection.Collection.map_reduce>`.
         """
         # TODO: Field name substitution (e.g. id -> _id)
         drop_collection = kwargs.pop('drop_collection', False)
@@ -101,7 +101,11 @@ class MongoDBQuerySet(QuerySet):
 
 class MongoDBManager(models.Manager, RawQueryMixin):
     """
-    TODO docs
+    Let's you use Map/Reduce and raw query/update with your models::
+
+        class FooModel(models.Model):
+            ...
+            objects = MongoDBManager()
     """
     def map_reduce(self, *args, **kwargs):
         return self.get_query_set().map_reduce(*args, **kwargs)
