@@ -25,38 +25,6 @@ def make_struct(*attrs):
                 setattr(self, attr, arg)
     return _Struct
 
-# MongoDB related stuff:
-
-_databases = []
-def get_databases():
-    if _databases:
-        return _databases
-
-    default_database = None
-    for name, databaseopt in settings.DATABASES.iteritems():
-        if databaseopt['ENGINE'] != 'django_mongodb_engine':
-            continue
-        _databases.append(name)
-        if databaseopt.get('IS_DEFAULT'):
-            if default_database is None:
-                default_database = name
-            else:
-                raise ImproperlyConfigured("There can be only one default MongoDB database")
-
-    if not _databases:
-        raise ImproperlyConfigured("No MongoDB database found in settings.DATABASES")
-
-    if default_database is None:
-        default_database = _databases[0]
-
-    return default_database, _databases
-
-def get_default_database():
-    return get_databases()[0]
-
-def get_default_connection():
-    return connections[get_default_database()]
-
 class CollectionDebugWrapper(object):
     def __init__(self, collection):
         self.collection = collection
