@@ -7,15 +7,6 @@ from gridfs import GridFS
 from djangotoolbox.fields import EmbeddedModelField as _EmbeddedModelField
 from django_mongodb_engine.utils import make_struct
 
-try:
-    # Used to satisfice south when introspecting models that use 
-    # GridFSField/GridFSString fields. Custom rules could be added
-    # if needed.
-    from south.modelsinspector import add_introspection_rules
-except ImportError:
-    def add_introspection_rules(*args, **kwargs):
-        pass
-
 __all__ = ['LegacyEmbeddedModelField', 'GridFSField', 'GridFSString']
 
 class LegacyEmbeddedModelField(_EmbeddedModelField):
@@ -35,13 +26,13 @@ class LegacyEmbeddedModelField(_EmbeddedModelField):
             if '_id' in values:
                 values['id'] = values.pop('_id')
         return super(LegacyEmbeddedModelField, self).to_python(values)
-        
+
 class GridFSField(models.Field):
     """
     GridFS field to store large chunks of data (blobs) in GridFS.
 
     Model instances keep references (ObjectIds) to GridFS files
-    (:class:`grifs.GridOut`) which are fetched on first attribute access.
+    (:class:`gridfs.GridOut`) which are fetched on first attribute access.
 
     :param delete:
         Whether to delete the data stored in the GridFS (as GridFS files) when
@@ -130,7 +121,6 @@ class GridFSField(models.Field):
         # XXX shouldn't we use the model's collection here?
         return GridFS(connections[model_instance.__class__.objects.db].database)
 
-add_introspection_rules([], ["^django_mongodb_engine\.fields\.GridFSField"])
 
 class GridFSString(GridFSField):
     """
@@ -146,4 +136,12 @@ class GridFSString(GridFSField):
             return filelike.read()
         return filelike
 
-add_introspection_rules([], ["^django_mongodb_engine\.fields\.GridFSString"])
+
+try:
+    # Used to satisfice south when introspecting models that use
+    # GridFSField/GridFSString fields. Custom rules could be added if needed.
+    from south.modelsinspector import add_introspection_rules
+    add_introspection_rules([], ["^django_mongodb_engine\.fields\.GridFSField"])
+    add_introspection_rules([], ["^django_mongodb_engine\.fields\.GridFSString"])
+except ImportError:
+    pass
