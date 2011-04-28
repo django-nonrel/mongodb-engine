@@ -31,17 +31,22 @@ class GridFSStorage(Storage):
     have to execute a search over the whole collection and then filter the
     results to exclude those not starting by '/this/path' using that model.)
 
-    :param collection:
-        The collection the file tree shall be stored in. Defaults to 'storage'.
     :param location:
        (optional) Name of the top-level node that holds the files. This value of
        `location` is prepended to all file paths, so it works like the `location`
        setting for Django's built-in :class:`~django.core.files.storage.FileSystemStorage`.
+    :param collection:
+        Name of the collection the file tree shall be stored in.
+        Defaults to 'storage'.
+    :param database:
+        Alias of the Django database to use. Defaults to 'default' (the default
+        Django database).
     """
 
-    def __init__(self, location='', collection='storage'):
+    def __init__(self, location='', collection='storage', database='default'):
         self.location = location.strip(os.sep)
         self.collection = collection
+        self.database = database
         if not self.collection:
             raise ImproperlyConfigured("'collection' may not be empty")
 
@@ -117,7 +122,7 @@ class GridFSStorage(Storage):
         collection_name = path.replace(os.sep, '.').strip('.')
 
         if not hasattr(self, '_db'):
-            from django_mongodb_engine.utils import get_default_connection
-            self._db = get_default_connection().database
+            from django.db import connections
+            self._db = connections[self.database].database
 
         return GridFS(self._db, collection_name), filename
