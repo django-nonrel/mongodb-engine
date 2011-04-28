@@ -44,7 +44,7 @@ class MapReduceTests(TestCase):
                          sum(n*m for n, m in random_numbers))
 
         # Test MapReduceResult
-        obj = documents[0].get_object()
+        obj = documents[0].model.objects.get(id=documents[0].key)
         self.assert_(isinstance(obj, MapReduceModel))
         self.assertEqual((obj.n, obj.m), random_numbers[0])
         self.assert_(obj.id)
@@ -88,7 +88,7 @@ class MapReduceTests(TestCase):
         somedoc = documents.next()
         self.assertEqual(somedoc.key, 'bar') # ordered by pk
         self.assertEqual(somedoc.value, None)
-        obj = somedoc.get_object()
+        obj = somedoc.model.objects.get(pk=somedoc.key)
         self.assert_(not hasattr(obj, 'id') and not hasattr(obj, '_id'))
         self.assertEqual(obj, MapReduceModelWithCustomPrimaryKey(pk='bar', data='yo?'))
 

@@ -1,6 +1,5 @@
 from django.db import models, connections
 from django.db.models.query import QuerySet
-from django.db.models.sql import AND
 from django.db.models.sql.query import Query as SQLQuery
 
 def _compiler_for_queryset(qs, which='SQLCompiler'):
@@ -61,13 +60,6 @@ class MapReduceResult(object):
         self.model = model
         self.key = key
         self.value = value
-
-    def get_object(self):
-        """
-        Fetches the model instance with ``self.key`` as primary key from the
-        database (doing a database query).
-        """
-        return self.model.objects.get(**{self.model._meta.pk.column : self.key})
 
     def __repr__(self):
         return '<%s model=%r key=%r value=%r>' % \
