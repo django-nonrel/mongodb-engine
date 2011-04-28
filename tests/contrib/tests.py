@@ -107,6 +107,16 @@ class RawQueryTests(TestCase):
             list(MapReduceModel.objects.filter(n__lt=9, n__gt=5)),
             list(MapReduceModel.objects.raw_query({'n' : {'$lt' : 9}}).filter(n__gt=5)))
 
+        MapReduceModel.objects.raw_query({'n' : {'$lt' : 3}}).update(m=42)
+        self.assertEqual(
+            list(MapReduceModel.objects.raw_query({'n' : {'$gt' : 0}}).filter(n__lt=3)),
+            list(MapReduceModel.objects.all()[1:3])
+        )
+        self.assertEqual(
+            list(MapReduceModel.objects.values_list('m')[:5]),
+            [(42,), (42,), (42,), (6,), (8,)]
+        )
+
     def test_raw_update(self):
         from django.db.models import Q
         MapReduceModel.objects.raw_update(Q(n__lte=3), {'$set' : {'n' : -1}})

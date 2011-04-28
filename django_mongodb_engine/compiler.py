@@ -69,9 +69,7 @@ class MongoQuery(NonrelQuery):
         db_table = self.query.get_meta().db_table
         self.collection = self.connection.get_collection(db_table)
         self._ordering = []
-        self._mongo_query = compiler.query.raw_query \
-                            if isinstance(compiler.query, RawQuery) \
-                            else {}
+        self._mongo_query = getattr(compiler.query, 'raw_query', {})
 
     def __repr__(self):
         return '<MongoQuery: %r ORDER %r>' % (self._mongo_query, self._ordering)
