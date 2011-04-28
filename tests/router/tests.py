@@ -3,9 +3,9 @@ from django.db.utils import DatabaseError
 
 class RouterTest(TestCase):
     def test_managed_apps(self):
-        # MONGODB_MANAGED_APPS = ['general'] : Any 'general' model resides in
+        # MONGODB_MANAGED_APPS = ['query'] : Any 'query' model resides in
         # the MongoDB 'other'
-        from general.models import Blog
+        from query.models import Blog
         Blog.objects.create()
         self.assertEqual(Blog.objects.using('other').count(), 1)
         self.assertRaisesRegexp(DatabaseError, "no such table",

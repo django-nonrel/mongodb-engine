@@ -14,7 +14,7 @@ def runtests(foo, settings='settings', extra=[]):
 def main(short):
     # Run some basic tests outside Django's test environment
     execute(
-        ['python', '-c', 'from general.models import Blog\n'
+        ['python', '-c', 'from query.models import Blog\n'
                          'Blog.objects.create()\n'
                          'Blog.objects.all().delete()\n'
                          'Blog.objects.update()'],
