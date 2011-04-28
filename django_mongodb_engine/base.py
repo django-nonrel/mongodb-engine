@@ -20,6 +20,11 @@ from djangotoolbox.db.base import (
 
 from datetime import datetime
 
+def _warn_deprecated(opt):
+    import warnings
+    warnings.warn("The %r option is deprecated as of version 0.4 in flavor of "
+                  "the 'OPERATIONS' setting" % opt, PendingDeprecationWarning)
+
 class DatabaseFeatures(NonrelDatabaseFeatures):
     string_based_auto_field = True
     supports_dicts = True
@@ -127,10 +132,11 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
             self.operation_flags = {'save' : flags, 'delete' : flags, 'update' : flags}
 
         # Compatibility to version < 0.4
-        # TODO deprecation
         if 'SAFE_INSERTS' in settings:
+            _warn_deprecated('SAFE_INSERTS')
             self.operation_flags['save']['safe'] = settings['SAFE_INSERTS']
         if 'WAIT_FOR_SLAVES' in settings:
+            _warn_deprecated('WAIT_FOR_SLAVES')
             self.operation_flags['save']['w'] = settings['WAIT_FOR_SLAVES']
 
         # lower-case all remaining OPTIONS
