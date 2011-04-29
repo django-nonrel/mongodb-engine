@@ -27,6 +27,12 @@ class MongoDjTest(TestCase):
     def assertEqualQueryset(self, a, b):
         self.assertEqual(list(a), list(b))
 
+    def test_empty(self):
+        obj = Empty.objects.create()
+        self.assertNotEqual(obj.id, None)
+        self.assertNotEqual(obj.id, 'None')
+        self.assertEqual(obj, Empty.objects.get(id=obj.id))
+
     def test_mongometa(self):
         self.assertEqual(Entry._meta.descending_indexes, ['title'])
 

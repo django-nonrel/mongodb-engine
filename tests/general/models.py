@@ -3,6 +3,9 @@ from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 from djangotoolbox.fields import ListField, DictField, SetField, RawField
 
+class Empty(models.Model):
+    pass
+
 class Blog(models.Model):
     title = models.CharField(max_length=200, db_index=True)
 
