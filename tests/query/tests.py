@@ -3,6 +3,7 @@
     plus tests for django-mongodb-engine specific features
 """
 import datetime
+from operator import attrgetter
 
 from django.db.models import F, Q
 from django.db.utils import DatabaseError
@@ -12,11 +13,8 @@ from pymongo.objectid import ObjectId
 from .models import *
 from .utils import *
 
-class QueryTests(TestCase):
+class BasicQueryTests(TestCase):
     """ Backend-agnostic query tests """
-
-    def assertQuerysetEqual(self, a, b):
-        self.assertEqual(list(a), list(b))
 
     def test_add_and_delete_blog(self):
         Blog.objects.create(title='blog1')
@@ -61,18 +59,6 @@ class QueryTests(TestCase):
         self.assertEqual(Blog.objects.count(), 1)
         self.assertEqual(blog1.title, Blog.objects.all()[0].title)
 
-    def test_dates_ordering(self):
-        now = datetime.datetime.now()
-        before = now - datetime.timedelta(days=1)
-
-        entry1 = Post.objects.create(title="entry 1", date_published=now)
-        entry2 = Post.objects.create(title="entry 2", date_published=before)
-
-        self.assertQuerysetEqual(Post.objects.order_by('-date_published'),
-                                 [entry1, entry2])
-        self.assertQuerysetEqual(Post.objects.order_by('date_published'),
-                                 [entry2, entry1])
-
     def test_skip_limit(self):
         now = datetime.datetime.now()
         before = now - datetime.timedelta(days=1)
@@ -86,30 +72,21 @@ class QueryTests(TestCase):
         self.assertEqual(len(Post.objects.order_by('date_published')[1:2:1]), 1)
         self.assertEqual(len(Post.objects.order_by('date_published')[1:2]), 1)
 
-    def test_values_query(self):
-        blog = Blog.objects.create(title='fooblog')
-        entry = Post.objects.create(blog=blog, title='footitle', content='foocontent')
-        entry2 = Post.objects.create(blog=blog, title='footitle2', content='foocontent2')
-        self.assertQuerysetEqual(
-            Post.objects.values(),
-            [{'blog_id' : blog.id, 'title' : u'footitle', 'id' : entry.id,
-              'content' : u'foocontent', 'date_published' : None},
-             {'blog_id' : blog.id, 'title' : u'footitle2', 'id' : entry2.id,
-              'content' : u'foocontent2', 'date_published' : None}
-            ]
+    def test_date_datetime_and_time(self):
+        self.assertEqual(DateModel().datelist, DateModel._datelist_default)
+        self.assert_(DateModel().datelist is not DateModel._datelist_default)
+        DateModel.objects.create()
+        self.assertNotEqual(DateModel.objects.get().datetime, None)
+        DateModel.objects.update(
+            time=datetime.time(hour=3, minute=5, second=7),
+            date=datetime.date(year=2042, month=3, day=5),
+            datelist=[datetime.date(2001, 1, 2)]
         )
-        self.assertQuerysetEqual(
-            Post.objects.values('blog'),
-            [{'blog' : blog.id}, {'blog' : blog.id}]
-        )
-        self.assertQuerysetEqual(
-            Post.objects.values_list('blog_id', 'date_published'),
-            [(blog.id, None), (blog.id, None)]
-        )
-        self.assertQuerysetEqual(
-            Post.objects.values('title', 'content'),
-            [{'title' : u'footitle', 'content' : u'foocontent'},
-             {'title' : u'footitle2', 'content' : u'foocontent2'}]
+        self.assertEqual(
+            DateModel.objects.values_list('time', 'date', 'datelist').get(),
+            (datetime.time(hour=3, minute=5, second=7),
+             datetime.date(year=2042, month=3, day=5),
+             [datetime.date(year=2001, month=1, day=2)])
         )
 
     def test_dates_less_and_more_than(self):
@@ -121,18 +98,9 @@ class QueryTests(TestCase):
         entry2 = Post.objects.create(title="entry 2", date_published=before)
         entry3 = Post.objects.create(title="entry 3", date_published=after)
 
-        self.assertQuerysetEqual(Post.objects.filter(date_published=now), [entry1])
-        self.assertQuerysetEqual(Post.objects.filter(date_published__lt=now), [entry3])
-        self.assertQuerysetEqual(Post.objects.filter(date_published__gt=now), [entry2])
-
-    def test_A_query(self):
-        from django_mongodb_engine.query import A
-        obj1 = RawModel.objects.create(raw=[{'a' : 1, 'b' : 2}])
-        obj2 = RawModel.objects.create(raw=[{'a' : 1, 'b' : 3}])
-        self.assertQuerysetEqual(RawModel.objects.filter(raw=A('a', 1)),
-                                 [obj1, obj2])
-        self.assertEqual(RawModel.objects.get(raw=A('b', 2)), obj1)
-        self.assertEqual(RawModel.objects.get(raw=A('b', 3)), obj2)
+        self.assertEqualLists(Post.objects.filter(date_published=now), [entry1])
+        self.assertEqualLists(Post.objects.filter(date_published__lt=now), [entry3])
+        self.assertEqualLists(Post.objects.filter(date_published__gt=now), [entry2])
 
     def test_simple_foreign_keys(self):
         blog1 = Blog.objects.create(title="Blog")
@@ -146,7 +114,7 @@ class QueryTests(TestCase):
             )
         blog2 = Blog.objects.create(title="Blog")
         Post.objects.create(title="entry 3", blog=blog2)
-        self.assertQuerysetEqual(Post.objects.filter(blog=blog1.pk),
+        self.assertEqualLists(Post.objects.filter(blog=blog1.pk),
                                  [entry1, entry2])
         # XXX Uncomment this if the corresponding Django has been fixed
         #entry_without_blog = Post.objects.create(title='x')
@@ -156,42 +124,7 @@ class QueryTests(TestCase):
     def test_foreign_keys_bug(self):
         blog1 = Blog.objects.create(title="Blog")
         entry1 = Post.objects.create(title="entry 1", blog=blog1)
-        self.assertQuerysetEqual(Post.objects.filter(blog=blog1), [entry1])
-
-    def test_update(self):
-        blog1 = Blog.objects.create(title="Blog")
-        blog2 = Blog.objects.create(title="Blog 2")
-        entry1 = Post.objects.create(title="entry 1", blog=blog1)
-
-        Post.objects.filter(pk=entry1.pk).update(blog=blog2)
-        self.assertQuerysetEqual(Post.objects.filter(blog=blog2), [entry1])
-
-        Post.objects.filter(blog=blog2).update(title="Title has been updated")
-        self.assertQuerysetEqual(Post.objects.filter()[0].title, "Title has been updated")
-
-        Post.objects.filter(blog=blog2).update(title="Last Update Test", blog=blog1)
-        self.assertQuerysetEqual(Post.objects.filter()[0].title, "Last Update Test")
-
-        self.assertEqual(Post.objects.filter(blog=blog1).count(), 1)
-        self.assertEqual(Blog.objects.filter(title='Blog').count(), 1)
-        Blog.objects.update(title='Blog')
-        self.assertEqual(Blog.objects.filter(title='Blog').count(), 2)
-
-    def test_update_id(self):
-        self.assertRaisesRegexp(DatabaseError, "Can not modify _id",
-                                Post.objects.update, id=ObjectId())
-
-    def test_update_with_F(self):
-        john = Person.objects.create(name='john', surname='nhoj', age=42)
-        andy = Person.objects.create(name='andy', surname='ydna', age=-5)
-        Person.objects.update(age=F('age')+7)
-        self.assertEqual(Person.objects.get(pk=john.id).age, 49)
-        self.assertEqual(Person.objects.get(id=andy.pk).age, 2)
-        Person.objects.filter(name='john').update(age=F('age')-10)
-        self.assertEqual(Person.objects.get(name='john').age, 39)
-
-    def test_invalid_update_with_F(self):
-        self.assertRaises(DatabaseError, Person.objects.update, age=F('name')+1)
+        self.assertEqualLists(Post.objects.filter(blog=blog1), [entry1])
 
     def test_regex_matchers(self):
         objs = [Blog.objects.create(title=title) for title in
@@ -223,7 +156,7 @@ class QueryTests(TestCase):
             Blog.objects.filter(title='a').filter(title='a').filter(title='a').get(),
             Blog.objects.get()
         )
-        self.assertQuerysetEqual(
+        self.assertEqualLists(
             Blog.objects.filter(title='a').filter(title='b').filter(title='a'),
             []
         )
@@ -231,7 +164,7 @@ class QueryTests(TestCase):
     def test_negated_Q(self):
         blogs = [Blog.objects.create(title=title) for title in
                  ('blog', 'other blog', 'another blog')]
-        self.assertQuerysetEqual(
+        self.assertEqualLists(
             Blog.objects.filter(title='blog') | Blog.objects.filter(~Q(title='another blog')),
             [blogs[0], blogs[1]]
         )
@@ -239,7 +172,7 @@ class QueryTests(TestCase):
             DatabaseError,
             lambda: Blog.objects.filter(~Q(title='blog') & ~Q(title='other blog')).get()
         )
-        self.assertQuerysetEqual(
+        self.assertEqualLists(
             Blog.objects.filter(~Q(title='another blog')
                                 | ~Q(title='blog')
                                 | ~Q(title='aaaaa')
@@ -269,40 +202,23 @@ class QueryTests(TestCase):
         obj3 = Blog.objects.create(title='2')
         obj4 = Blog.objects.create(title='3')
 
-        self.assertQuerysetEqual(
+        self.assertEqualLists(
             Blog.objects.filter(title='1'),
             [obj1, obj2]
         )
-        self.assertQuerysetEqual(
+        self.assertEqualLists(
             Blog.objects.filter(title='1') | Blog.objects.filter(title='2'),
             [obj1, obj2, obj3]
         )
-        self.assertQuerysetEqual(
+        self.assertEqualLists(
             Blog.objects.filter(Q(title='2') | Q(title='3')),
             [obj3, obj4]
         )
 
-        self.assertQuerysetEqual(
+        self.assertEqualLists(
             Blog.objects.filter(Q(Q(title__lt='4') & Q(title__gt='2'))
                                   | Q(title='1')).order_by('id'),
             [obj1, obj2, obj4]
-        )
-
-    def test_date_datetime_and_time(self):
-        self.assertEqual(DateModel().datelist, DateModel._datelist_default)
-        self.assert_(DateModel().datelist is not DateModel._datelist_default)
-        DateModel.objects.create()
-        self.assertNotEqual(DateModel.objects.get().datetime, None)
-        DateModel.objects.update(
-            time=datetime.time(hour=3, minute=5, second=7),
-            date=datetime.date(year=2042, month=3, day=5),
-            datelist=[datetime.date(2001, 1, 2)]
-        )
-        self.assertEqual(
-            DateModel.objects.values_list('time', 'date', 'datelist').get(),
-            (datetime.time(hour=3, minute=5, second=7),
-             datetime.date(year=2042, month=3, day=5),
-             [datetime.date(year=2001, month=1, day=2)])
         )
 
     def test_can_save_empty_model(self):
@@ -310,3 +226,308 @@ class QueryTests(TestCase):
         self.assertNotEqual(obj.id, None)
         self.assertNotEqual(obj.id, 'None')
         self.assertEqual(obj, Empty.objects.get(id=obj.id))
+
+    def test_values_query(self):
+        blog = Blog.objects.create(title='fooblog')
+        entry = Post.objects.create(blog=blog, title='footitle', content='foocontent')
+        entry2 = Post.objects.create(blog=blog, title='footitle2', content='foocontent2')
+        self.assertEqualLists(
+            Post.objects.values(),
+            [{'blog_id' : blog.id, 'title' : u'footitle', 'id' : entry.id,
+              'content' : u'foocontent', 'date_published' : None},
+             {'blog_id' : blog.id, 'title' : u'footitle2', 'id' : entry2.id,
+              'content' : u'foocontent2', 'date_published' : None}
+            ]
+        )
+        self.assertEqualLists(
+            Post.objects.values('blog'),
+            [{'blog' : blog.id}, {'blog' : blog.id}]
+        )
+        self.assertEqualLists(
+            Post.objects.values_list('blog_id', 'date_published'),
+            [(blog.id, None), (blog.id, None)]
+        )
+        self.assertEqualLists(
+            Post.objects.values('title', 'content'),
+            [{'title' : u'footitle', 'content' : u'foocontent'},
+             {'title' : u'footitle2', 'content' : u'foocontent2'}]
+        )
+
+
+class UpdateTests(TestCase):
+    def test_update(self):
+        blog1 = Blog.objects.create(title="Blog")
+        blog2 = Blog.objects.create(title="Blog 2")
+        entry1 = Post.objects.create(title="entry 1", blog=blog1)
+
+        Post.objects.filter(pk=entry1.pk).update(blog=blog2)
+        self.assertEqualLists(Post.objects.filter(blog=blog2), [entry1])
+
+        Post.objects.filter(blog=blog2).update(title="Title has been updated")
+        self.assertEqualLists(Post.objects.filter()[0].title, "Title has been updated")
+
+        Post.objects.filter(blog=blog2).update(title="Last Update Test", blog=blog1)
+        self.assertEqualLists(Post.objects.filter()[0].title, "Last Update Test")
+
+        self.assertEqual(Post.objects.filter(blog=blog1).count(), 1)
+        self.assertEqual(Blog.objects.filter(title='Blog').count(), 1)
+        Blog.objects.update(title='Blog')
+        self.assertEqual(Blog.objects.filter(title='Blog').count(), 2)
+
+    def test_update_id(self):
+        self.assertRaisesRegexp(DatabaseError, "Can not modify _id",
+                                Post.objects.update, id=ObjectId())
+
+    def test_update_with_F(self):
+        john = Person.objects.create(name='john', surname='nhoj', age=42)
+        andy = Person.objects.create(name='andy', surname='ydna', age=-5)
+        Person.objects.update(age=F('age')+7)
+        self.assertEqual(Person.objects.get(pk=john.id).age, 49)
+        self.assertEqual(Person.objects.get(id=andy.pk).age, 2)
+        Person.objects.filter(name='john').update(age=F('age')-10)
+        self.assertEqual(Person.objects.get(name='john').age, 39)
+
+    def test_invalid_update_with_F(self):
+        self.assertRaises(DatabaseError, Person.objects.update, age=F('name')+1)
+
+
+class OrderingTests(TestCase):
+    def test_dates_ordering(self):
+        now = datetime.datetime.now()
+        before = now - datetime.timedelta(days=1)
+
+        entry1 = Post.objects.create(title="entry 1", date_published=now)
+        entry2 = Post.objects.create(title="entry 2", date_published=before)
+
+        self.assertEqualLists(Post.objects.order_by('-date_published'),
+                                 [entry1, entry2])
+        self.assertEqualLists(Post.objects.order_by('date_published'),
+                                 [entry2, entry1])
+
+
+class OrLookupsTests(TestCase):
+    """ Stolen from the Django test suite, shaked down for m2m tests """
+    def setUp(self):
+        self.a1 = Article.objects.create(
+            headline='Hello', pub_date=datetime.datetime(2005, 11, 27)
+        ).pk
+        self.a2 = Article.objects.create(
+            headline='Goodbye', pub_date=datetime.datetime(2005, 11, 28)
+        ).pk
+        self.a3 = Article.objects.create(
+            headline='Hello and goodbye', pub_date=datetime.datetime(2005, 11, 29)
+        ).pk
+
+    def test_filter_or(self):
+        self.assertQuerysetEqual(
+            Article.objects.filter(headline__startswith='Hello') |  Article.objects.filter(headline__startswith='Goodbye'), [
+                'Hello',
+                'Goodbye',
+                'Hello and goodbye'
+            ],
+            attrgetter("headline")
+        )
+
+        self.assertQuerysetEqual(
+            Article.objects.filter(headline__contains='Hello') | Article.objects.filter(headline__contains='bye'), [
+                'Hello',
+                'Goodbye',
+                'Hello and goodbye'
+            ],
+            attrgetter("headline")
+        )
+
+        self.assertQuerysetEqual(
+            Article.objects.filter(headline__iexact='Hello') | Article.objects.filter(headline__contains='ood'), [
+                'Hello',
+                'Goodbye',
+                'Hello and goodbye'
+            ],
+            attrgetter("headline")
+        )
+
+        self.assertQuerysetEqual(
+            Article.objects.filter(Q(headline__startswith='Hello') | Q(headline__startswith='Goodbye')), [
+                'Hello',
+                'Goodbye',
+                'Hello and goodbye'
+            ],
+            attrgetter("headline")
+        )
+
+
+    def test_stages(self):
+        # You can shorten this syntax with code like the following,  which is
+        # especially useful if building the query in stages:
+        articles = Article.objects.all()
+        self.assertQuerysetEqual(
+            articles.filter(headline__startswith='Hello') & articles.filter(headline__startswith='Goodbye'),
+            []
+        )
+        self.assertQuerysetEqual(
+            articles.filter(headline__startswith='Hello') & articles.filter(headline__contains='bye'), [
+                'Hello and goodbye'
+            ],
+            attrgetter("headline")
+        )
+
+    def test_pk_q(self):
+        self.assertQuerysetEqual(
+            Article.objects.filter(Q(pk=self.a1) | Q(pk=self.a2)), [
+                'Hello',
+                'Goodbye'
+            ],
+            attrgetter("headline")
+        )
+
+        self.assertQuerysetEqual(
+            Article.objects.filter(Q(pk=self.a1) | Q(pk=self.a2) | Q(pk=self.a3)), [
+                'Hello',
+                'Goodbye',
+                'Hello and goodbye'
+            ],
+            attrgetter("headline"),
+        )
+
+    def test_pk_in(self):
+        self.assertQuerysetEqual(
+            Article.objects.filter(pk__in=[self.a1, self.a2, self.a3]), [
+                'Hello',
+                'Goodbye',
+                'Hello and goodbye'
+            ],
+            attrgetter("headline"),
+        )
+
+        self.assertQuerysetEqual(
+            Article.objects.filter(pk__in=(self.a1, self.a2, self.a3)), [
+                'Hello',
+                'Goodbye',
+                'Hello and goodbye'
+            ],
+            attrgetter("headline"),
+        )
+
+        self.assertQuerysetEqual(
+            Article.objects.filter(pk__in=[self.a1, self.a2, self.a3]), [
+                'Hello',
+                'Goodbye',
+                'Hello and goodbye'
+            ],
+            attrgetter("headline"),
+        )
+
+    def test_q_negated(self):
+        # Q objects can be negated
+        self.assertQuerysetEqual(
+            Article.objects.filter(Q(pk=self.a1) | ~Q(pk=self.a2)), [
+                'Hello',
+                'Hello and goodbye'
+            ],
+            attrgetter("headline")
+        )
+
+        # Does not work on MongoDB:
+        #self.assertQuerysetEqual(
+        #    Article.objects.filter(~Q(pk=self.a1) & ~Q(pk=self.a2)), [
+        #        'Hello and goodbye'
+        #    ],
+        #    attrgetter("headline"),
+        #)
+
+        # This allows for more complex queries than filter() and exclude()
+        # alone would allow
+        self.assertQuerysetEqual(
+            Article.objects.filter(Q(pk=self.a1) & (~Q(pk=self.a2) | Q(pk=self.a3))), [
+                'Hello'
+            ],
+            attrgetter("headline"),
+        )
+
+    def test_complex_filter(self):
+        # The 'complex_filter' method supports framework features such as
+        # 'limit_choices_to' which normally take a single dictionary of lookup
+        # arguments but need to support arbitrary queries via Q objects too.
+        self.assertQuerysetEqual(
+            Article.objects.complex_filter({'pk': self.a1}), [
+                'Hello'
+            ],
+            attrgetter("headline"),
+        )
+
+        self.assertQuerysetEqual(
+            Article.objects.complex_filter(Q(pk=self.a1) | Q(pk=self.a2)), [
+                'Hello',
+                'Goodbye'
+            ],
+            attrgetter("headline"),
+        )
+
+    def test_empty_in(self):
+        # Passing "in" an empty list returns no results ...
+        self.assertQuerysetEqual(
+            Article.objects.filter(pk__in=[]),
+            []
+        )
+        # ... but can return results if we OR it with another query.
+        self.assertQuerysetEqual(
+            Article.objects.filter(Q(pk__in=[]) | Q(headline__icontains='goodbye')), [
+                'Goodbye',
+                'Hello and goodbye'
+            ],
+            attrgetter("headline"),
+        )
+
+    def test_q_and(self):
+        # Q arg objects are ANDed
+        self.assertQuerysetEqual(
+            Article.objects.filter(Q(headline__startswith='Hello'), Q(headline__contains='bye')), [
+                'Hello and goodbye'
+            ],
+            attrgetter("headline")
+        )
+        # Q arg AND order is irrelevant
+        self.assertQuerysetEqual(
+            Article.objects.filter(Q(headline__contains='bye'), headline__startswith='Hello'), [
+                'Hello and goodbye'
+            ],
+            attrgetter("headline"),
+        )
+
+        self.assertQuerysetEqual(
+            Article.objects.filter(Q(headline__startswith='Hello') & Q(headline__startswith='Goodbye')),
+            []
+        )
+
+    def test_q_exclude(self):
+        self.assertQuerysetEqual(
+            Article.objects.exclude(Q(headline__startswith='Hello')), [
+                'Goodbye'
+            ],
+            attrgetter("headline")
+        )
+
+    def test_other_arg_queries(self):
+        # Try some arg queries with operations other than filter.
+        self.assertEqual(
+            Article.objects.get(Q(headline__startswith='Hello'),
+                                Q(headline__contains='bye')).headline,
+            'Hello and goodbye'
+        )
+
+        self.assertEqual(
+            Article.objects.filter(Q(headline__startswith='Hello') | Q(headline__contains='bye')).count(),
+            3
+        )
+
+        self.assertQuerysetEqual(
+            Article.objects.filter(Q(headline__startswith='Hello'), Q(headline__contains='bye')).values(), [
+                {"headline": "Hello and goodbye", "id": self.a3, "pub_date": datetime.datetime(2005, 11, 29)},
+            ],
+            lambda o: o,
+        )
+
+        self.assertEqual(
+            Article.objects.filter(Q(headline__startswith='Hello')).in_bulk([self.a1, self.a2]),
+            {self.a1: Article.objects.get(pk=self.a1)}
+        )

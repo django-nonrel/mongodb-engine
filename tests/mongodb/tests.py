@@ -18,6 +18,15 @@ class MongoDBEngineTests(TestCase):
     def test_mongometa(self):
         self.assertEqual(DescendingIndexModel._meta.descending_indexes, ['desc'])
 
+    def test_A_query(self):
+        from django_mongodb_engine.query import A
+        obj1 = RawModel.objects.create(raw=[{'a' : 1, 'b' : 2}])
+        obj2 = RawModel.objects.create(raw=[{'a' : 1, 'b' : 3}])
+        self.assertEqualLists(RawModel.objects.filter(raw=A('a', 1)),
+                              [obj1, obj2])
+        self.assertEqual(RawModel.objects.get(raw=A('b', 2)), obj1)
+        self.assertEqual(RawModel.objects.get(raw=A('b', 3)), obj2)
+
     def test_lazy_model_instance(self):
         l1 = LazyModelInstance(RawModel, 'some-pk')
         l2 = LazyModelInstance(RawModel, 'some-pk')

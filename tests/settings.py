@@ -9,7 +9,7 @@ DATABASES = {
     }
 }
 
-INSTALLED_APPS = ['djangotoolbox', 'query', 'embedded', 'or_lookups', 'mongodb',
+INSTALLED_APPS = ['djangotoolbox', 'query', 'embedded', 'mongodb',
                   'aggregations', 'contrib', 'storage', 'django_mongodb_engine']
 
 LOGGING = {

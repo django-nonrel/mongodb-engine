@@ -31,3 +31,13 @@ class DateModel(models.Model):
     date = models.DateField(null=True)
     _datelist_default = []
     datelist = ListField(models.DateField(), default=_datelist_default)
+
+class Article(models.Model):
+    headline = models.CharField(max_length=50)
+    pub_date = models.DateTimeField()
+
+    class Meta:
+       ordering = ('pub_date',)
+
+    def __unicode__(self):
+        return self.headline

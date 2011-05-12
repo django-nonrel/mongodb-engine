@@ -9,6 +9,9 @@ class TestCase(TestCase):
         if getattr(settings, 'TEST_DEBUG', False):
             settings.DEBUG = True
 
+    def assertEqualLists(self, a, b):
+        self.assertEqual(list(a), list(b))
+
 def skip_all_except(*tests):
     class meta(type):
         def __new__(cls, name, bases, dict):
