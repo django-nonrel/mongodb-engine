@@ -28,7 +28,7 @@ setup(
     long_description=codecs.open('README.rst', 'r', 'utf-8').read(),
 
     platforms=['any'],
-    install_requires=['pymongo', 'django>=1.2', 'djangotoolbox'],
+    install_requires=['pymongo', 'djangotoolbox'],
 
     packages=find_packages(exclude=['ez_setup', 'tests', 'tests.*']),
     include_package_data=True,
