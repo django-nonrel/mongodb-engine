@@ -44,3 +44,7 @@ class GridFSFieldTestModel(models.Model):
     gridfile_versioned = GridFSField(versioning=True)
     gridfile_nodelete = GridFSField(delete=False)
     gridstring = GridFSString()
+
+
+RawModel.objects.all().delete()
+RawModel.objects.create(raw=42)

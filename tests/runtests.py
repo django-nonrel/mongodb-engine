@@ -10,22 +10,34 @@ def runtests(foo, settings='settings', extra=[]):
         apps = foo
     execute(['./manage.py', 'test', '--settings', settings] + extra + apps)
 
+def execute_python(lines):
+    from textwrap import dedent
+    return execute(
+        ['python', '-c',  dedent(lines)],
+        env=dict(os.environ, DJANGO_SETTINGS_MODULE='settings', PYTHONPATH='..')
+    )
 
 def main(short):
     # Run some basic tests outside Django's test environment
-    execute(
-        ['python', '-c', 'from query.models import Blog\n'
-                         'Blog.objects.create()\n'
-                         'Blog.objects.all().delete()\n'
-                         'Blog.objects.update()'],
-        env=dict(os.environ, DJANGO_SETTINGS_MODULE='settings', PYTHONPATH='..')
-    )
+    execute_python('''
+        from mongodb.models import RawModel
+        RawModel.objects.create()
+        RawModel.objects.all().delete()
+        RawModel.objects.update()
+    ''')
 
     import settings
     import settings_dbindexer
     import settings_slow_tests
 
     runtests(settings, extra=['--failfast'] if short else [])
+
+    # assert we didn't touch the production database
+    execute_python('''
+        from pymongo import Connection
+        print Connection().test.mongodb_rawmodel.find()
+        assert Connection().test.mongodb_rawmodel.find_one()['raw'] == 42
+    ''')
 
     if short:
         exit()

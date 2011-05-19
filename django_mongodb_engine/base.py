@@ -49,7 +49,6 @@ class DatabaseOperations(NonrelDatabaseOperations):
         all `tables`. No SQL in MongoDB, so just drop all tables here and
         return an empty list.
         """
-        tables = self.connection.introspection.table_names()
         for table in tables:
             if table.startswith('system.'):
                 # do not try to drop system collections
@@ -83,6 +82,7 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
     def __init__(self, *args, **kwargs):
         self.collection_class = kwargs.pop('collection_class', Collection)
         super(DatabaseWrapper, self).__init__(*args, **kwargs)
+
         self.features = DatabaseFeatures(self)
         self.ops = DatabaseOperations(self)
         self.client = DatabaseClient(self)
@@ -158,6 +158,13 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
         self._add_serializer()
         self.connected = True
         connection_created.send(sender=self.__class__, connection=self)
+
+    def _reconnect(self):
+        if self.connected:
+            del self.connection
+            del self.database
+            self.connected = False
+        self._connect()
 
     def _add_serializer(self):
         for option in ['MONGODB_AUTOMATIC_REFERENCING',

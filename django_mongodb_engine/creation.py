@@ -114,9 +114,10 @@ class DatabaseCreation(NonrelDatabaseCreation):
         """ There's no such thing in MongoDB """
 
     def create_test_db(self, verbosity=1, autoclobber=False):
-        # No need to create databases in MongoDB :)
-        # but we can make sure that if the database existed is emptied
-
+        """
+        No need to create databases in MongoDB :)
+        but we can make sure that if the database existed is emptied
+        """
         test_database_name = self._get_test_db_name()
 
         self.connection.settings_dict['NAME'] = test_database_name
@@ -125,6 +126,9 @@ class DatabaseCreation(NonrelDatabaseCreation):
         # that nothing needs to change in the test code for working with
         # connections, databases and collections. It will appear the same as
         # when working with non-test code.
+
+        # Force a reconnect to ensure we're using the test database
+        self.connection._reconnect()
 
         # In this phase it will only drop the database if it already existed
         # which could potentially happen if the test database was created but
