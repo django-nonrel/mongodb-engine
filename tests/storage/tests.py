@@ -6,9 +6,6 @@ from django.core.files.base import ContentFile, File
 from django_mongodb_engine.storage import GridFSStorage
 
 from .utils import TestCase
-import models
-
-FILES_PATH = os.path.join(os.path.dirname(models.__file__), 'to_import')
 
 class GridFSStorageTest(TestCase):
     storage_class = GridFSStorage
@@ -16,6 +13,11 @@ class GridFSStorageTest(TestCase):
 
     def setUp(self):
         self.storage = self.get_storage(self.temp_dir)
+
+    def tearDown(self):
+        for collection in self.storage._db.collection_names():
+            if not collection.startswith('system.'):
+                self.storage._db.drop_collection(collection)
 
     def get_storage(self, location):
         return self.storage_class(location=location)
@@ -145,22 +147,20 @@ class GridFSStorageTest(TestCase):
         """
         File storage returns a tuple containing directories and files.
         """
+        self.assertEqual(self.storage.listdir(''), (set(), []))
         self.assertFalse(self.storage.exists('storage_test_1'))
         self.assertFalse(self.storage.exists('storage_test_2'))
         self.assertFalse(self.storage.exists('storage_dir_1'))
 
-        f = self.storage.save('storage_test_1', ContentFile('custom content'))
-        f = self.storage.save('storage_test_2', ContentFile('custom content'))
+        self.storage.save('storage_test_1', ContentFile('custom content'))
+        self.storage.save('storage_test_2', ContentFile('custom content'))
         storage = self.get_storage(location=os.path.join(self.temp_dir, 'storage_dir_1'))
-        f = storage.save('storage_test_3', ContentFile('custom content'))
+        storage.save('storage_test_3', ContentFile('custom content'))
 
         dirs, files = self.storage.listdir('')
         self.assertEqual(set(dirs), set([u'storage_dir_1']))
         self.assertEqual(set(files),
                          set([u'storage_test_1', u'storage_test_2']))
-
-        self.storage.delete('storage_test_1')
-        self.storage.delete('storage_test_2')
 
 class GridFSStorageTestWithoutLocation(GridFSStorageTest):
     # Now test everything without passing a location argument
