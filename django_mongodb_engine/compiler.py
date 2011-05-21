@@ -404,6 +404,7 @@ class SQLUpdateCompiler(NonrelUpdateCompiler, SQLCompiler):
                 lhs, rhs = value.children
                 if isinstance(lhs, F):
                     assert not isinstance(rhs, F)
+                    assert lhs.name == field.name
                     if value.connector == value.SUB:
                         rhs = -rhs
                 else:

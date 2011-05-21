@@ -288,7 +288,7 @@ class UpdateTests(TestCase):
         self.assertEqual(Person.objects.get(name='john').age, 39)
 
     def test_invalid_update_with_F(self):
-        self.assertRaises(DatabaseError, Person.objects.update, age=F('name')+1)
+        self.assertRaises(AssertionError, Person.objects.update, age=F('name')+1)
 
 
 class OrderingTests(TestCase):
