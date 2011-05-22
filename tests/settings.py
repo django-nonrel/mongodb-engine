@@ -9,8 +9,18 @@ DATABASES = {
     }
 }
 
-INSTALLED_APPS = ['djangotoolbox', 'query', 'embedded', 'mongodb',
-                  'aggregations', 'contrib', 'storage', 'django_mongodb_engine']
+DEFAULT_APPS = [
+    'django.contrib.auth',
+]
+INSTALLED_APPS = [
+    'djangotoolbox',
+    'query',
+    'embedded',
+    'mongodb',
+    'aggregations',
+    'contrib',
+    'storage'
+]
 
 LOGGING = {
     'version' : 1,

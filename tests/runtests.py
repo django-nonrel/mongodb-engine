@@ -2,12 +2,14 @@
 import os
 from types import ModuleType
 
-def runtests(foo, settings='settings', extra=[]):
+def runtests(foo, settings='settings', extra=[], test_builtin=False):
     if isinstance(foo, ModuleType):
         settings = foo.__name__
         apps = foo.INSTALLED_APPS
     else:
         apps = foo
+    if not test_builtin:
+        apps = filter(lambda name: not name.startswith('django.contrib.'), apps)
     execute(['./manage.py', 'test', '--settings', settings] + extra + apps)
 
 def execute_python(lines):

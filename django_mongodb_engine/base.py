@@ -75,7 +75,7 @@ class DatabaseIntrospection(NonrelDatabaseIntrospection):
         return self.connection.database.collection_names()
 
     def sequence_list(self):
-        # Only required for backends that support ManyToMany relations
+        # Only required for backends that use integer primary keys
         pass
 
 class DatabaseWrapper(NonrelDatabaseWrapper):
