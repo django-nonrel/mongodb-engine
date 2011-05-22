@@ -97,7 +97,7 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
     def get_collection(self, name, **kwargs):
         collection = self.collection_class(self.database, name, **kwargs)
         if settings.DEBUG:
-            collection = CollectionDebugWrapper(collection)
+            collection = CollectionDebugWrapper(collection, self.alias)
         return collection
 
     def __getattr__(self, attr):

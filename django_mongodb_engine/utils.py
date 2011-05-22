@@ -26,8 +26,9 @@ def make_struct(*attrs):
     return _Struct
 
 class CollectionDebugWrapper(object):
-    def __init__(self, collection):
+    def __init__(self, collection, db_alias):
         self.collection = collection
+        self.alias = db_alias
 
     def __getattr__(self, attr):
         return getattr(self.collection, attr)
@@ -45,6 +46,8 @@ class CollectionDebugWrapper(object):
                                            ' '.join(str(arg) for arg in args))
                 if any(kwargs.itervalues()):
                     msg += ' %s' % kwargs
+                if len(settings.DATABASES) > 1:
+                    msg = self.alias + '.' + msg
                 logger.debug(msg, extra={'duration' : duration})
             return result
         return wrapper
