@@ -104,7 +104,7 @@ class MongoDBQuerySet(QuerySet):
 
 class MongoDBManager(models.Manager, RawQueryMixin):
     """
-    Let's you use Map/Reduce and raw query/update with your models::
+    Lets you use Map/Reduce and raw query/update with your models::
 
         class FooModel(models.Model):
             ...
