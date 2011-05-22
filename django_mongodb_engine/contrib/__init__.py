@@ -61,6 +61,10 @@ class MapReduceResult(object):
         self.key = key
         self.value = value
 
+    @classmethod
+    def from_entity(cls, model, entity):
+        return cls(model, entity['_id'], entity['value'])
+
     def __repr__(self):
         return '<%s model=%r key=%r value=%r>' % \
                 (self.__class__.__name__, self.model.__name__, self.key, self.value)
@@ -79,17 +83,24 @@ class MongoDBQuerySet(QuerySet):
         """
         # TODO: Field name substitution (e.g. id -> _id)
         drop_collection = kwargs.pop('drop_collection', False)
-        compiler = _compiler_for_queryset(self)
-        query = compiler.build_query()
+        query = self._get_query()
         kwargs.setdefault('query', query._mongo_query)
         result_collection = query.collection.map_reduce(*args, **kwargs)
         try:
             for entity in result_collection.find():
-                yield MapReduceResult(self.model, entity['_id'], entity['value'])
+                yield MapReduceResult.from_entity(self.model, entity)
         finally:
             if drop_collection:
                 result_collection.drop()
 
+    def inline_map_reduce(self, *args, **kwargs):
+        query = self._get_query()
+        kwargs.setdefault('query', query._mongo_query)
+        return [MapReduceResult.from_entity(self.model, entity) for entity in
+                query.collection.inline_map_reduce(*args, **kwargs)]
+
+    def _get_query(self):
+        return _compiler_for_queryset(self).build_query()
 
 class MongoDBManager(models.Manager, RawQueryMixin):
     """
@@ -101,6 +112,9 @@ class MongoDBManager(models.Manager, RawQueryMixin):
     """
     def map_reduce(self, *args, **kwargs):
         return self.get_query_set().map_reduce(*args, **kwargs)
+
+    def inline_map_reduce(self, *args, **kwargs):
+        return self.get_query_set().inline_map_reduce(*args, **kwargs)
 
     def get_query_set(self):
         return MongoDBQuerySet(self.model, using=self._db)

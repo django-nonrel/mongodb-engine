@@ -60,9 +60,7 @@ class MapReduceTests(TestCase):
             result_collection = get_collection('m/r-out')
             self.assertEqual(result_collection.count(), len(random_numbers)-1)
 
-        # Test drop_collection
-        if not inline:
-            # FIXME .next() should not be required
+            # Test drop_collection
             map_reduce(drop_collection=True).next()
             self.assertEqual(get_collection('m/r-out').count(), 0)
 
