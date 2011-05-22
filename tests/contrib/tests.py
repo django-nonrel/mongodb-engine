@@ -1,3 +1,4 @@
+from functools import partial
 from django.db.models import Q
 from django.db.utils import DatabaseError
 from django_mongodb_engine.contrib import MapReduceResult
@@ -6,7 +7,7 @@ from .utils import TestCase, get_collection
 from .models import *
 
 class MapReduceTests(TestCase):
-    def test_map_reduce(self):
+    def test_map_reduce(self, inline=False):
         mapfunc = """
             function map() {
                 for(i=0; i<this.n; ++i) {
@@ -23,6 +24,12 @@ class MapReduceTests(TestCase):
             }
         """
 
+        if inline:
+            map_reduce = MapReduceModel.objects.inline_map_reduce
+        else:
+            map_reduce = partial(MapReduceModel.objects.map_reduce, out='m/r-out')
+        map_reduce = partial(map_reduce, mapfunc, reducefunc)
+
         random_numbers = [
             (3, 4),
             (6, 19),
@@ -36,8 +43,7 @@ class MapReduceTests(TestCase):
             MapReduceModel(n=n, m=m).save()
 
         # Test mapfunc + reducefunc
-        documents = MapReduceModel.objects.map_reduce(mapfunc, reducefunc,
-                                                      out='m/r-out')
+        documents = map_reduce()
         documents = list(documents)
         self.assertEqual(len(documents), len(random_numbers)-1)
         self.assertEqual(sum(doc.value for doc in documents),
@@ -50,30 +56,37 @@ class MapReduceTests(TestCase):
         self.assert_(obj.id)
 
         # Collection should not have been perished
-        result_collection = get_collection('m/r-out')
-        self.assertEqual(result_collection.count(), len(random_numbers)-1)
-        result_collection.drop()
+        if not inline:
+            result_collection = get_collection('m/r-out')
+            self.assertEqual(result_collection.count(), len(random_numbers)-1)
 
         # Test drop_collection
-        MapReduceModel.objects.map_reduce(mapfunc, reducefunc, out='m/r-out')
-        self.assertEqual(get_collection('m/r-out').count(), 0)
+        if not inline:
+            # FIXME .next() should not be required
+            map_reduce(drop_collection=True).next()
+            self.assertEqual(get_collection('m/r-out').count(), 0)
 
         # Test arbitrary kwargs
-        documents = MapReduceModel.objects.map_reduce(mapfunc, reducefunc,
-                                                      out='m/r-out', limit=3)
-        documents = list(documents)
+        documents = list(map_reduce(limit=3))
         self.assertEqual(len(documents), 3)
         self.assertEqual(sum(doc.value for doc in documents),
                          sum(n*m for n, m in random_numbers[:3]))
 
         # Test with .filter(...)
         qs = MapReduceModel.objects.filter(n__lt=300).filter(~Q(m__in=[4]))
-        documents = list(qs.map_reduce(mapfunc, reducefunc, out='m/r-out'))
+        if inline:
+            documents = qs.inline_map_reduce(mapfunc, reducefunc)
+        else:
+            documents = list(qs.map_reduce(mapfunc, reducefunc, out='m/r-out'))
         self.assertEqual(len(documents), len(random_numbers)-2-1)
         self.assertEqual(sum(doc.value for doc in documents),
                          sum(n*m for n, m in random_numbers[1:-1]))
 
-    def test_map_reduce_with_custom_primary_key(self):
+    def test_inline_map_reduce(self):
+        self.test_map_reduce(inline=True)
+        self.test_map_reduce_with_custom_primary_key(inline=True)
+
+    def test_map_reduce_with_custom_primary_key(self, inline=False):
         mapfunc = """ function() { emit(this._id, null) } """
         reducefunc = """ function(key, values) { return null } """
         for pk, data in [
@@ -83,9 +96,12 @@ class MapReduceTests(TestCase):
         ]:
             MapReduceModelWithCustomPrimaryKey(primarykey=pk, data=data).save()
 
-        documents = MapReduceModelWithCustomPrimaryKey.objects.map_reduce(
-            mapfunc, reducefunc, out='m/r-out')
-        somedoc = documents.next()
+        if inline:
+            somedoc = MapReduceModelWithCustomPrimaryKey.objects \
+                            .inline_map_reduce(mapfunc, reducefunc)[0]
+        else:
+            somedoc = MapReduceModelWithCustomPrimaryKey.objects.map_reduce(
+                            mapfunc, reducefunc, out='m/r-out').next()
         self.assertEqual(somedoc.key, 'bar') # ordered by pk
         self.assertEqual(somedoc.value, None)
         obj = somedoc.model.objects.get(pk=somedoc.key)
