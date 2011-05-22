@@ -24,7 +24,7 @@ INSTALLED_APPS = [
     'storage'
 ]
 
-SERIALIZATION_MODULES = {'json' : 'tests.deserializer'}
+SERIALIZATION_MODULES = {'json' : 'tests.serializer'}
 
 LOGGING = {
     'version' : 1,

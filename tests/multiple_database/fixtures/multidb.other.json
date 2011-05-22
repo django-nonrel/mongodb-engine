@@ -19,7 +19,6 @@
         "fields": {
             "title": "Dive into Python",
             "published": "2009-5-4",
-            "authors": [["Mark Pilgrim"]],
             "editor": ["Chris Mills"]
         }
     }

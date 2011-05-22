@@ -19,7 +19,6 @@
         "fields": {
             "title": "Pro Django",
             "published": "2008-12-16",
-            "authors": [["Marty Alchin"]],
             "editor": ["George Vilches"]
         }
     }

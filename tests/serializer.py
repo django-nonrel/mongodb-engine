@@ -1,5 +1,4 @@
-from django.core.serializers.base import Serializer
-from django.core.serializers.json import Deserializer as JSONDeserializer
+from django.core.serializers.json import Serializer, Deserializer as JSONDeserializer
 
 def Deserializer(*args, **kwargs):
     for objwrapper in JSONDeserializer(*args, **kwargs):
