@@ -73,7 +73,7 @@ class MongoDBQuerySet(QuerySet):
     def map_reduce(self, *args, **kwargs):
         """
         Performs a Map/Reduce operation on all documents matching the query,
-        yielding :class:`MapReduceResult` objects for each result entity.
+        yielding a :class:`MapReduceResult` object for each result entity.
 
         If the optional keyword argument `drop_collection` is ``True``, the
         result collection will be dropped after fetching all results.
@@ -94,6 +94,13 @@ class MongoDBQuerySet(QuerySet):
                 result_collection.drop()
 
     def inline_map_reduce(self, *args, **kwargs):
+        """
+        Similar to :meth:`map_reduce` but runs the Map/Reduce in memory,
+        returning a list of :class:`MapReduceResults <MapReduceResult>`.
+
+        Does not take the `drop_collection` keyword argument since no result
+        collection is involved for in-memory Map/Reduce operations.
+        """
         query = self._get_query()
         kwargs.setdefault('query', query._mongo_query)
         return [MapReduceResult.from_entity(self.model, entity) for entity in
