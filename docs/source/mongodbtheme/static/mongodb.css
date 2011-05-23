@@ -1,0 +1,261 @@
+/* Fonts */
+@font-face { font-family: fallback_Qlassik; src: url('Qlassik_TB.otf'); }
+@font-face { font-family: fallback_Qlassik; font-weight: bold; src: url('QlassikBold_TB.otf'); }
+
+
+body {
+  margin: 0;
+  color: #4c3a2c;
+  background-color: #f6f7ee;
+  font-family: sans-serif;
+}
+
+a { text-decoration: none; color: #003366; }
+a:hover { border-bottom: 1px dotted #003366; }
+a[href^=http]:after {
+  content: url(data:image/gif;base64,R0lGODlhEAAQAIABACBRZv///yH5BAEAAAEALAAAAAAQABAAAAIgjI+py+0GIngwKjkDvkhqXmWLaDXicXbgijLYRsVyXAAAOw%3D%3D);
+  position: relative;
+  top: 3px;
+  opacity: 0.5;
+}
+a[href^=http]:hover:after { opacity: 0.7; }
+
+ul > li > ul {
+  padding-left: 1.5em;
+}
+
+ul.simple > li,
+.toctree-wrapper > ul > li {
+  padding-bottom: 0.3em;
+}
+
+.clearer { clear: both; }
+
+/*
+div, ul { border: 1px solid green; }
+*/
+
+
+/* -------------------- Header -------------------- */
+
+#header {
+  background-color: #442d22;
+  font-family: Qlassik, 'Qlassik Medium', fallback_Qlassik, sans-serif;
+  font-size: 13pt;
+  height: 3.2em;
+}
+#header a {
+  opacity: 0.7;
+  border: 0;
+}
+#header li.current > a,
+#header a:hover {
+  opacity: 1;
+}
+
+/* Navigation level 1 */
+#header > ul {
+  margin: 0;
+  padding: 0;
+  position: relative;
+  z-index: 1;
+  top: 1.1em;
+}
+#header > ul > li {
+  display: inline;
+}
+#header > ul > li > a {
+  margin-left: -0.3em;
+  padding: 1.1em 0.9em;
+  padding-bottom: 1.2em;
+  color: #fffdd4;
+}
+#header > ul > li:first-child a {
+  padding-left: 1.5em;
+}
+#header > ul > li.current > a {
+  font-weight: bold;
+}
+
+/* Navigation level 2 */
+#header > ul > li > ul {
+  display: none;
+  float: left;
+  width: 100%;
+  margin-top: 1.2em;
+  margin-left: -0.7em;
+  padding-left: 0.7em;
+  background-color: #f6f4cd;
+  border-bottom: 3px solid #fdfcf7;
+  list-style-type: none;
+}
+#header > ul > li > ul > li { float: left; }
+#header > ul > li > ul > li > a {
+  color: #403125;
+  padding: 0.6em;
+  padding-left: 1.1em;
+  display: block;
+}
+/*#header > ul > li > ul > li + li > a {
+  padding-left: 0.6em;
+}*/
+
+/* Display sub-menus if activated */
+#header > ul > li.current > ul { display: block; }
+
+/* Top right caption */
+#header > a.logo {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  right: 0.2em;
+  padding: 0.2em;
+  font-size: 19.5pt;
+  font-weight: bold;
+  color: #f6f4cd;
+}
+#header > a.logo #slogan {
+  color: #ccc;
+  font-size: 12pt;
+  margin-top: 1px;
+  display: block;
+  text-align: right;
+}
+
+
+/* ------------------- Content ------------------- */
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: lighter;
+  font-family: Qlassik, 'Qlassik Medium', fallback_Qlassik, sans-serif;
+}
+h1 { font-size: 26pt; margin-bottom: 0; }
+h1 a.headerlink { display: none; }
+h2 { font-size: 20pt; margin-bottom: 0.3em; }
+h3 { font-size: 16pt; position: relative; top: 0.5em; margin-bottom: 0; padding-bottom: 0; }
+h2 + p { margin-top: 0; }
+h2 tt { font-size: 18pt; }
+
+/* headerlink = the pilcrow (¶) showed besides headlines */
+.headerlink {
+  padding: 0 0.2em 0.2em;
+  font-family: sans-serif;
+  visibility: hidden;
+  opacity: 0.2;
+  border: 0 !important;
+}
+.headerlink:hover { opacity: 0.8; }
+*:hover > .headerlink { visibility: visible; }
+
+.bodywrapper { margin: 1.4em 0 0 250px; border-left: 1px solid #ccc; }
+
+/* Use some nice padding for the content */
+.bodywrapper { padding: 0.2em 1.8em 2em; }
+
+/* Indent paragraphs a tiny bit */
+.section > div   { margin-left: 1px; }
+.section > p, dl { margin-left: 3px; }
+
+.section p, .section ul, .section .admonition, .section table,
+.sphinxsidebar p, .sphinxsidebar ul {
+  font-size: 14px;
+  line-height: 1.3;
+}
+
+/* No italic for internal references */
+.reference.internal em { font-style: normal; }
+
+dt tt { font-size: 110%; }
+dt .descname { font-size: 120%; font-weight: bold; }
+dt em { font-size: 90%; }
+
+dl.docutils dt { font-size: 110%; font-weight: bold; margin-bottom: -0.3em; }
+dl.docutils dd { margin-left: 1em; margin-bottom: 1.3em; }
+
+dl.class dd p { margin-top: 0.5em; margin-bottom: 0.5em; }
+dl.class dd p:first { margin-top: 0; }
+
+.document li {
+  margin-bottom: 0.2em;
+}
+
+.field-name { padding-right: 0.5em; }
+.field-body > ul { margin-top: 1.8em; margin-left: -7.5em; }
+.field-body strong { font-family: monospace; }
+
+.admonition {
+  border: 1px solid #ccc;
+  padding: 0 1em;
+  background-color: #eff0e7;
+}
+.admonition > * {
+  margin-left: 0.2em;
+}
+.admonition .first {
+  margin-top: 0.6em;
+  margin-bottom: -0.5em;
+  font-size: 13pt;
+  margin-left: 0;
+}
+.warning {
+  background-color: #f4e0d8;
+  border-color: #f5c3bc;
+}
+
+.sphinxsidebar {
+  position: relative;
+  z-index: 1;
+  float: left;
+  width: 250px;
+  height: 100%;
+  margin-top: 1.3em;
+}
+.sphinxsidebarwrapper {
+  padding: 1em;
+  padding-top: 0;
+}
+.sphinxsidebarwrapper > ul {
+  list-style-type: none;
+  padding-left: 1px;
+}
+
+/* ------------------- Hacks ------------------- */
+
+/* Adjust headline position of pages without a toctree */
+#page-tutorial, #page-index, #page-troubleshooting {
+  position: relative;
+  top: -1.1em;
+}
+#page-tutorial .sphinxsidebar, #page-troubleshooting .sphinxsidebar {
+  margin-top: 0;
+}
+#page-index .sphinxsidebar { display: none; }
+#page-index .bodywrapper { margin-left: 0; }
+
+.highlight {
+  margin-top: 2px;
+  margin-bottom: 2px;
+  padding: 0 0.7em;
+  background: #f1f2e9 !important;
+  border: 1px solid #ccc;
+  border-left: 0;
+  border-right: 0;
+  color: #442d22;
+}
+.highlight .go { color: #5c5c5c !important; } /* Generic.Output */
+
+.highlight-none pre { white-space: pre-wrap; }
+
+
+/* ------------------- Footer ------------------- */
+
+.footer {
+  margin-left: 250px;
+  border-left: 1px solid #ccc;
+  clear: both;
+  font-size: 12px;
+  margin-bottom: 5px;
+  text-align: center;
+  color: #616161;
+}
+#page-index + .footer { border: 0; }

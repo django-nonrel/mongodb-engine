@@ -1,0 +1,32 @@
+{# Hack to get rid of jQuery and friends #}
+{% set script_files = [] %}
+
+{% extends 'basic/layout.html' %}
+
+{# No relbars please #}
+{% block relbar1 %}{% endblock %}
+{% block relbar2 %}{% endblock %}
+
+{%- block header %}
+<div id=header>
+  {{ toctree(titles_only=True, collapse=False) }}
+  <a href="{{ pathto('index') }}" class=logo>
+    Django MongoDB Engine
+    <span id=slogan>MongoDB backend for Django</span>
+  </a>
+</div>
+{%- endblock %}
+
+{# Sidebar before content #}
+{%- block sidebar1 %}
+  <div class=clearer></div>
+  {{ sidebar() }}
+{% endblock %}
+{%- block sidebar2 %}{% endblock %}
+
+{# Wrap all content to make special-casing certain pages possible #}
+{%- block content %}
+<div id="page-{{ pagename }}">
+  {{ super() }}
+</div>
+{%- endblock %}
