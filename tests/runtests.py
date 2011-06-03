@@ -1,5 +1,6 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 import os
+import sys
 from types import ModuleType
 
 def runtests(foo, settings='settings', extra=[], test_builtin=False):
@@ -15,7 +16,7 @@ def runtests(foo, settings='settings', extra=[], test_builtin=False):
 def execute_python(lines):
     from textwrap import dedent
     return execute(
-        ['python', '-c',  dedent(lines)],
+        [sys.executable, '-c',  dedent(lines)],
         env=dict(os.environ, DJANGO_SETTINGS_MODULE='settings', PYTHONPATH='..')
     )
 

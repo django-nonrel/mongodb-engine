@@ -124,29 +124,29 @@ class MongoQuery(NonrelQuery):
         if query is None:
             query = self._mongo_query
 
-        if filters.connector is OR:
+        if filters.connector == OR:
             or_conditions = query['$or'] = []
 
         if filters.negated:
             self._negated = not self._negated
 
         for child in children:
-            if filters.connector is OR:
+            if filters.connector == OR:
                 subquery = {}
             else:
                 subquery = query
 
             if isinstance(child, Node):
-                if filters.connector is OR and child.connector is OR:
+                if filters.connector == OR and child.connector == OR:
                     if len(child.children) > 1:
                         raise DatabaseError("Nested ORs are not supported")
 
-                if filters.connector is OR and filters.negated:
+                if filters.connector == OR and filters.negated:
                     raise NotImplementedError("Negated ORs are not implemented")
 
                 self.add_filters(child, query=subquery)
 
-                if filters.connector is OR and subquery:
+                if filters.connector == OR and subquery:
                     or_conditions.extend(subquery.pop('$or', []))
                     or_conditions.append(subquery)
             else:
