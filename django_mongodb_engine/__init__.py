@@ -21,7 +21,7 @@ try:
     # 'django.db.models.signals'. Because the 'django_mongodb_engine' module gets
     # imported as part of the initialization process of Django's ORM ('django.db'),
     # we can *not* import anything from 'django.db' in this file (or any other
-    # submodule that is imported while the ORM initialization) because that would
+    # submodule that is imported during the ORM initialization) because that would
     # get us into recursive import hell which the Python interpreter doesn't allow.
     # The only way to make sure certain code is executed after Django's ORM has been
     # initialized is registering an app. After initializing itself, Django imports
