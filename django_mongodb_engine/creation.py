@@ -1,6 +1,4 @@
 from pymongo import ASCENDING, DESCENDING
-from django.db.backends.creation import TEST_DATABASE_PREFIX
-from django.core.exceptions import ImproperlyConfigured
 from djangotoolbox.db.base import NonrelDatabaseCreation
 from .utils import first
 

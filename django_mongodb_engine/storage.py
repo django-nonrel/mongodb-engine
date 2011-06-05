@@ -1,9 +1,7 @@
 import os
-import re
 
 from gridfs import GridFS, NoFile
 
-from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.core.files.storage import Storage
 

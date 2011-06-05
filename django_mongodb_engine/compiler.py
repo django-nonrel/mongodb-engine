@@ -8,8 +8,8 @@ from django.db.utils import DatabaseError
 from django.db.models.fields import NOT_PROVIDED
 from django.db.models import F
 from django.db.models.sql import aggregates as sqlaggregates
-from django.db.models.sql.constants import MULTI, SINGLE
-from django.db.models.sql.where import AND, OR
+from django.db.models.sql.constants import MULTI
+from django.db.models.sql.where import OR
 from django.utils.tree import Node
 
 from pymongo.errors import PyMongoError
@@ -21,7 +21,6 @@ from djangotoolbox.db.basecompiler import NonrelQuery, NonrelCompiler, \
 
 from .query import A
 from .aggregations import get_aggregation_class_by_name
-from .contrib import RawQuery
 from .utils import safe_regex, first
 
 OPERATORS_MAP = {

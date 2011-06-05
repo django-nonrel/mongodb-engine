@@ -1,7 +1,6 @@
 from django.core.exceptions import ImproperlyConfigured
 from django.db.backends.signals import connection_created
 from django.conf import settings
-from django.utils.functional import wraps
 
 from pymongo.connection import Connection
 from pymongo.collection import Collection
@@ -140,7 +139,7 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
             self.operation_flags['save']['w'] = settings['WAIT_FOR_SLAVES']
 
         # lower-case all remaining OPTIONS
-        for key, value in options.items():
+        for key in options.iterkeys():
             options[key.lower()] = options.pop(key)
 
         try:
