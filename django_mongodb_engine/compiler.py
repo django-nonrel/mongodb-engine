@@ -377,9 +377,11 @@ class SQLUpdateCompiler(NonrelUpdateCompiler, SQLCompiler):
         criteria = self.build_query()._mongo_query
         options = self.connection.operation_flags.get('update', {})
         options = dict(options, **kwargs)
-        return collection.update(criteria, update_spec, multi=multi, **options)
+        info = collection.update(criteria, update_spec, multi=multi, **options)
+        if info is not None:
+            return info.get('n')
 
-    def execute_sql(self, return_id=False):
+    def execute_sql(self, result_type):
         return self.execute_raw(*self._get_update_spec())
 
     def _get_update_spec(self):

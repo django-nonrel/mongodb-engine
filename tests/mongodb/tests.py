@@ -148,17 +148,20 @@ class DatabaseOptionTests(TestCase):
                     def {0}(self, *a, **k):
                         assert '{0}' not in self._method_kwargs
                         self._method_kwargs['{0}'] = k
-                        super(self.__class__, self).{0}(*a, **k)'''.format(name))
+                        return super(self.__class__, self).{0}(*a, **k)'''.format(name))
 
             options = {'OPTIONS' : {'OPERATIONS' : flags}}
             with self.custom_database_wrapper(options, collection_class=Collection):
                 RawModel.objects.create(raw='foo')
-                RawModel.objects.update(raw='foo')
+                update_count = RawModel.objects.update(raw='foo'), RawModel.objects.count()
                 RawModel.objects.all().delete()
 
             for name in method_kwargs:
                 self.assertEqual(method_kwargs[name],
                                  Collection._method_kwargs[name])
+
+            if Collection._method_kwargs['update'].get('safe'):
+                self.assertEqual(*update_count)
 
         test_setup({}, save={}, update={'multi' : True}, remove={})
         test_setup(
@@ -171,7 +174,8 @@ class DatabaseOptionTests(TestCase):
             {'delete' : {'safe' : True}, 'update' : {}},
             save={},
             update={'multi' : True},
-            remove={'safe' : True}
+            remove={'safe' : True},
+            update_count=True
         )
         test_setup(
             {'insert' : {'fsync' : True}, 'delete' : {'w' : True, 'fsync' : True}},
