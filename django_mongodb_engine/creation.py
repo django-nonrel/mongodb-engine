@@ -4,27 +4,10 @@ from .utils import first
 
 class DatabaseCreation(NonrelDatabaseCreation):
     data_types = dict(NonrelDatabaseCreation.data_types, **{
-        'EmailField':                   'unicode',
-        'URLField':                     'unicode',
-        'CharField':                    'unicode',
-        'CommaSeparatedIntegerField':   'unicode',
-        'IPAddressField':               'unicode',
-        'SlugField':                    'unicode',
-        'FileField':                    'unicode',
-        'FilePathField':                'unicode',
-        'TextField':                    'unicode',
-        'XMLField':                     'unicode',
-        'IntegerField':                 'int',
-        'SmallIntegerField':            'int',
-        'PositiveIntegerField':         'int',
-        'PositiveSmallIntegerField':    'int',
-        'BigIntegerField':              'int',
-        'GenericAutoField':             'objectid',
-        'StringForeignKey':             'objectid',
-        'AutoField':                    'objectid',
-        'RelatedAutoField':             'objectid',
-        'OneToOneField':                'int',
-        'DecimalField':                 'float',
+        'AutoField': 'objectid',
+        'ForeignKey': 'objectid',
+        'OneToOneField': 'objectid',
+        'DecimalField': 'float',
     })
 
     def sql_indexes_for_model(self, model, termstyle):
