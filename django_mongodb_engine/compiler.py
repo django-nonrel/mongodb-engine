@@ -226,7 +226,7 @@ class SQLCompiler(NonrelCompiler):
         db_type, db_subtype = self._split_db_type(db_type)
         if db_subtype is not None:
             if isinstance(value, (set, list, tuple)):
-                # Sets are converted to lists here because MongoDB has not sets.
+                # Sets are converted to lists here because MongoDB has no sets.
                 return [self.convert_value_for_db(db_subtype, subvalue)
                         for subvalue in value]
             elif isinstance(value, dict):
