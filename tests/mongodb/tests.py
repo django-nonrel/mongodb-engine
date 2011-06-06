@@ -100,6 +100,18 @@ class MongoDBEngineTests(TestCase):
             for call in calls:
                 call()
 
+class RegressionTests(TestCase):
+    def test_issue_47(self):
+        """ ForeignKeys in subobjects should be ObjectIds, not unicode """
+        from bson.objectid import ObjectId
+        from query.models import Blog, Post
+        post = Post.objects.create(blog=Blog.objects.create())
+        m = Issue47Model.objects.create(foo=[post])
+        collection = get_collection(Issue47Model)
+        assert collection.count() == 1
+        doc = collection.find_one()
+        self.assertIsInstance(doc['foo'][0]['blog_id'], ObjectId)
+
 class DatabaseOptionTests(TestCase):
     """ Tests for MongoDB-specific database options """
 

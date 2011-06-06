@@ -1,6 +1,7 @@
 from django.db import models
-from djangotoolbox.fields import RawField
+from djangotoolbox.fields import RawField, ListField, EmbeddedModelField
 from django_mongodb_engine.fields import GridFSField, GridFSString
+from query.models import Post
 
 class DescendingIndexModel(models.Model):
     desc = models.IntegerField()
@@ -45,6 +46,9 @@ class GridFSFieldTestModel(models.Model):
     gridfile_nodelete = GridFSField(delete=False)
     gridstring = GridFSString()
 
+
+class Issue47Model(models.Model):
+    foo = ListField(EmbeddedModelField(Post))
 
 RawModel.objects.all().delete()
 RawModel.objects.create(raw=42)
