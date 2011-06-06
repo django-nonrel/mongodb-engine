@@ -7,6 +7,7 @@ class DatabaseCreation(NonrelDatabaseCreation):
         'AutoField': 'objectid',
         'ForeignKey': 'objectid',
         'OneToOneField': 'objectid',
+        'RelatedAutoField' : 'objectid',
         'DecimalField': 'float',
     })
 
