@@ -112,6 +112,15 @@ class RegressionTests(TestCase):
         doc = collection.find_one()
         self.assertIsInstance(doc['foo'][0]['blog_id'], ObjectId)
 
+    def test_djangotoolbox_issue_7(self):
+        """ Subobjects should not have an id field """
+        from query.models import Post
+        Issue47Model.objects.create(foo=[Post(title='a')])
+        collection = get_collection(Issue47Model)
+        assert collection.count() == 1
+        doc = collection.find_one()
+        self.assertNotIn('id', doc['foo'][0])
+
 class DatabaseOptionTests(TestCase):
     """ Tests for MongoDB-specific database options """
 
