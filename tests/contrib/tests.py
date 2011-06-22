@@ -184,11 +184,11 @@ class FullTextTest(TestCase):
         self.assertEqual(Post.objects.get(Q(content_tokenized="django mongodb") & Q(content_tokenized='testing')).pk, post.pk)
 
     def test_for_wrong_lookups(self):
-        # This because because full text queries run over 
+        # This because because full text queries run over
         # a list of tokenized values so djangotoolbox will complain.
-        # We should find a workaround for this. 
+        # We should find a workaround for this.
         # For example: Using the iexact lookup could be usefule 'cause it
-        # could be passed to the tokenized in order to support Case Sensitive 
+        # could be passed to the tokenized in order to support Case Sensitive
         # Case Insensitive queries.
         with self.assertRaises(DatabaseError):
             Post.objects.get(content_tokenized__iexact="django mongodb")
