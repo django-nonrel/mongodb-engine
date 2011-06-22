@@ -1,3 +1,6 @@
+Authors
+=======
+
 Current Primary Authors
 -----------------------
 * Jonas Haag <jonas@lophus.org>
@@ -16,4 +19,4 @@ Contributions by
 * Brandon Pedersen (https://github.com/bpedman)
 
 (For an up-to-date list of contributors, see
- https://github.com/django-mongodb-engine/mongodb-engine/contributors.)
+https://github.com/django-mongodb-engine/mongodb-engine/contributors.)
