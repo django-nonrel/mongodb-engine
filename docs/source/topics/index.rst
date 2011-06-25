@@ -6,6 +6,7 @@ Topics
 
    lists-and-dicts
    embedded-models
+   atomic-updates
    gridfs
    mapreduce
    cache
