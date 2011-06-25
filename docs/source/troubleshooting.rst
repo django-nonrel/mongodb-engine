@@ -18,7 +18,8 @@ This means that your ``SITE_ID`` setting (`What's SITE_ID?!`_) is incorrect --
 it is set to "1" but the site object that has automatically been created has an
 ObjectId primary key.
 
-Use the ``tellsiteid`` command to get the default site's ObjectId and update
+If you add ``'django_mongodb_engine'`` to your list of ``INSTALLED_APPS``, you
+can use the ``tellsiteid`` command to get the default site's ObjectId and update
 your ``SITE_ID`` setting accordingly:
 
 .. code-block:: none
