@@ -15,6 +15,7 @@ DEFAULT_APPS = [
     'django.contrib.messages'
 ]
 INSTALLED_APPS = [
+    'django_mongodb_engine',
     'djangotoolbox',
     'query',
     'embedded',

@@ -1,3 +1,5 @@
+from cStringIO import StringIO
+from django.core.management import call_command
 from django.db import connections
 from django.db.utils import DatabaseError
 from django.contrib.sites.models import Site
@@ -99,6 +101,15 @@ class MongoDBEngineTests(TestCase):
             shuffle(calls)
             for call in calls:
                 call()
+
+    def test_tellsiteid(self):
+        from django.contrib.sites.models import Site
+        from django.conf import settings
+        site_id = Site.objects.create().id
+        for kwargs in [{}, {'verbosity': 1}]:
+            stdout = StringIO()
+            call_command('tellsiteid', stdout=stdout, **kwargs)
+            self.assertIn(site_id, stdout.getvalue())
 
 class RegressionTests(TestCase):
     def test_issue_47(self):
@@ -213,8 +224,6 @@ class DatabaseOptionTests(TestCase):
 
 class IndexTests(TestCase):
     def setUp(self):
-        from django.core.management import call_command
-        from cStringIO import StringIO
         import sys
         _stdout = sys.stdout
         sys.stdout = StringIO()
