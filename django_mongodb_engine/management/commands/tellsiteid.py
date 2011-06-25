@@ -7,10 +7,12 @@ class Command(NoArgsCommand):
         verbosity = int(options.get('verbosity', 1))
         site_id = self._get_site_id()
         if verbosity >= 1:
-            print "The default site's ID is %r. To use the sites framework, " \
-                   "add this line to settings.py:\nSITE_ID=%r" % (site_id, site_id)
+            self.stdout.write(
+                "The default site's ID is %r. To use the sites framework, "
+                "add this line to settings.py:\nSITE_ID=%r" % (site_id, site_id)
+            )
         else:
-            print site_id
+            self.stdout.write(site_id)
 
     def _get_site_id(self):
         from django.contrib.sites.models import Site
