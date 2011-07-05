@@ -75,9 +75,10 @@ class MongoQuery(NonrelQuery):
 
     def fetch(self, low_mark, high_mark):
         results = self._get_results()
-        primarykey_column = self.query.get_meta().pk.column
+        pk_field = self.query.get_meta().pk
         for entity in results:
-            entity[primarykey_column] = entity.pop('_id')
+            if pk_field.auto_created:
+                entity[pk_field.column] = entity.pop('_id')
             yield entity
 
     @safe_call
@@ -94,7 +95,8 @@ class MongoQuery(NonrelQuery):
                 order, direction = order[1:], DESCENDING
             else:
                 direction = ASCENDING
-            if order == self.query.get_meta().pk.column:
+            pk_field = self.query.get_meta().pk
+            if pk_field.auto_created and order == pk_field.column:
                 order = '_id'
             self._ordering.append((order, direction))
         return self
@@ -152,7 +154,8 @@ class MongoQuery(NonrelQuery):
                 column, lookup_type, db_type, value = self._decode_child(child)
                 if lookup_type in ('year', 'month', 'day'):
                     raise DatabaseError("MongoDB does not support year/month/day queries")
-                if column == self.query.get_meta().pk.column:
+                pk_field = self.query.get_meta().pk
+                if pk_field.auto_created and column == pk_field.column:
                     column = '_id'
 
                 existing = subquery.get(column)
@@ -358,11 +361,12 @@ class SQLCompiler(NonrelCompiler):
 class SQLInsertCompiler(NonrelInsertCompiler, SQLCompiler):
     @safe_call
     def insert(self, data, return_id=False):
-        pk_column = self.query.get_meta().pk.column
-        try:
-            data['_id'] = data.pop(pk_column)
-        except KeyError:
-            pass
+        pk_field = self.query.get_meta().pk
+        if pk_field.auto_created:
+            try:
+                data['_id'] = data.pop(pk_field.column)
+            except KeyError:
+                pass
         return self._save(data, return_id)
 
 # TODO: Define a common nonrel API for updates and add it to the nonrel
@@ -414,7 +418,8 @@ class SQLUpdateCompiler(NonrelUpdateCompiler, SQLCompiler):
                 action, column, value = '$inc', lhs.name, rhs
             else:
                 action, column, value = '$set', field.column, value
-            if column == self.query.get_meta().pk.column:
+            pk_field = self.query.get_meta().pk
+            if pk_field.auto_created and column == pk_field.column:
                 raise DatabaseError("Can not modify _id")
             spec.setdefault(action, {})[column] = value
 

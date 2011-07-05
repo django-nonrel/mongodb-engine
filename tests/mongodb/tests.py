@@ -132,6 +132,28 @@ class RegressionTests(TestCase):
         doc = collection.find_one()
         self.assertNotIn('id', doc['foo'][0])
 
+    def test_custom_id_field(self):
+        """ Everything should work fine with custom primary keys """
+        CustomIDModel.objects.create(id=42, primary=666)
+        self.assertDictContainsSubset(
+            {'primary': 666, 'id': 42},
+            get_collection(CustomIDModel).find_one()
+        )
+        CustomIDModel2.objects.create(id=42)
+        self.assertDictContainsSubset(
+            {'id': 42},
+            get_collection(CustomIDModel2).find_one()
+        )
+        obj = CustomIDModel2.objects.create(id=41)
+        self.assertEqualLists(
+            [o.id for o in CustomIDModel2.objects.order_by('id')],
+            [41, 42]
+        )
+        self.assertEqual(obj, CustomIDModel2.objects.get(id=41))
+        CustomIDModel2.objects.filter(id=41).update(id=43)
+        CustomIDModel2.objects.get(id=43)
+
+
 class DatabaseOptionTests(TestCase):
     """ Tests for MongoDB-specific database options """
 

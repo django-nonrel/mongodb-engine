@@ -46,9 +46,15 @@ class GridFSFieldTestModel(models.Model):
     gridfile_nodelete = GridFSField(delete=False)
     gridstring = GridFSString()
 
-
 class Issue47Model(models.Model):
     foo = ListField(EmbeddedModelField(Post))
+
+class CustomIDModel(models.Model):
+    id = models.IntegerField()
+    primary = models.IntegerField(primary_key=True, default=1)
+
+class CustomIDModel2(models.Model):
+    id = models.IntegerField(primary_key=True)
 
 RawModel.objects.all().delete()
 RawModel.objects.create(raw=42)
