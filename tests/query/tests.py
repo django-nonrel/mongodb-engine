@@ -1,7 +1,3 @@
-"""
-    Query and regression tests,
-    plus tests for django-mongodb-engine specific features
-"""
 import datetime
 from operator import attrgetter
 

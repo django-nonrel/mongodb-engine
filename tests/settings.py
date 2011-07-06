@@ -18,11 +18,12 @@ INSTALLED_APPS = [
     'django_mongodb_engine',
     'djangotoolbox',
     'query',
+    'lookup',
     'embedded',
     'mongodb',
     'aggregations',
     'contrib',
-    'storage'
+    'storage',
 ]
 
 SERIALIZATION_MODULES = {'json' : 'tests.serializer'}
