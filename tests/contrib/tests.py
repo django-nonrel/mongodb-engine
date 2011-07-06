@@ -85,7 +85,7 @@ class MapReduceTests(TestCase):
         self.test_map_reduce_with_custom_primary_key(inline=True)
 
     def test_map_reduce_with_custom_primary_key(self, inline=False):
-        mapfunc = """ function() { emit(this._id, null) } """
+        mapfunc = """ function() { emit(this.primarykey, null) } """
         reducefunc = """ function(key, values) { return null } """
         for pk, data in [
             ('foo', 'hello!'),
