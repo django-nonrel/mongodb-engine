@@ -192,17 +192,23 @@ class DatabaseOptionTests(TestCase):
 
     def test_operation_flags(self):
         from textwrap import dedent
-        from pymongo.collection import Collection as PyMongoCollection
 
         def test_setup(flags, **method_kwargs):
-            class Collection(PyMongoCollection):
-                _method_kwargs = {}
-                for name in method_kwargs:
-                    exec dedent('''
-                    def {0}(self, *a, **k):
-                        assert '{0}' not in self._method_kwargs
-                        self._method_kwargs['{0}'] = k
-                        return super(self.__class__, self).{0}(*a, **k)'''.format(name))
+            cls_code = [
+                'from pymongo.collection import Collection',
+                'class Collection(Collection):',
+                '    _method_kwargs = {}'
+            ]
+            for name in method_kwargs:
+                for line in [
+                    'def %s(self, *args, **kwargs):',
+                    '    assert %r not in self._method_kwargs',
+                    '    self._method_kwargs[%r] = kwargs',
+                    '    return super(self.__class__, self).%s(*args, **kwargs)',
+                ]:
+                    cls_code.append('    ' + line % name)
+
+            exec '\n'.join(cls_code) in locals()
 
             options = {'OPTIONS' : {'OPERATIONS' : flags}}
             with self.custom_database_wrapper(options, collection_class=Collection):
@@ -228,8 +234,7 @@ class DatabaseOptionTests(TestCase):
             {'delete' : {'safe' : True}, 'update' : {}},
             save={},
             update={'multi' : True},
-            remove={'safe' : True},
-            update_count=True
+            remove={'safe' : True}
         )
         test_setup(
             {'insert' : {'fsync' : True}, 'delete' : {'w' : True, 'fsync' : True}},
