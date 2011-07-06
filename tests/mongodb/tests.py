@@ -112,6 +112,7 @@ class MongoDBEngineTests(TestCase):
             self.assertIn(site_id, stdout.getvalue())
 
 class RegressionTests(TestCase):
+    @skip("Needs changes in ListField/db_type")
     def test_issue_47(self):
         """ ForeignKeys in subobjects should be ObjectIds, not unicode """
         from bson.objectid import ObjectId

@@ -1,5 +1,6 @@
-from django.test import TestCase
 from django.conf import settings
+from django.test import TestCase
+from django.utils.unittest import skip
 from django.db import connections
 from django.db.models import Model
 
@@ -20,9 +21,6 @@ def skip_all_except(*tests):
                     del dict[attr]
             return type.__new__(cls, name, bases, dict)
     return meta
-
-def skip(test):
-    pass
 
 def get_collection(model_or_name):
     if isinstance(model_or_name, type) and issubclass(model_or_name, Model):
