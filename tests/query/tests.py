@@ -123,12 +123,24 @@ class BasicQueryTests(TestCase):
         self.assertEqualLists(Post.objects.filter(blog=blog1), [entry1])
 
     def test_regex_matchers(self):
-        objs = [Blog.objects.create(title=title) for title in
-                ('Hello', 'worLd', '[(', '**', '\\')]
-        self.assertEqual(list(Blog.objects.filter(title__startswith='h')), [])
-        self.assertEqual(list(Blog.objects.filter(title__istartswith='h')), [objs[0]])
-        self.assertEqual(list(Blog.objects.filter(title__contains='(')), [objs[2]])
-        self.assertEqual(list(Blog.objects.filter(title__endswith='\\')), [objs[4]])
+        blogs = [Blog.objects.create(title=title) for title in
+                 ('Hello', 'worLd', 'D', '[(', '**', '\\')]
+        for lookup, value, objs in [
+            ('startswith', 'h', []),
+            ('istartswith', 'h', [0]),
+            ('contains', '(', [3]),
+            ('icontains', 'l', [0, 1]),
+            ('endswith', '\\', [5]),
+            ('iendswith', 'D', [1, 2])
+        ]:
+            self.assertEqualLists(
+                [blog for i, blog in enumerate(blogs) if i in objs],
+                Blog.objects.filter(**{'title__%s' % lookup : value})
+            )
+            self.assertEqualLists(
+                [blog for i, blog in enumerate(blogs) if i not in objs],
+                Blog.objects.filter(~Q(**{'title__%s' % lookup : value}))
+            )
 
     def test_multiple_regex_matchers(self):
         objs = [Person.objects.create(name=a, surname=b) for a, b in
