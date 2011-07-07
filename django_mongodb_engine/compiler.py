@@ -25,33 +25,35 @@ from .aggregations import get_aggregation_class_by_name
 from .utils import safe_regex, first
 
 OPERATORS_MAP = {
-    'exact':        lambda val: val,
-    'iexact':       safe_regex('^%s$', re.IGNORECASE),
-    'startswith':   safe_regex('^%s'),
-    'istartswith':  safe_regex('^%s', re.IGNORECASE),
-    'endswith':     safe_regex('%s$'),
-    'iendswith':    safe_regex('%s$', re.IGNORECASE),
-    'contains':     safe_regex('%s'),
-    'icontains':    safe_regex('%s', re.IGNORECASE),
-    'regex':    lambda val: re.compile(val),
-    'iregex':   lambda val: re.compile(val, re.IGNORECASE),
-    'gt':       lambda val: {'$gt': val},
-    'gte':      lambda val: {'$gte': val},
-    'lt':       lambda val: {'$lt': val},
-    'lte':      lambda val: {'$lte': val},
-    'range':    lambda val: {'$gte': val[0], '$lte': val[1]},
-    'isnull':   lambda val: None if val else {'$ne': None},
-    'in':       lambda val: {'$in': val},
+    'exact':  lambda val: val,
+    'gt':     lambda val: {'$gt': val},
+    'gte':    lambda val: {'$gte': val},
+    'lt':     lambda val: {'$lt': val},
+    'lte':    lambda val: {'$lte': val},
+    'in':     lambda val: {'$in': val},
+    'range':  lambda val: {'$gte': val[0], '$lte': val[1]},
+    'isnull': lambda val: None if val else {'$ne': None},
+
+    # regex matchers
+    'iexact':      safe_regex('^%s$', re.IGNORECASE),
+    'startswith':  safe_regex('^%s'),
+    'istartswith': safe_regex('^%s', re.IGNORECASE),
+    'endswith':    safe_regex('%s$'),
+    'iendswith':   safe_regex('%s$', re.IGNORECASE),
+    'contains':    safe_regex('%s'),
+    'icontains':   safe_regex('%s', re.IGNORECASE),
+    'regex':       lambda val: re.compile(val),
+    'iregex':      lambda val: re.compile(val, re.IGNORECASE),
 }
 
 NEGATED_OPERATORS_MAP = {
-    'exact':    lambda val: {'$ne': val},
-    'gt':       lambda val: {'$lte': val},
-    'gte':      lambda val: {'$lt': val},
-    'lt':       lambda val: {'$gte': val},
-    'lte':      lambda val: {'$gt': val},
-    'isnull':   lambda val: {'$ne': None} if val else None,
-    'in':       lambda val: {'$nin' : val}
+    'exact':  lambda val: {'$ne': val},
+    'gt':     lambda val: {'$lte': val},
+    'gte':    lambda val: {'$lt': val},
+    'lt':     lambda val: {'$gte': val},
+    'lte':    lambda val: {'$gt': val},
+    'in':     lambda val: {'$nin' : val},
+    'isnull': lambda val: {'$ne': None} if val else None,
 }
 
 def safe_call(func):

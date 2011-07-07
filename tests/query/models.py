@@ -20,6 +20,7 @@ class Post(models.Model):
     date_published = models.DateTimeField(null=True, blank=True)
     blog = models.ForeignKey(Blog, null=True, blank=True)
 
+# TODO: Get rid of this model
 class Person(models.Model):
     name = models.CharField(max_length=20)
     surname = models.CharField(max_length=20)
@@ -38,9 +39,3 @@ class DateModel(models.Model):
 class Article(models.Model):
     headline = models.CharField(max_length=50)
     pub_date = models.DateTimeField()
-
-    class Meta:
-       ordering = ('pub_date',)
-
-    def __unicode__(self):
-        return self.headline
