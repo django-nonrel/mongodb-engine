@@ -47,6 +47,17 @@ class BasicQueryTests(TestCase):
         self.assertEqual(Person.objects.filter(name="igor", surname="duck").count(), 1)
         self.assertEqual(Person.objects.filter(age__gte=20, surname="duck").count(), 2)
 
+    def test_isnull(self):
+        p1 = Post.objects.create()
+        p2 = Post.objects.create(date_published=datetime.datetime.now())
+        self.assertEqual(Post.objects.get(date_published__isnull=True), p1)
+        self.assertEqual(Post.objects.get(date_published__isnull=False), p2)
+
+    def test_range(self):
+        i1 = IntegerModel.objects.create(integer=3)
+        i2 = IntegerModel.objects.create(integer=10)
+        self.assertEqual(IntegerModel.objects.get(integer__range=(2, 4)), i1)
+
     def test_change_model(self):
         blog1 = Blog.objects.create(title="blog 1")
         self.assertEqual(Blog.objects.count(), 1)
