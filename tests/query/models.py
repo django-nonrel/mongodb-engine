@@ -8,6 +8,9 @@ class RawModel(models.Model):
 class Empty(models.Model):
     pass
 
+class IntegerModel(models.Model):
+    integer = models.IntegerField()
+
 class Blog(models.Model):
     title = models.CharField(max_length=200, db_index=True)
 

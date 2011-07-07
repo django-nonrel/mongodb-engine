@@ -143,20 +143,51 @@ class BasicQueryTests(TestCase):
             )
 
     def test_multiple_regex_matchers(self):
-        objs = [Person.objects.create(name=a, surname=b) for a, b in
-                (name.split() for name in ['donald duck', 'dagobert duck', 'daisy duck'])]
+        # (startswith, contains, ... uses regex on MongoDB)
+        posts = [
+            {'title': 'Title A', 'content': 'Content A'},
+            {'title': 'Title B', 'content': 'Content B'},
+            {'title': 'foo bar', 'content': 'spam eggs'},
+            {'title': 'asd asd', 'content': 'fghj fghj'}
+        ]
+        posts = [Post.objects.create(**post) for post in posts]
 
-        filters = dict(surname__startswith='duck', surname__istartswith='duck',
-                       surname__endswith='duck', surname__iendswith='duck',
-                       surname__contains='duck', surname__icontains='duck')
-        base_query = Person.objects \
-                        .filter(**filters) \
-                        .filter(~Q(surname__contains='just-some-random-condition',
-                                   surname__endswith='hello world'))
-        #base_query = base_query | base_query
+        # Test that we can combine multiple regex matchers:
+        self.assertEqualLists(
+            Post.objects.filter(title='Title A'),
+            Post.objects.filter(title__startswith='T', title__istartswith='t') \
+                        .filter(title__endswith='A', title__iendswith='a') \
+                        .filter(title__contains='l', title__icontains='L')
+        )
 
-        self.assertEqual(base_query.filter(name__iendswith='d')[0], objs[0])
-        self.assertEqual(base_query.filter(name='daisy').get(), objs[2])
+        # Test that multiple regex matchers can be used on more than one field.
+        self.assertEqualLists(
+            Post.objects.all()[:3],
+            Post.objects.filter(title__contains=' ', content__icontains='e')
+        )
+
+        # Test multiple negated regex matchers.
+        self.assertEqual(
+            Post.objects.filter(~Q(title__icontains='I')).get(~Q(title__endswith='d')),
+            Post.objects.all()[2]
+        )
+        self.assertEqual(
+            Post.objects.filter(~Q(title__startswith='T')).get(~Q(content__startswith='s')),
+            Post.objects.all()[3]
+        )
+
+        # Test negated regex matchers combined with non-negated regex matchers.
+        self.assertEqual(
+            Post.objects.filter(title__startswith='Title') \
+                        .get(~Q(title__startswith='Title A')),
+            Post.objects.all()[1]
+        )
+        self.assertEqual(
+            Post.objects.filter(title__startswith='T', title__contains=' ') \
+                        .filter(content__startswith='C') \
+                        .get(~Q(content__contains='Y', content__icontains='B')),
+            Post.objects.all()[0]
+        )
 
     def test_multiple_filter_on_same_name(self):
         Blog.objects.create(title='a')
@@ -176,9 +207,9 @@ class BasicQueryTests(TestCase):
             Blog.objects.filter(title='blog') | Blog.objects.filter(~Q(title='another blog')),
             [blogs[0], blogs[1]]
         )
-        self.assertRaises(
-            DatabaseError,
-            lambda: Blog.objects.filter(~Q(title='blog') & ~Q(title='other blog')).get()
+        self.assertEqual(
+            blogs[2],
+            Blog.objects.get(~Q(title='blog') & ~Q(title='other blog'))
         )
         self.assertEqualLists(
             Blog.objects.filter(~Q(title='another blog')
@@ -196,6 +227,15 @@ class BasicQueryTests(TestCase):
         self.assertEqual(
             Blog.objects.filter().exclude(~Q(title='blog')).get(),
             blogs[0]
+        )
+
+    def test_exclude_plus_filter(self):
+        objs = [IntegerModel.objects.create(integer=i) for i in (1, 2, 3, 4)]
+        self.assertEqual(
+            IntegerModel.objects.exclude(integer=1) \
+                                .exclude(integer=2) \
+                                .get(integer__gt=3),
+            objs[3]
         )
 
     def test_nin(self):
@@ -435,13 +475,12 @@ class OrLookupsTests(TestCase):
             attrgetter("headline")
         )
 
-        # Does not work on MongoDB:
-        #self.assertQuerysetEqual(
-        #    Article.objects.filter(~Q(pk=self.a1) & ~Q(pk=self.a2)), [
-        #        'Hello and goodbye'
-        #    ],
-        #    attrgetter("headline"),
-        #)
+        self.assertQuerysetEqual(
+            Article.objects.filter(~Q(pk=self.a1) & ~Q(pk=self.a2)), [
+                'Hello and goodbye'
+            ],
+            attrgetter("headline"),
+        )
 
         # This allows for more complex queries than filter() and exclude()
         # alone would allow
