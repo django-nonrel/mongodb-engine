@@ -152,8 +152,12 @@ class MongoQuery(NonrelQuery):
                     or_conditions.append(subquery)
             else:
                 column, lookup_type, db_type, value = self._decode_child(child)
+
                 if lookup_type in ('year', 'month', 'day'):
                     raise DatabaseError("MongoDB does not support year/month/day queries")
+                if self._negated and lookup_type == 'range':
+                    raise DatabaseError("Negated range lookups are not supported")
+
                 pk_field = self.query.get_meta().pk
                 if pk_field.auto_created and column == pk_field.column:
                     column = '_id'
