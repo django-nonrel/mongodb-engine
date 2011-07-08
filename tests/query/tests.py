@@ -248,6 +248,12 @@ class BasicQueryTests(TestCase):
                                 .get(integer__gt=3),
             objs[3]
         )
+        self.assertEqual(
+            IntegerModel.objects.exclude(integer=1) \
+                                .exclude(integer=2) \
+                                .get(integer=3),
+            objs[2]
+        )
 
     def test_nin(self):
         Blog.objects.create(title='a')

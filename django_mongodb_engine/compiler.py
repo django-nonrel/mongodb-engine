@@ -218,7 +218,8 @@ class MongoQuery(NonrelQuery):
                                     assert all(key not in existing for key in lookup.keys()), [lookup, existing]
                                     existing.update(lookup)
                             else:
-                                existing['$nin' if self._negated else '$all'].append(lookup)
+                                key = '$nin' if self._negated else '$all'
+                                existing.setdefault(key, []).append(lookup)
 
                 query.update(subquery)
 
