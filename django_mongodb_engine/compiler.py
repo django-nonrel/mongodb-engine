@@ -153,73 +153,77 @@ class MongoQuery(NonrelQuery):
                 if filters.connector == OR and subquery:
                     or_conditions.extend(subquery.pop('$or', []))
                     or_conditions.append(subquery)
+
+                continue
+
+            column, lookup_type, db_type, value = self._decode_child(child)
+
+            if lookup_type in ('year', 'month', 'day'):
+                raise DatabaseError("MongoDB does not support year/month/day queries")
+            if self._negated and lookup_type == 'range':
+                raise DatabaseError("Negated range lookups are not supported")
+
+            pk_field = self.query.get_meta().pk
+            if pk_field.auto_created and column == pk_field.column:
+                column = '_id'
+
+            existing = subquery.get(column)
+
+            if isinstance(value, A):
+                field = first(lambda field: field.column == column, self.fields)
+                column, value = value.as_q(field)
+
+            if self._negated and lookup_type in NEGATED_OPERATORS_MAP:
+                op_func = NEGATED_OPERATORS_MAP[lookup_type]
+                already_negated = True
             else:
-                column, lookup_type, db_type, value = self._decode_child(child)
+                op_func = OPERATORS_MAP[lookup_type]
+                if self._negated:
+                    already_negated = False
 
-                if lookup_type in ('year', 'month', 'day'):
-                    raise DatabaseError("MongoDB does not support year/month/day queries")
-                if self._negated and lookup_type == 'range':
-                    raise DatabaseError("Negated range lookups are not supported")
+            if lookup_type == 'isnull':
+                lookup = op_func(value)
+            else:
+                lookup = op_func(self.convert_value_for_db(db_type, value))
 
-                pk_field = self.query.get_meta().pk
-                if pk_field.auto_created and column == pk_field.column:
-                    column = '_id'
+            if existing is None:
+                if self._negated and not already_negated:
+                    lookup = {'$not': lookup}
+                subquery[column] = lookup
+                query.update(subquery)
+                continue
 
-                existing = subquery.get(column)
-
-                if isinstance(value, A):
-                    field = first(lambda field: field.column == column, self.fields)
-                    column, value = value.as_q(field)
-
-                if self._negated and lookup_type in NEGATED_OPERATORS_MAP:
-                    op_func = NEGATED_OPERATORS_MAP[lookup_type]
-                    already_negated = True
+            if not isinstance(existing, dict):
+                if not self._negated:
+                    # {'a': o1} + {'a': o2} --> {'a': {'$all': [o1, o2]}}
+                    subquery[column] = {'$all': [existing, lookup]}
                 else:
-                    op_func = OPERATORS_MAP[lookup_type]
+                    # {'a': o1} + {'a': {'$not': o2}} --> {'a': {'$all': [o1], '$nin': [o2]}}
+                    subquery[column] = {'$all': [existing], '$nin': [lookup]}
+            else:
+                not_ = existing.pop('$not', None)
+                if not_:
+                    assert not existing
+                    assert not isinstance(lookup, dict)
                     if self._negated:
-                        already_negated = False
-
-                if lookup_type == 'isnull':
-                    lookup = op_func(value)
-                else:
-                    lookup = op_func(self.convert_value_for_db(db_type, value))
-
-                if existing is None:
-                    if self._negated and not already_negated:
-                        lookup = {'$not': lookup}
-                    subquery[column] = lookup
-                else:
-                    if not isinstance(existing, dict):
-                        if not self._negated:
-                            # {'a': o1} + {'a': o2} --> {'a': {'$all': [o1, o2]}}
-                            subquery[column] = {'$all': [existing, lookup]}
-                        else:
-                            # {'a': o1} + {'a': {'$not': o2}} --> {'a': {'$all': [o1], '$nin': [o2]}}
-                            subquery[column] = {'$all': [existing], '$nin': [lookup]}
+                        # {'not': {'a': o1}} + {'a': o2} --> {'a': {'nin': [o1], 'all': [o2]}}
+                        subquery[column] = {'$nin': [not_, lookup]}
                     else:
-                        not_ = existing.pop('$not', None)
-                        if not_:
-                            assert not existing
-                            assert not isinstance(lookup, dict)
-                            if self._negated:
-                                # {'not': {'a': o1}} + {'a': o2} --> {'a': {'nin': [o1], 'all': [o2]}}
-                                subquery[column] = {'$nin': [not_, lookup]}
-                            else:
-                                # {'not': {'a': o1}} + {'a': {'not': o2}} --> {'a': {'nin': [o1, o2]}}
-                                subquery[column] = {'$nin': [not_], '$all': [lookup]}
+                        # {'not': {'a': o1}} + {'a': {'not': o2}} --> {'a': {'nin': [o1, o2]}}
+                        subquery[column] = {'$nin': [not_], '$all': [lookup]}
+                else:
+                    if isinstance(lookup, dict):
+                        if '$ne' in lookup and '$ne' in existing:
+                            # {'$ne': o1} + {'$ne': o2} --> {'$nin': [o1, o2]}
+                            assert existing.keys() == ['$ne']
+                            subquery[column] = {'$nin': [existing['$ne'], lookup['$ne']]}
                         else:
-                            if isinstance(lookup, dict):
-                                if '$ne' in lookup and '$ne' in existing:
-                                    # {'$ne': o1} + {'$ne': o2} --> {'$nin': [o1, o2]}
-                                    assert existing.keys() == ['$ne']
-                                    subquery[column] = {'$nin': [existing['$ne'], lookup['$ne']]}
-                                else:
-                                    # {'$gt': o1} + {'$lt': o2} --> {'$gt': o1, '$lt': o2}
-                                    assert all(key not in existing for key in lookup.keys()), [lookup, existing]
-                                    existing.update(lookup)
-                            else:
-                                key = '$nin' if self._negated else '$all'
-                                existing.setdefault(key, []).append(lookup)
+                            # {'$gt': o1} + {'$lt': o2} --> {'$gt': o1, '$lt': o2}
+                            assert all(key not in existing for key in lookup.keys()), [lookup, existing]
+                            existing.update(lookup)
+                    else:
+                        key = '$nin' if self._negated else '$all'
+                        existing.setdefault(key, []).append(lookup)
 
                 query.update(subquery)
 
