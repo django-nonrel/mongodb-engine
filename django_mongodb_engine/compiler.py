@@ -213,10 +213,16 @@ class MongoQuery(NonrelQuery):
                         subquery[column] = {'$nin': [not_], '$all': [lookup]}
                 else:
                     if isinstance(lookup, dict):
-                        if '$ne' in lookup and '$ne' in existing:
-                            # {'$ne': o1} + {'$ne': o2} --> {'$nin': [o1, o2]}
-                            assert existing.keys() == ['$ne']
-                            subquery[column] = {'$nin': [existing['$ne'], lookup['$ne']]}
+                        if '$ne' in lookup:
+                            if '$nin' in existing:
+                                # {'$nin': [o1, o2]} + {'$ne': o3} --> {'$nin': [o1, o2, o3]}
+                                assert '$ne' not in existing
+                                existing['$nin'].append(lookup['$ne'])
+                            elif '$ne' in existing:
+                                # {'$ne': o1} + {'$ne': o2} --> {'$nin': [o1, o2]}
+                                existing['$nin'] = [existing.pop('$ne'), lookup['$ne']]
+                            else:
+                                existing.update(lookup)
                         else:
                             # {'$gt': o1} + {'$lt': o2} --> {'$gt': o1, '$lt': o2}
                             assert all(key not in existing for key in lookup.keys()), [lookup, existing]

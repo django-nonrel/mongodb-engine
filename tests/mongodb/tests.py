@@ -154,6 +154,26 @@ class RegressionTests(TestCase):
         CustomIDModel2.objects.filter(id=41).update(id=43)
         CustomIDModel2.objects.get(id=43)
 
+    def test_multiple_exclude(self):
+        objs = [RawModel.objects.create(raw=i) for i in xrange(1, 6)]
+        self.assertEqual(
+            objs[-1],
+            RawModel.objects.exclude(raw=1).exclude(raw=2) \
+                            .exclude(raw=3).exclude(raw=4).get()
+        )
+        list(RawModel.objects.filter(raw=1).filter(raw=2))
+        list(RawModel.objects.filter(raw=1).filter(raw=2).exclude(raw=3))
+        list(RawModel.objects.filter(raw=1).filter(raw=2).exclude(raw=3).exclude(raw=4))
+        list(RawModel.objects.filter(raw=1).filter(raw=2).exclude(raw=3).exclude(raw=4).filter(raw=5))
+
+    def test_multiple_exclude_random(self):
+        from random import randint
+        objs = [RawModel.objects.create(raw=i) for i in xrange(20)]
+        for i in xrange(10):
+            q = RawModel.objects.all()
+            for i in xrange(randint(0, 20)):
+                q = getattr(q, 'filter' if randint(0, 1) else 'exclude')(raw=i)
+            list(q)
 
 class DatabaseOptionTests(TestCase):
     """ Tests for MongoDB-specific database options """
