@@ -51,7 +51,7 @@ def main(short):
     runtests(settings_dbindexer)
     runtests(['router'], 'settings_router')
     runtests(settings.INSTALLED_APPS, 'settings_debug')
-    runtests(settings_slow_tests)
+    runtests(settings_slow_tests, test_builtin=True)
 
 
 if __name__ == '__main__':
