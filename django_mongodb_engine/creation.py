@@ -117,6 +117,10 @@ class DatabaseCreation(NonrelDatabaseCreation):
         # was never dropped at the end of the tests
         self._drop_database(test_database_name)
 
+        from django.core.management import call_command
+        call_command('syncdb', verbosity=max(verbosity-1, 0),
+                     interactive=False, database=self.connection.alias)
+
         return test_database_name
 
     def destroy_test_db(self, old_database_name, verbosity=1):

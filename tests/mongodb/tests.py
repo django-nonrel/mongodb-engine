@@ -271,15 +271,6 @@ class DatabaseOptionTests(TestCase):
             self.assertEqual(wrapper.operation_flags['save']['w'], 5)
 
 class IndexTests(TestCase):
-    def setUp(self):
-        import sys
-        _stdout = sys.stdout
-        sys.stdout = StringIO()
-        try:
-            call_command('sqlindexes', 'mongodb')
-        finally:
-            sys.stdout = _stdout
-
     def assertHaveIndex(self, field_name, direction=ASCENDING):
         info = get_collection(IndexTestModel).index_information()
         index_name = field_name + ['_1', '_-1'][direction==DESCENDING]

@@ -48,8 +48,8 @@ class BasicQueryTests(TestCase):
         self.assertEqual(Person.objects.filter(age__gte=20, surname="duck").count(), 2)
 
     def test_isnull(self):
-        p1 = Post.objects.create()
-        p2 = Post.objects.create(date_published=datetime.datetime.now())
+        p1 = Post.objects.create(title='a')
+        p2 = Post.objects.create(title='b', date_published=datetime.datetime.now())
         self.assertEqual(Post.objects.get(date_published__isnull=True), p1)
         self.assertEqual(Post.objects.get(date_published__isnull=False), p2)
 
@@ -121,8 +121,8 @@ class BasicQueryTests(TestCase):
             )
         blog2 = Blog.objects.create(title="Blog")
         Post.objects.create(title="entry 3", blog=blog2)
-        self.assertEqualLists(Post.objects.filter(blog=blog1.pk),
-                                 [entry1, entry2])
+        self.assertEqualLists(Post.objects.filter(blog=blog1.pk).order_by('pk'),
+                              [entry1, entry2])
         # XXX Uncomment this if the corresponding Django has been fixed
         #entry_without_blog = Post.objects.create(title='x')
         #self.assertEqual(Post.objects.get(blog=None), entry_without_blog)
@@ -146,11 +146,11 @@ class BasicQueryTests(TestCase):
         ]:
             self.assertEqualLists(
                 [blog for i, blog in enumerate(blogs) if i in objs],
-                Blog.objects.filter(**{'title__%s' % lookup : value})
+                Blog.objects.filter(**{'title__%s' % lookup : value}).order_by('pk')
             )
             self.assertEqualLists(
                 [blog for i, blog in enumerate(blogs) if i not in objs],
-                Blog.objects.filter(~Q(**{'title__%s' % lookup : value}))
+                Blog.objects.filter(~Q(**{'title__%s' % lookup : value})).order_by('pk')
             )
 
     def test_multiple_regex_matchers(self):

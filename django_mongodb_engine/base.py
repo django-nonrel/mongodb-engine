@@ -45,14 +45,14 @@ class DatabaseOperations(NonrelDatabaseOperations):
     def sql_flush(self, style, tables, sequence_list):
         """
         Returns a list of SQL statements that have to be executed to drop
-        all `tables`. No SQL in MongoDB, so just drop all tables here and
+        all `tables`. No SQL in MongoDB, so just clear all tables here and
         return an empty list.
         """
         for table in tables:
             if table.startswith('system.'):
                 # do not try to drop system collections
                 continue
-            self.connection.database.drop_collection(table)
+            self.connection.database[table].remove()
         return []
 
     def value_to_db_date(self, value):
