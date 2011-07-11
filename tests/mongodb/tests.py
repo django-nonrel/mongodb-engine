@@ -1,7 +1,7 @@
 from cStringIO import StringIO
 from django.core.management import call_command
 from django.db import connections
-from django.db.utils import DatabaseError
+from django.db.utils import DatabaseError, IntegrityError
 from django.contrib.sites.models import Site
 
 from pymongo.objectid import InvalidId
@@ -269,6 +269,22 @@ class DatabaseOptionTests(TestCase):
         with self.custom_database_wrapper(options) as wrapper:
             self.assertTrue(wrapper.operation_flags['save']['safe'])
             self.assertEqual(wrapper.operation_flags['save']['w'], 5)
+
+    def test_unique(self):
+        Post.objects.create(title='a', content='x')
+        Post.objects.create(title='a', content='y')
+        self.assertEqual(Post.objects.count(), 1)
+        self.assertEqual(Post.objects.get().content, 'x')
+
+    def test_unique_safe(self):
+        with self.custom_database_wrapper({
+            'OPTIONS': {
+                'OPERATIONS': {'save': {'safe': True}}
+            }
+        }):
+            Post.objects.create(title='a')
+            self.assertRaises(IntegrityError, Post.objects.create, title='a')
+
 
 class IndexTests(TestCase):
     def assertHaveIndex(self, field_name, direction=ASCENDING):

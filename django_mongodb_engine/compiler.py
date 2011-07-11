@@ -5,7 +5,7 @@ import datetime
 
 from functools import wraps
 
-from django.db.utils import DatabaseError
+from django.db.utils import DatabaseError, IntegrityError
 from django.db.models.fields import NOT_PROVIDED
 from django.db.models import F
 from django.db.models.sql import aggregates as sqlaggregates
@@ -13,7 +13,7 @@ from django.db.models.sql.constants import MULTI
 from django.db.models.sql.where import OR
 from django.utils.tree import Node
 
-from pymongo.errors import PyMongoError
+from pymongo.errors import PyMongoError, DuplicateKeyError
 from pymongo import ASCENDING, DESCENDING
 from pymongo.objectid import ObjectId, InvalidId
 
@@ -61,6 +61,8 @@ def safe_call(func):
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
+        except DuplicateKeyError, e:
+            raise IntegrityError, IntegrityError(str(e)), sys.exc_info()[2]
         except PyMongoError, e:
             raise DatabaseError, DatabaseError(str(e)), sys.exc_info()[2]
     return wrapper
