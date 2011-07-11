@@ -18,8 +18,8 @@ class RawModel(models.Model):
 class IndexTestModel(models.Model):
     regular_index = models.IntegerField(db_index=True)
     custom_column = models.IntegerField(db_column='foo', db_index=True)
-    descending_index = models.IntegerField()
-    descending_index_custom_column = models.IntegerField(db_column='bar')
+    descending_index = models.IntegerField(db_index=True)
+    descending_index_custom_column = models.IntegerField(db_column='bar', db_index=True)
     foreignkey_index = models.ForeignKey(RawModel, db_index=True)
     foreignkey_custom_column = models.ForeignKey('DateModel', db_column='spam')
     sparse_index = models.IntegerField(db_index=True)
@@ -54,7 +54,7 @@ class CustomIDModel(models.Model):
     primary = models.IntegerField(primary_key=True, default=1)
 
 class CustomIDModel2(models.Model):
-    id = models.IntegerField(primary_key=True)
+    id = models.IntegerField(primary_key=True, db_column='id')
 
 RawModel.objects.all().delete()
 RawModel.objects.create(raw=42)

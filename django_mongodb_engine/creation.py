@@ -28,23 +28,24 @@ class DatabaseCreation(NonrelDatabaseCreation):
 
         def ensure_index(*args, **kwargs):
             if ensure_index.first_index:
-                print "Installing index for %s.%s model" % (meta.app_label, meta.object_name)
+                print "Installing indices for %s.%s model" % (meta.app_label, meta.object_name)
                 ensure_index.first_index = False
             return collection.ensure_index(*args, **kwargs)
         ensure_index.first_index = True
 
         # Ordinary indexes
         for field in meta.local_fields:
-            if field.name in descending_indexes or field.column in descending_indexes:
-                direction = DESCENDING
+            if not (field.unique or field.db_index):
+                # field doesn't need an index
+                continue
+            if field.primary_key and not field.db_column:
+                column = '_id'
             else:
-                if not field.db_index:
-                    continue
-                if field.column == '_id':
-                    # Indices on _id are automatically created
-                    continue
-                direction = ASCENDING
-            ensure_index([(field.column, direction)], unique=field.unique, sparse=field.name in sparse_indexes)
+                column = field.column
+            if field.name in descending_indexes or field.column in descending_indexes:
+                column = [(column, DESCENDING)]
+            ensure_index(column, unique=field.unique,
+                         sparse=field.name in sparse_indexes)
 
         field_names = set(field.name for field in meta.local_fields)
         def create_compound_indexes(indexes, **kwargs):

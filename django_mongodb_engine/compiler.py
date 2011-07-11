@@ -80,7 +80,7 @@ class MongoQuery(NonrelQuery):
         results = self._get_results()
         pk_field = self.query.get_meta().pk
         for entity in results:
-            if pk_field.auto_created:
+            if not pk_field.db_column:
                 entity[pk_field.column] = entity.pop('_id')
             yield entity
 
@@ -99,7 +99,7 @@ class MongoQuery(NonrelQuery):
             else:
                 direction = ASCENDING
             pk_field = self.query.get_meta().pk
-            if pk_field.auto_created and order == pk_field.column:
+            if not pk_field.db_column and order == pk_field.name:
                 order = '_id'
             self._ordering.append((order, direction))
         return self
@@ -164,7 +164,7 @@ class MongoQuery(NonrelQuery):
                 raise DatabaseError("Negated range lookups are not supported")
 
             pk_field = self.query.get_meta().pk
-            if pk_field.auto_created and column == pk_field.column:
+            if not pk_field.db_column and column == pk_field.column:
                 column = '_id'
 
             existing = subquery.get(column)
@@ -393,7 +393,7 @@ class SQLInsertCompiler(NonrelInsertCompiler, SQLCompiler):
     @safe_call
     def insert(self, data, return_id=False):
         pk_field = self.query.get_meta().pk
-        if pk_field.auto_created:
+        if not pk_field.db_column:
             try:
                 data['_id'] = data.pop(pk_field.column)
             except KeyError:

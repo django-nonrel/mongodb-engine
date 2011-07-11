@@ -137,7 +137,7 @@ class RegressionTests(TestCase):
         """ Everything should work fine with custom primary keys """
         CustomIDModel.objects.create(id=42, primary=666)
         self.assertDictContainsSubset(
-            {'primary': 666, 'id': 42},
+            {'_id': 666, 'id': 42},
             get_collection(CustomIDModel).find_one()
         )
         CustomIDModel2.objects.create(id=42)
