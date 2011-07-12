@@ -31,8 +31,8 @@ def main(short):
     ''')
 
     import settings
-    import settings_dbindexer
-    import settings_slow_tests
+    import settings.dbindexer
+    import settings.slow_tests
 
     runtests(settings, extra=['--failfast'] if short else [])
 
@@ -49,10 +49,10 @@ def main(short):
     # Make sure we can syncdb.
     execute(['./manage.py', 'syncdb', '--noinput'])
 
-    runtests(settings_dbindexer)
-    runtests(['router'], 'settings_router')
-    runtests(settings.INSTALLED_APPS, 'settings_debug')
-    runtests(settings_slow_tests, test_builtin=True)
+    runtests(settings.dbindexer)
+    runtests(['router'], 'settings.router')
+    runtests(settings.INSTALLED_APPS, 'settings.debug')
+    runtests(settings.slow_tests, test_builtin=True)
 
 
 if __name__ == '__main__':
