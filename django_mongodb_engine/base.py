@@ -7,7 +7,6 @@ from pymongo.connection import Connection
 from pymongo.collection import Collection
 
 from .creation import DatabaseCreation
-from .client import DatabaseClient
 from .utils import CollectionDebugWrapper
 
 from djangotoolbox.db.base import (
@@ -86,7 +85,6 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
 
         self.features = DatabaseFeatures(self)
         self.ops = DatabaseOperations(self)
-        self.client = DatabaseClient(self)
         self.creation = DatabaseCreation(self)
         self.introspection = DatabaseIntrospection(self)
         self.validation = DatabaseValidation(self)
