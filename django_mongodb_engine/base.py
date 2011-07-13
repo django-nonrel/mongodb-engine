@@ -25,6 +25,7 @@ def _warn_deprecated(opt):
                   "the 'OPERATIONS' setting" % opt, PendingDeprecationWarning)
 
 class DatabaseFeatures(NonrelDatabaseFeatures):
+    supports_microsecond_precision = False
     string_based_auto_field = True
     supports_dicts = True
 
