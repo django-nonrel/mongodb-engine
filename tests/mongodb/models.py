@@ -51,10 +51,10 @@ class Issue47Model(models.Model):
 
 class CustomIDModel(models.Model):
     id = models.IntegerField()
-    primary = models.IntegerField(primary_key=True, default=1)
+    primary = models.IntegerField(primary_key=True)
 
 class CustomIDModel2(models.Model):
-    id = models.IntegerField(primary_key=True, db_column='id')
+    id = models.IntegerField(primary_key=True, db_column='blah')
 
 RawModel.objects.all().delete()
 RawModel.objects.create(raw=42)

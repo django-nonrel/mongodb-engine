@@ -67,6 +67,9 @@ def safe_call(func):
             raise DatabaseError, DatabaseError(str(e)), sys.exc_info()[2]
     return wrapper
 
+def get_pk_column(duck):
+    return duck.query.get_meta().pk.column
+
 class MongoQuery(NonrelQuery):
     def __init__(self, compiler, fields):
         super(MongoQuery, self).__init__(compiler, fields)
@@ -80,10 +83,8 @@ class MongoQuery(NonrelQuery):
 
     def fetch(self, low_mark, high_mark):
         results = self._get_results()
-        pk_field = self.query.get_meta().pk
         for entity in results:
-            if not pk_field.db_column:
-                entity[pk_field.column] = entity.pop('_id')
+            entity[get_pk_column(self)] = entity.pop('_id')
             yield entity
 
     @safe_call
@@ -100,8 +101,7 @@ class MongoQuery(NonrelQuery):
                 order, direction = order[1:], DESCENDING
             else:
                 direction = ASCENDING
-            pk_field = self.query.get_meta().pk
-            if not pk_field.db_column and order == pk_field.name:
+            if order == get_pk_column(self):
                 order = '_id'
             self._ordering.append((order, direction))
         return self
@@ -167,8 +167,7 @@ class MongoQuery(NonrelQuery):
             if self._negated and lookup_type == 'range':
                 raise DatabaseError("Negated range lookups are not supported")
 
-            pk_field = self.query.get_meta().pk
-            if not pk_field.db_column and column == pk_field.column:
+            if column == get_pk_column(self):
                 column = '_id'
 
             existing = subquery.get(column)
@@ -396,12 +395,10 @@ class SQLCompiler(NonrelCompiler):
 class SQLInsertCompiler(NonrelInsertCompiler, SQLCompiler):
     @safe_call
     def insert(self, data, return_id=False):
-        pk_field = self.query.get_meta().pk
-        if not pk_field.db_column:
-            try:
-                data['_id'] = data.pop(pk_field.column)
-            except KeyError:
-                pass
+        try:
+            data['_id'] = data.pop(get_pk_column(self))
+        except KeyError:
+            pass
         return self._save(data, return_id)
 
 # TODO: Define a common nonrel API for updates and add it to the nonrel
@@ -453,8 +450,7 @@ class SQLUpdateCompiler(NonrelUpdateCompiler, SQLCompiler):
                 action, column, value = '$inc', lhs.name, rhs
             else:
                 action, column, value = '$set', field.column, value
-            pk_field = self.query.get_meta().pk
-            if pk_field.auto_created and column == pk_field.column:
+            if column == get_pk_column(self):
                 raise DatabaseError("Can not modify _id")
             spec.setdefault(action, {})[column] = value
 

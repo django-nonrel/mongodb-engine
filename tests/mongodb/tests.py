@@ -142,17 +142,15 @@ class RegressionTests(TestCase):
         )
         CustomIDModel2.objects.create(id=42)
         self.assertDictContainsSubset(
-            {'id': 42},
+            {'_id': 42},
             get_collection(CustomIDModel2).find_one()
         )
         obj = CustomIDModel2.objects.create(id=41)
         self.assertEqualLists(
-            [o.id for o in CustomIDModel2.objects.order_by('id')],
-            [41, 42]
+            CustomIDModel2.objects.order_by('id').values('id'),
+            [{'id': 41}, {'id': 42}]
         )
         self.assertEqual(obj, CustomIDModel2.objects.get(id=41))
-        CustomIDModel2.objects.filter(id=41).update(id=43)
-        CustomIDModel2.objects.get(id=43)
 
     def test_multiple_exclude(self):
         objs = [RawModel.objects.create(raw=i) for i in xrange(1, 6)]

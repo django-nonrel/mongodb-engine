@@ -38,7 +38,7 @@ class DatabaseCreation(NonrelDatabaseCreation):
             if not (field.unique or field.db_index):
                 # field doesn't need an index
                 continue
-            if field.primary_key and not field.db_column:
+            if field.primary_key:
                 column = '_id'
             else:
                 column = field.column
