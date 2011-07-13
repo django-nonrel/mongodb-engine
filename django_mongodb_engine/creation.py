@@ -1,6 +1,6 @@
-from pymongo import ASCENDING, DESCENDING
+from pymongo import DESCENDING
 from djangotoolbox.db.base import NonrelDatabaseCreation
-from .utils import first
+from .utils import make_index_list
 
 class DatabaseCreation(NonrelDatabaseCreation):
     data_types = dict(NonrelDatabaseCreation.data_types, **{
@@ -38,35 +38,24 @@ class DatabaseCreation(NonrelDatabaseCreation):
             if not (field.unique or field.db_index):
                 # field doesn't need an index
                 continue
-            if field.primary_key:
-                column = '_id'
-            else:
-                column = field.column
-            if field.name in descending_indexes or field.column in descending_indexes:
+            column = '_id' if field.primary_key else field.column
+            if field.name in descending_indexes:
                 column = [(column, DESCENDING)]
             ensure_index(column, unique=field.unique,
                          sparse=field.name in sparse_indexes)
 
-        field_names = set(field.name for field in meta.local_fields)
         def create_compound_indexes(indexes, **kwargs):
-            # if (field1, field2) in the sparse_indexes list
-            # then set sparse to true
-            kwargs['sparse'] = tuple(indexes) in sparse_indexes
-
+            # indexes: (field1, field2, ...)
             if not indexes:
                 return
-            indexes = [(index if isinstance(index, tuple) else (index, ASCENDING))
-                       for index in indexes]
-            invalid = first(lambda (name, direction): name not in field_names,
-                            indexes)
-            if invalid is not None:
-                from django.db.models.fields import FieldDoesNotExist
-                raise FieldDoesNotExist("%r has no field named %r" %
-                                        (meta.object_name, invalid))
+            kwargs['sparse'] = tuple(indexes) in sparse_indexes
+            indexes = [(meta.get_field(name).column, direction) for
+                       name, direction in make_index_list(indexes)]
             ensure_index(indexes, **kwargs)
 
         # Django unique_together indexes
         for indexes in getattr(meta, 'unique_together', []):
+            assert isinstance(indexes, (list, tuple))
             create_compound_indexes(indexes, unique=True)
 
         # MongoDB compound indexes

@@ -323,7 +323,7 @@ class IndexTests(TestCase):
         self.assertCompoundIndex([('sparse_index_cmp_1', 1), ('sparse_index_cmp_2', 1)])
 
     def test_compound(self):
-        self.assertCompoundIndex([('regular_index', 1), ('custom_column', 1)])
+        self.assertCompoundIndex([('regular_index', 1), ('foo', 1)])
         self.assertCompoundIndex([('a', 1), ('b', -1)], IndexTestModel2)
 
     def test_foreignkey(self):

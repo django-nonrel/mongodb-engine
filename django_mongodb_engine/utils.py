@@ -1,6 +1,6 @@
 import re
 import time
-
+from pymongo import ASCENDING
 from django.conf import settings
 from django.db.backends.util import logger
 
@@ -22,6 +22,12 @@ def make_struct(*attrs):
             for attr, arg in zip(self.__slots__, args):
                 setattr(self, attr, arg)
     return _Struct
+
+def make_index_list(indexes):
+    for index in indexes:
+        if not isinstance(index, tuple):
+            index = index, ASCENDING
+        yield index
 
 class CollectionDebugWrapper(object):
     def __init__(self, collection, db_alias):
