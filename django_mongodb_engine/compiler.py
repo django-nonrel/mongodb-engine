@@ -112,6 +112,8 @@ class MongoQuery(NonrelQuery):
         self.collection.remove(self._mongo_query, **options)
 
     def _get_results(self):
+        if self.query.low_mark == self.query.high_mark:
+            return []
         fields = None
         if self.query.select_fields and not self.query.aggregates:
             fields = dict((field.column, 1) for field in self.query.select_fields)
@@ -121,7 +123,7 @@ class MongoQuery(NonrelQuery):
         if self.query.low_mark > 0:
             results.skip(self.query.low_mark)
         if self.query.high_mark is not None:
-            results.limit(self.query.high_mark - self.query.low_mark)
+            results.limit(int(self.query.high_mark - self.query.low_mark))
         return results
 
     def add_filters(self, filters, query=None):
