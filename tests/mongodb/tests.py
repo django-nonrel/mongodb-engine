@@ -269,19 +269,15 @@ class DatabaseOptionTests(TestCase):
             self.assertEqual(wrapper.operation_flags['save']['w'], 5)
 
     def test_unique(self):
-        Post.objects.create(title='a', content='x')
-        Post.objects.create(title='a', content='y')
-        self.assertEqual(Post.objects.count(), 1)
-        self.assertEqual(Post.objects.get().content, 'x')
+        with self.custom_database_wrapper({'OPTIONS': {}}):
+            Post.objects.create(title='a', content='x')
+            Post.objects.create(title='a', content='y')
+            self.assertEqual(Post.objects.count(), 1)
+            self.assertEqual(Post.objects.get().content, 'x')
 
     def test_unique_safe(self):
-        with self.custom_database_wrapper({
-            'OPTIONS': {
-                'OPERATIONS': {'save': {'safe': True}}
-            }
-        }):
-            Post.objects.create(title='a')
-            self.assertRaises(IntegrityError, Post.objects.create, title='a')
+        Post.objects.create(title='a')
+        self.assertRaises(IntegrityError, Post.objects.create, title='a')
 
 
 class IndexTests(TestCase):
