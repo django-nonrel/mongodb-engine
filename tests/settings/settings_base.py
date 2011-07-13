@@ -9,4 +9,4 @@ DATABASES = {
     }
 }
 
-SERIALIZATION_MODULES = {'json' : 'settings.serializer'}
+SERIALIZATION_MODULES = {'json': 'settings.serializer'}
