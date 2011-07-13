@@ -1,3 +1,4 @@
+import copy
 from django.core.exceptions import ImproperlyConfigured
 from django.db.backends.signals import connection_created
 from django.conf import settings
@@ -108,7 +109,7 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
         raise AttributeError(attr)
 
     def _connect(self):
-        settings = self.settings_dict.copy()
+        settings = copy.deepcopy(self.settings_dict)
         def pop(name, default=None):
             return settings.pop(name) or default
         db_name = pop('NAME')
