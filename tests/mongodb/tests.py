@@ -148,7 +148,7 @@ class RegressionTests(TestCase):
         obj = CustomIDModel2.objects.create(id=41)
         self.assertEqualLists(
             CustomIDModel2.objects.order_by('id').values('id'),
-            [{'id': 41}, {'id': 42}]
+            [{'id': 42}, {'id': 41}]
         )
         self.assertEqual(obj, CustomIDModel2.objects.get(id=41))
 

@@ -134,6 +134,7 @@ class BasicQueryTests(TestCase):
         self.assertEqualLists(Post.objects.filter(blog=blog1), [entry1])
 
     def test_regex_matchers(self):
+        # (startswith, contains, ... uses regex on MongoDB)
         blogs = [Blog.objects.create(title=title) for title in
                  ('Hello', 'worLd', 'D', '[(', '**', '\\')]
         for lookup, value, objs in [
@@ -154,7 +155,6 @@ class BasicQueryTests(TestCase):
             )
 
     def test_multiple_regex_matchers(self):
-        # (startswith, contains, ... uses regex on MongoDB)
         posts = [
             {'title': 'Title A', 'content': 'Content A'},
             {'title': 'Title B', 'content': 'Content B'},
@@ -198,6 +198,11 @@ class BasicQueryTests(TestCase):
                         .filter(content__startswith='C') \
                         .get(~Q(content__contains='Y', content__icontains='B')),
             Post.objects.all()[0]
+        )
+
+        self.assertEqualLists(
+            Post.objects.filter(title__startswith='T').exclude(title='Title A'),
+            [posts[1]]
         )
 
     def test_multiple_filter_on_same_name(self):
