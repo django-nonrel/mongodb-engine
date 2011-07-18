@@ -29,3 +29,16 @@ your ``SITE_ID`` setting accordingly:
    SITE_ID=u'deafbeefdeadbeef00000000'
 
 .. _What's SITE_ID?!: http://docs.djangoproject.com/en/dev/ref/settings/#std:setting-SITE_ID
+
+
+Creating/editing user in admin causes ``DatabaseError``
+-------------------------------------------------------
+.. code-block:: none
+
+   DatabaseError at /admin/auth/user/deafbeefdeadbeef00000000/
+
+This happens because Django tries to execute JOINs in order to display a list of
+groups/permissions in the user edit form.
+
+To workaround this problem, add ``'djangotoolbox'`` to your ``INSTALLED_APPS``
+which makes the Django admin skip the groups and permissions widgets.
