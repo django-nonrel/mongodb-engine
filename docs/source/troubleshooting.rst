@@ -36,6 +36,7 @@ Creating/editing user in admin causes ``DatabaseError``
 .. code-block:: none
 
    DatabaseError at /admin/auth/user/deafbeefdeadbeef00000000/
+   [...] This query is not supported by the database.
 
 This happens because Django tries to execute JOINs in order to display a list of
 groups/permissions in the user edit form.
