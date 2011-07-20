@@ -72,7 +72,7 @@ merging them together into one grand total.
 Example
 -------
 (See also :ref:`the example in the tutorial <tutorial/mapreduce>` and
-`Wikipedia <https://en.wikipedia.org/wiki/MapReduce>`_, from which I stole the
+`Wikipedia <http://en.wikipedia.org/wiki/MapReduce>`_, from which I stole the
 idea for the example beneath.)
 
 As an example, we'll count the number of occurrences of each word in a bunch of

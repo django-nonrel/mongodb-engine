@@ -93,6 +93,7 @@ div, ul { border: 1px solid green; }
 #header > ul > li > ul > li > a {
   color: #403125;
   padding: 0.6em;
+  padding-bottom: 0.5em;
   padding-left: 1.1em;
   display: block;
 }

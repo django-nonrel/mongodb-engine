@@ -254,7 +254,7 @@ Our last quest is to count the number of comments each author has made.
 This could be done in plain Django but would be very inefficient because we
 would have to literally fetch all posts (with all comments) from the database.
 
-Instead, we're going to use `Map/Reduce <topics/mapreduce>`_ to accomplish the task.
+Instead, we're going to use :doc:`Map/Reduce <topics/mapreduce>` to accomplish the task.
 
 Programmer's introduction to Map/Reduce: The *map* function gets called for each
 document and emits one or more *key-value pairs*. The *reduce* function is passed
