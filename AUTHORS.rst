@@ -13,7 +13,8 @@ Past Primary Authors
 
 Contributions by
 ----------------
-* Shane R. Spencer (https://github.com/whardier)
+* Dag Stockstad (https://github.com/dstockstad) -- found tons of bugs in our query generator
+* Shane R. Spencer (https://github.com/whardier) -- Website Review
 * Sabin Iacob (https://github.com/m0n5t3r)
 * kryton (https://github.com/kryton)
 * Brandon Pedersen (https://github.com/bpedman)

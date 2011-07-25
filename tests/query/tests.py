@@ -204,6 +204,14 @@ class BasicQueryTests(TestCase):
             Post.objects.filter(title__startswith='T').exclude(title='Title A'),
             [posts[1]]
         )
+        self.assertEqual(
+            Post.objects.exclude(title='asd asd').exclude(title__startswith='T').get(),
+            posts[2]
+        )
+        self.assertEqual(
+            Post.objects.exclude(title__startswith='T').exclude(title='asd asd').get(),
+            posts[2]
+        )
 
     def test_multiple_filter_on_same_name(self):
         Blog.objects.create(title='a')

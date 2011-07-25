@@ -212,7 +212,10 @@ class MongoQuery(NonrelQuery):
                 not_ = existing.pop('$not', None)
                 if not_:
                     assert not existing
-                    assert not isinstance(lookup, dict)
+                    if isinstance(lookup, dict):
+                        assert lookup.keys() == ['$ne']
+                        lookup = lookup.values()[0]
+                    assert not isinstance(lookup, dict), (not_, lookup)
                     if self._negated:
                         # {'not': {'a': o1}} + {'a': o2} --> {'a': {'nin': [o1], 'all': [o2]}}
                         subquery[column] = {'$nin': [not_, lookup]}
