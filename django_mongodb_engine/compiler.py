@@ -44,6 +44,9 @@ OPERATORS_MAP = {
     'icontains':   safe_regex('%s', re.IGNORECASE),
     'regex':       lambda val: re.compile(val),
     'iregex':      lambda val: re.compile(val, re.IGNORECASE),
+
+    #Date OPs
+    'year' : lambda val: {'$gte': val[0], '$lt': val[1]},
 }
 
 NEGATED_OPERATORS_MAP = {
@@ -162,8 +165,8 @@ class MongoQuery(NonrelQuery):
 
             column, lookup_type, db_type, value = self._decode_child(child)
 
-            if lookup_type in ('year', 'month', 'day'):
-                raise DatabaseError("MongoDB does not support year/month/day queries")
+            if lookup_type in ('month', 'day'):
+                raise DatabaseError("MongoDB does not support month/day queries")
             if self._negated and lookup_type == 'range':
                 raise DatabaseError("Negated range lookups are not supported")
 

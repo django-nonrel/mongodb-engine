@@ -109,6 +109,16 @@ class BasicQueryTests(TestCase):
         self.assertEqualLists(Post.objects.filter(date_published__lt=now), [entry3])
         self.assertEqualLists(Post.objects.filter(date_published__gt=now), [entry2])
 
+    def test_year_date(self):
+        now = datetime.datetime.now()
+        before = now - datetime.timedelta(days=365)
+
+        entry1 = Post.objects.create(title="entry 1", date_published=now)
+        entry2 = Post.objects.create(title="entry 2", date_published=before)
+
+        self.assertEqualLists(Post.objects.filter(date_published__year=now.year), [entry1])
+        self.assertEqualLists(Post.objects.filter(date_published__year=before.year), [entry2])
+
     def test_simple_foreign_keys(self):
         blog1 = Blog.objects.create(title="Blog")
         entry1 = Post.objects.create(title="entry 1", blog=blog1)

@@ -60,9 +60,9 @@ class MongoDBEngineTests(TestCase):
         self.assertNotEqual(obj.raw[0]._wrapped, None)
 
     def test_nice_yearmonthday_query_exception(self):
-        for x in ('year', 'month', 'day'):
+        for x in ('month', 'day'):
             key = 'date__%s' % x
-            self.assertRaisesRegexp(DatabaseError, "MongoDB does not support year/month/day queries",
+            self.assertRaisesRegexp(DatabaseError, "MongoDB does not support month/day queries",
                                     lambda: DateModel.objects.get(**{key : 1}))
 
     def test_nice_int_objectid_exception(self):
