@@ -207,6 +207,9 @@ class DatabaseOptionTests(TestCase):
         }) as connection:
             for name, value in connection.settings_dict['OPTIONS'].iteritems():
                 name = '_Connection__%s' % name.lower()
+                if name not in connection.connection.__dict__:
+                    # slave_okay was moved into BaseObject in PyMongo 2.0
+                    name = name.replace('Connection', 'BaseObject')
                 self.assertEqual(connection.connection.__dict__[name], value)
 
     def test_operation_flags(self):
