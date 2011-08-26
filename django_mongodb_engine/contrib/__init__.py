@@ -1,6 +1,9 @@
+import sys
 from django.db import models, connections
 from django.db.models.query import QuerySet
 from django.db.models.sql.query import Query as SQLQuery
+
+ON_PYPY = hasattr(sys, 'pypy_version_info')
 
 def _compiler_for_queryset(qs, which='SQLCompiler'):
     connection = connections[qs.db]
@@ -86,12 +89,31 @@ class MongoDBQuerySet(QuerySet):
         query = self._get_query()
         kwargs.setdefault('query', query._mongo_query)
         result_collection = query.collection.map_reduce(*args, **kwargs)
+        # XXX get rid of this
+        # PyPy has no guaranteed garbage collection so we can't rely on the
+        # 'finally' suite of a generator (_map_reduce_cpython) to be executed
+        # in time (in fact, it isn't guaranteed to be executed *at all*).
+        # On the other hand, we *must* drop the collection if `drop_collection`
+        # is True so we can't use a generator in this case.
+        if drop_collection and ON_PYPY:
+            return self._map_reduce_pypy_drop_collection_hack(result_collection)
+        else:
+            return self._map_reduce_cpython(result_collection, drop_collection)
+
+    def _map_reduce_cpython(self, result_collection, drop_collection):
         try:
             for entity in result_collection.find():
                 yield MapReduceResult.from_entity(self.model, entity)
         finally:
             if drop_collection:
                 result_collection.drop()
+
+    def _map_reduce_pypy_drop_collection_hack(self, result_collection):
+        try:
+            return iter([MapReduceResult.from_entity(self.model, entity)
+                         for entity in result_collection.find()])
+        finally:
+            result_collection.drop()
 
     def inline_map_reduce(self, *args, **kwargs):
         """
