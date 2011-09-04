@@ -121,4 +121,6 @@ class DatabaseCreation(NonrelDatabaseCreation):
         self.connection.settings_dict['NAME'] = old_database_name
 
     def _drop_database(self, database_name):
-        self.connection.connection.drop_database(database_name)
+        for collection in self.connection.introspection.table_names():
+            if not collection.startswith('system.'):
+                self.connection.database.drop_collection(collection)
