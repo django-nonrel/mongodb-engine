@@ -55,6 +55,3 @@ class CustomIDModel(models.Model):
 
 class CustomIDModel2(models.Model):
     id = models.IntegerField(primary_key=True, db_column='blah')
-
-RawModel.objects.all().delete()
-RawModel.objects.create(raw=42)

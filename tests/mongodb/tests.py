@@ -91,7 +91,7 @@ class MongoDBEngineTests(TestCase):
 
         for wrapper in (
             connections['default'],
-            DatabaseWrapper(connections['default'].settings_dict.copy())
+            DatabaseWrapper(connections['default'].settings_dict)
         ):
             calls = [
                 lambda: self.assertIsInstance(wrapper.get_collection('foo'), Collection),

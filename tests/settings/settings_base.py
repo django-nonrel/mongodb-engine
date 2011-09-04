@@ -11,3 +11,8 @@ DATABASES = {
 }
 
 SERIALIZATION_MODULES = {'json': 'settings.serializer'}
+
+try:
+    from local_settings import *
+except ImportError:
+    pass

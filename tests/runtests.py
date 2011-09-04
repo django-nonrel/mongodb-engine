@@ -25,9 +25,10 @@ def main(short):
     # Run some basic tests outside Django's test environment
     execute_python('''
         from mongodb.models import RawModel
-        RawModel.objects.create()
+        RawModel.objects.create(raw=41)
+        RawModel.objects.update(raw=42)
         RawModel.objects.all().delete()
-        RawModel.objects.update()
+        RawModel.objects.create(raw=42)
     ''')
 
     import settings
@@ -38,9 +39,8 @@ def main(short):
 
     # assert we didn't touch the production database
     execute_python('''
-        from pymongo import Connection
-        print Connection().test.mongodb_rawmodel.find()
-        assert Connection().test.mongodb_rawmodel.find_one()['raw'] == 42
+        from mongodb.models import RawModel
+        assert RawModel.objects.get().raw == 42
     ''')
 
     if short:
