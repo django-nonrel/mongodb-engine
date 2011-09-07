@@ -1,6 +1,5 @@
 *.pyc
 *~
-.hg*
 .db*
 .pydevproject
 .settings
@@ -10,3 +9,4 @@ build
 .build
 docs/.*
 dist/
+.tox
