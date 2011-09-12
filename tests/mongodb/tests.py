@@ -247,10 +247,10 @@ class DatabaseOptionTests(TestCase):
 
         test_setup({}, save={}, update={'multi' : True}, remove={})
         test_setup(
-            {'safe' : True, 'w' : True},
-            save={'safe' : True, 'w' : True},
-            update={'safe' : True, 'w' : True, 'multi' : True},
-            remove={'safe' : True, 'w' : True}
+            {'safe' : True},
+            save={'safe' : True},
+            update={'safe' : True, 'multi' : True},
+            remove={'safe' : True}
         )
         test_setup(
             {'delete' : {'safe' : True}, 'update' : {}},
@@ -259,10 +259,10 @@ class DatabaseOptionTests(TestCase):
             remove={'safe' : True}
         )
         test_setup(
-            {'insert' : {'fsync' : True}, 'delete' : {'w' : True, 'fsync' : True}},
+            {'insert' : {'fsync' : True}, 'delete' : {'fsync' : True}},
             save={},
             update={'multi' : True},
-            remove={'w' : True, 'fsync' : True}
+            remove={'fsync' : True}
         )
 
     def test_legacy_flags(self):
