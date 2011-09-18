@@ -102,6 +102,7 @@ class GridFSField(models.Field):
                 # We're putting a new GridFS file, so get rid of the old one
                 # if we weren't explicitly asked to keep it.
                 gridfs.delete(meta.oid)
+            meta.should_save = False
             return gridfs.put(meta.filelike)
         return meta.oid
 

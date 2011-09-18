@@ -16,7 +16,7 @@ class Blog(models.Model):
 
 class Post(models.Model):
     title = models.CharField(max_length=200, db_index=True, unique=True)
-    content = models.CharField(max_length=1000)
+    content = models.CharField(max_length=1000, db_column='text')
     date_published = models.DateTimeField(null=True, blank=True)
     blog = models.ForeignKey(Blog, null=True, blank=True)
 

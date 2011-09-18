@@ -1,12 +1,12 @@
 from cStringIO import StringIO
 from django.core.management import call_command
-from django.db import connections
+from django.db import connection, connections
 from django.db.utils import DatabaseError, IntegrityError
 from django.contrib.sites.models import Site
 
 from pymongo.objectid import InvalidId
 from pymongo import ASCENDING, DESCENDING
-from gridfs import GridOut
+from gridfs import GridFS, GridOut
 
 from django_mongodb_engine.base import DatabaseWrapper
 from django_mongodb_engine.serializer import LazyModelInstance
@@ -89,10 +89,7 @@ class MongoDBEngineTests(TestCase):
         if settings.DEBUG:
             from django_mongodb_engine.utils import CollectionDebugWrapper as Collection
 
-        for wrapper in (
-            connections['default'],
-            DatabaseWrapper(connections['default'].settings_dict)
-        ):
+        for wrapper in [connection, DatabaseWrapper(connection.settings_dict)]:
             calls = [
                 lambda: self.assertIsInstance(wrapper.get_collection('foo'), Collection),
                 lambda: self.assertIsInstance(wrapper.database, Database),
@@ -179,7 +176,7 @@ class DatabaseOptionTests(TestCase):
     class custom_database_wrapper(object):
         def __init__(self, settings, **kwargs):
             self.new_wrapper = DatabaseWrapper(
-                dict(connections['default'].settings_dict, **settings),
+                dict(connection.settings_dict, **settings),
                 **kwargs
             )
 
@@ -333,6 +330,9 @@ class IndexTests(TestCase):
         self.assertHaveIndex('bar', DESCENDING)
 
 class GridFSFieldTests(TestCase):
+    def tearDown(self):
+        connection.database.fs.files.remove()
+
     def test_empty(self):
         obj = GridFSFieldTestModel.objects.create()
         self.assertEqual(obj.gridfile, None)
@@ -413,6 +413,15 @@ class GridFSFieldTests(TestCase):
                 self.assertRaises(NoFile, gridfs.get, first_oid)
 
             GridFSFieldTestModel.objects.all().delete()
+
+    def test_multiple_save_regression(self):
+        o = GridFSFieldTestModel.objects.create(gridfile='asd')
+        self.assertEqual(connection.database.fs.files.count(), 1)
+        o.save()
+        self.assertEqual(connection.database.fs.files.count(), 1)
+        o = GridFSFieldTestModel.objects.get()
+        o.save()
+        self.assertEqual(connection.database.fs.files.count(), 1)
 
     def test_update(self):
         self.assertRaisesRegexp(
