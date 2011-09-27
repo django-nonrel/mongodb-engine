@@ -331,7 +331,7 @@ class IndexTests(TestCase):
 
 class GridFSFieldTests(TestCase):
     def tearDown(self):
-        connection.database.fs.files.remove()
+        get_collection(GridFSFieldTestModel).files.remove()
 
     def test_empty(self):
         obj = GridFSFieldTestModel.objects.create()
@@ -398,12 +398,13 @@ class GridFSFieldTests(TestCase):
             #GridFSFieldTestModel.objects.update(
             #    gridfile='qwe', gridfile_versioned='rty')
             obj.gridfile = 'qwe'
-            obj.gridfile_versioned = 'rty'
+            obj.gridfile_versioned = new_version = 'rty'
             obj.save()
 
             obj = GridFSFieldTestModel.objects.get()
             second_oid = field._get_meta(obj).oid
-            assert first_oid != second_oid
+            assert field._versioning and first_oid == second_oid or first_oid != second_oid
+            assert obj.gridfile_versioned.read() == new_version
 
             gridfs = field._get_gridfs(obj)
             self.assertIsInstance(gridfs.get(second_oid), GridOut)
@@ -415,13 +416,14 @@ class GridFSFieldTests(TestCase):
             GridFSFieldTestModel.objects.all().delete()
 
     def test_multiple_save_regression(self):
+        col = get_collection(GridFSFieldTestModel).files
         o = GridFSFieldTestModel.objects.create(gridfile='asd')
-        self.assertEqual(connection.database.fs.files.count(), 1)
+        self.assertEqual(col.count(), 1)
         o.save()
-        self.assertEqual(connection.database.fs.files.count(), 1)
+        self.assertEqual(col.count(), 1)
         o = GridFSFieldTestModel.objects.get()
         o.save()
-        self.assertEqual(connection.database.fs.files.count(), 1)
+        self.assertEqual(col.count(), 1)
 
     def test_update(self):
         self.assertRaisesRegexp(

@@ -3,6 +3,7 @@ from django.db import connections, models
 
 from pymongo.objectid import ObjectId
 from gridfs import GridFS
+from gridfs.errors import NoFile
 
 from djangotoolbox.fields import EmbeddedModelField as _EmbeddedModelField
 from django_mongodb_engine.utils import make_struct
@@ -46,9 +47,12 @@ class GridFSField(models.Field):
 
     def __init__(self, *args, **kwargs):
         self._versioning = kwargs.pop('versioning', False)
-        self._autodelete = kwargs.pop('delete', not self._versioning)
-        if self._versioning and self._autodelete:
-            raise ImproperlyConfigured("Can have only one of 'versioning' and 'delete'")
+        self._autodelete = kwargs.pop('delete', True)
+        if self._versioning:
+            import warnings
+            warnings.warn("GridFSField versioning will be deprecated on version 0.6."
+                        "If you consider this option usefule please add a comment"
+                        "on issue #65 with your use case", PendingDeprecationWarning)
 
         kwargs['max_length'] = 24
         kwargs.setdefault('default', None)
@@ -75,6 +79,12 @@ class GridFSField(models.Field):
         meta = self._get_meta(model_instance)
         if meta.filelike is None and meta.oid is not None:
             gridfs = self._get_gridfs(model_instance)
+            if self._versioning:
+                try:
+                    meta.filelike = gridfs.get_last_version(filename=meta.oid)
+                    return meta.filelike
+                except NoFile:
+                    pass        
             meta.filelike = gridfs.get(meta.oid)
         return meta.filelike
 
@@ -103,11 +113,27 @@ class GridFSField(models.Field):
                 # if we weren't explicitly asked to keep it.
                 gridfs.delete(meta.oid)
             meta.should_save = False
-            return gridfs.put(meta.filelike)
+            if not self._versioning or meta.oid is None:
+                return gridfs.put(meta.filelike)
+            gridfs.put(meta.filelike, filename=meta.oid)        
         return meta.oid
 
     def _on_pre_delete(self, sender, instance, using, signal, **kwargs):
-        self._get_gridfs(instance).delete(self._get_meta(instance).oid)
+        """
+        Deletes the files associated with this isntance
+
+        If versioning is enabled all versions will be deleted. 
+        """
+        gridfs = self._get_gridfs(instance)
+        meta = self._get_meta(instance)
+        try:
+            while self._versioning and meta.oid:
+                last = gridfs.get_last_version(filename=meta.oid)
+                gridfs.delete(last._id)
+        except NoFile:
+            pass
+
+        gridfs.delete(meta.oid)
 
     def _get_meta(self, model_instance):
         meta_name = '_%s_meta' % self.attname
@@ -120,7 +146,9 @@ class GridFSField(models.Field):
 
     def _get_gridfs(self, model_instance):
         # XXX shouldn't we use the model's collection here?
-        return GridFS(connections[model_instance.__class__.objects.db].database)
+        model = model_instance.__class__
+        return GridFS(connections[model.objects.db].database, 
+                      model._meta.db_table)
 
 
 class GridFSString(GridFSField):
