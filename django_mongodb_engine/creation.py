@@ -1,4 +1,4 @@
-from pymongo import DESCENDING
+from pymongo import DESCENDING, GEO2D
 from djangotoolbox.db.base import NonrelDatabaseCreation
 from .utils import make_index_list
 
@@ -21,6 +21,7 @@ class DatabaseCreation(NonrelDatabaseCreation):
         sparse_indexes = []
         collection = self.connection.get_collection(meta.db_table)
         descending_indexes = set(getattr(model._meta, 'descending_indexes', ()))
+        geo_indexes = set(getattr(model._meta, 'geo_indexes', ()))
 
         # Lets normalize the sparse_index values changing [], set() to ()
         for idx in set(getattr(model._meta, 'sparse_indexes', ())):
@@ -41,6 +42,8 @@ class DatabaseCreation(NonrelDatabaseCreation):
             column = '_id' if field.primary_key else field.column
             if field.name in descending_indexes:
                 column = [(column, DESCENDING)]
+            elif field.name in geo_indexes:
+                column = [(column, GEO2D)]
             ensure_index(column, unique=field.unique,
                          sparse=field.name in sparse_indexes)
 

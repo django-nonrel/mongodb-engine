@@ -5,7 +5,7 @@ from django.db.utils import DatabaseError, IntegrityError
 from django.contrib.sites.models import Site
 
 from pymongo.objectid import InvalidId
-from pymongo import ASCENDING, DESCENDING
+from pymongo import ASCENDING, DESCENDING, GEO2D
 from gridfs import GridFS, GridOut
 
 from django_mongodb_engine.base import DatabaseWrapper
@@ -281,11 +281,14 @@ class DatabaseOptionTests(TestCase):
 
 
 class IndexTests(TestCase):
-    def assertHaveIndex(self, field_name, direction=ASCENDING):
+    def assertHaveIndex(self, field_name, sort=ASCENDING):
+        suffix = { ASCENDING : '_1',
+                   DESCENDING : '_-1',
+                   GEO2D : '_2d' }
         info = get_collection(IndexTestModel).index_information()
-        index_name = field_name + ['_1', '_-1'][direction==DESCENDING]
+        index_name = field_name + suffix[sort] 
         self.assertIn(index_name, info)
-        self.assertIn((field_name, direction), info[index_name]['key'])
+        self.assertIn((field_name, sort), info[index_name]['key'])
 
     # Assumes fields as [(name, direction), (name, direction)]
     def assertCompoundIndex(self, fields, model=IndexTestModel):
@@ -328,6 +331,9 @@ class IndexTests(TestCase):
     def test_descending(self):
         self.assertHaveIndex('descending_index', DESCENDING)
         self.assertHaveIndex('bar', DESCENDING)
+
+    def test_2d(self):
+        self.assertHaveIndex('geo_index', GEO2D)
 
 class GridFSFieldTests(TestCase):
     def tearDown(self):

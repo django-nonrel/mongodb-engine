@@ -26,10 +26,12 @@ class IndexTestModel(models.Model):
     sparse_index_unique = models.IntegerField(db_index=True, unique=True)
     sparse_index_cmp_1 = models.IntegerField(db_index=True)
     sparse_index_cmp_2 = models.IntegerField(db_index=True)
+    geo_index = ListField(db_index=True)
 
     class MongoMeta:
         sparse_indexes = ["sparse_index", "sparse_index_unique", ('sparse_index_cmp_1', 'sparse_index_cmp_2')]
         descending_indexes = ['descending_index', 'descending_index_custom_column']
+        geo_indexes = ['geo_index']
         index_together = [{ 'fields' : ['regular_index', 'custom_column']},
                           { 'fields' : ('sparse_index_cmp_1', 'sparse_index_cmp_2')}]
 
