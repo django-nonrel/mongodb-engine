@@ -47,7 +47,7 @@ class GridFSField(models.Field):
 
     def __init__(self, *args, **kwargs):
         self._versioning = kwargs.pop('versioning', False)
-        self._autodelete = kwargs.pop('delete', True)
+        self._autodelete = kwargs.pop('delete', not self._versioning)
         if self._versioning:
             import warnings
             warnings.warn("GridFSField versioning will be deprecated on version 0.6."
@@ -84,7 +84,7 @@ class GridFSField(models.Field):
                     meta.filelike = gridfs.get_last_version(filename=meta.oid)
                     return meta.filelike
                 except NoFile:
-                    pass        
+                    pass
             meta.filelike = gridfs.get(meta.oid)
         return meta.filelike
 
@@ -114,15 +114,16 @@ class GridFSField(models.Field):
                 gridfs.delete(meta.oid)
             meta.should_save = False
             if not self._versioning or meta.oid is None:
-                return gridfs.put(meta.filelike)
-            gridfs.put(meta.filelike, filename=meta.oid)        
+                meta.oid = gridfs.put(meta.filelike)
+            else:
+                gridfs.put(meta.filelike, filename=meta.oid)
         return meta.oid
 
     def _on_pre_delete(self, sender, instance, using, signal, **kwargs):
         """
         Deletes the files associated with this isntance
 
-        If versioning is enabled all versions will be deleted. 
+        If versioning is enabled all versions will be deleted.
         """
         gridfs = self._get_gridfs(instance)
         meta = self._get_meta(instance)
@@ -146,7 +147,7 @@ class GridFSField(models.Field):
 
     def _get_gridfs(self, model_instance):
         model = model_instance.__class__
-        return GridFS(connections[model.objects.db].database, 
+        return GridFS(connections[model.objects.db].database,
                       model._meta.db_table)
 
 
