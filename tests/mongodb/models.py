@@ -42,8 +42,9 @@ class IndexTestModel2(models.Model):
 
 class GridFSFieldTestModel(models.Model):
     gridfile = GridFSField()
-    gridfile_versioned = GridFSField(versioning=True)
     gridfile_nodelete = GridFSField(delete=False)
+    gridfile_versioned = GridFSField(versioning=True)
+    gridfile_versioned_delete = GridFSField(versioning=True, delete=True)
     gridstring = GridFSString()
 
 class Issue47Model(models.Model):

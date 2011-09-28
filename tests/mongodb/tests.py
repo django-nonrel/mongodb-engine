@@ -350,20 +350,6 @@ class GridFSFieldTests(TestCase):
         fh.seek(42)
         self.assertEqual(obj.gridfile.read(), fh.read())
 
-    def test_deletion(self):
-        from gridfs import NoFile
-        for field in GridFSFieldTestModel._meta.fields[-2:]:
-            GridFSFieldTestModel.objects.create(
-                gridstring='foobar', gridfile_nodelete='spam')
-            obj = GridFSFieldTestModel.objects.get()
-            file_id = field._get_meta(obj).oid
-            gridfs = field._get_gridfs(obj)
-            obj.delete()
-            if field._autodelete:
-                self.assertRaises(NoFile, gridfs.get, file_id)
-            else:
-                self.assertIsInstance(gridfs.get(file_id), GridOut)
-
     def test_gridstring(self):
         data = open(__file__).read()
         obj = GridFSFieldTestModel(gridstring=data)
@@ -387,33 +373,69 @@ class GridFSFieldTests(TestCase):
         meta.filelike = sentinel
         self.assertEqual(obj.gridfile, sentinel)
 
+    def _test_versioning_delete(self, field, versioning, delete):
+        col = get_collection(GridFSFieldTestModel).files
+        get_meta = GridFSFieldTestModel._meta.get_field(field)._get_meta
+
+        obj = GridFSFieldTestModel.objects.create()
+        self.assertEqual(col.count(), 0)
+        obj.delete()
+
+        obj = GridFSFieldTestModel.objects.create(**{field: 'a'})
+        self.assertEqual(col.count(), 1)
+
+        old_oid = get_meta(obj).oid
+        self.assertNotEqual(old_oid, None)
+        setattr(obj, field, 'a')
+        obj.save()
+        self.assertEqual(get_meta(obj).oid, old_oid)
+        self.assertEqual(col.count(), 1)
+
+        obj = GridFSFieldTestModel.objects.get()
+        self.assertEqual(getattr(obj, field).read(), 'a')
+        setattr(obj, field, 'b')
+        obj.save()
+        self.assertEqual(col.count(), 2 if versioning else 1)
+
+        old_oid = get_meta(obj).oid
+        setattr(obj, field, 'b')
+        obj.save()
+        self.assertEqual(get_meta(obj).oid, old_oid)
+        self.assertEqual(col.count(), 2 if versioning else 1)
+
+        setattr(obj, field, 'c')
+        obj.save()
+        self.assertEqual(col.count(), 3 if versioning else 1)
+
+        setattr(obj, field, 'd')
+        obj.save()
+        self.assertEqual(col.count(), 4 if versioning else 1)
+
+        obj = GridFSFieldTestModel.objects.get()
+        self.assertEqual(getattr(obj, field).read(), 'd')
+
+        setattr(obj, field, 'e')
+        obj.save()
+        self.assertEqual(col.count(), 5 if versioning else 1)
+
+        setattr(obj, field, 'f')
+        obj.save()
+        self.assertEqual(col.count(), 6 if versioning else 1)
+
+        obj.delete()
+        self.assertEqual(col.count(), 0 if delete else (6 if versioning else 1))
+
+    def test_delete(self):
+        self._test_versioning_delete('gridfile', versioning=False, delete=True)
+
+    def test_nodelete(self):
+        self._test_versioning_delete('gridfile_nodelete', versioning=False, delete=False)
+
     def test_versioning(self):
-        from gridfs import NoFile
-        for field in GridFSFieldTestModel._meta.fields[1:3]:
-            GridFSFieldTestModel.objects.create(
-                gridfile='asd', gridfile_versioned='fgh')
-            obj = GridFSFieldTestModel.objects.get()
-            first_oid = field._get_meta(obj).oid
+        self._test_versioning_delete('gridfile_versioned', versioning=True, delete=False)
 
-            #GridFSFieldTestModel.objects.update(
-            #    gridfile='qwe', gridfile_versioned='rty')
-            obj.gridfile = 'qwe'
-            obj.gridfile_versioned = new_version = 'rty'
-            obj.save()
-
-            obj = GridFSFieldTestModel.objects.get()
-            second_oid = field._get_meta(obj).oid
-            assert field._versioning and first_oid == second_oid or first_oid != second_oid
-            assert obj.gridfile_versioned.read() == new_version
-
-            gridfs = field._get_gridfs(obj)
-            self.assertIsInstance(gridfs.get(second_oid), GridOut)
-            if field._versioning:
-                self.assertIsInstance(gridfs.get(first_oid), GridOut)
-            else:
-                self.assertRaises(NoFile, gridfs.get, first_oid)
-
-            GridFSFieldTestModel.objects.all().delete()
+    def test_versioning_delete(self):
+        self._test_versioning_delete('gridfile_versioned_delete', versioning=True, delete=True)
 
     def test_multiple_save_regression(self):
         col = get_collection(GridFSFieldTestModel).files
