@@ -291,17 +291,24 @@ class IndexTests(TestCase):
         self.assertIn((field_name, sort), info[index_name]['key'])
 
     # Assumes fields as [(name, direction), (name, direction)]
-    def assertCompoundIndex(self, fields, model=IndexTestModel):
+    def assertCompoundIndex(self, fields, model=IndexTestModel, index_name = None):
         info = get_collection(model).index_information()
-        index_names = [field[0] + ['_1', '_-1'][field[1]==DESCENDING] for field in fields]
-        index_name = "_".join(index_names)
+        if not index_name:
+            index_names = [field[0] + ['_1', '_-1'][field[1]==DESCENDING] for field in fields]
+            index_name = "_".join(index_names)
         self.assertIn(index_name, info)
         self.assertEqual(fields, info[index_name]['key'])
 
     def assertIndexProperty(self, field_name, name, direction=ASCENDING):
         info = get_collection(IndexTestModel).index_information()
-        index_name = field_name + ['_1', '_-1'][direction==DESCENDING]
+        index_name = field_name + ['_1', '_-1'][directione==DESCENDING]
         self.assertTrue(info.get(index_name, {}).get(name, False))
+
+    def assertIndexPropertyValue(self, index_name, name, 
+            value, model=IndexTestModel):
+        info = get_collection(model).index_information()
+        self.assertTrue(info.get(index_name, {}).get(name, False))
+        self.assertEqual(info.get(index_name, {}).get(name), value)
 
     def test_regular_indexes(self):
         self.assertHaveIndex('regular_index')
@@ -333,7 +340,16 @@ class IndexTests(TestCase):
         self.assertHaveIndex('bar', DESCENDING)
 
     def test_2d(self):
-        self.assertHaveIndex('geo_index', GEO2D)
+        self.assertCompoundIndex([('geo_index', GEO2D),
+                                  ('regular_index', DESCENDING)],
+                                  index_name='geo_index__regular_index_1')
+        index_name = 'GeoIndex'
+        self.assertCompoundIndex([('geo_index', GEO2D),
+                                  ('a',DESCENDING)], 
+                                  IndexTestModel2, index_name)
+        self.assertIndexPropertyValue(index_name, 'min', -10, IndexTestModel2)
+        self.assertIndexPropertyValue(index_name, 'max', 15, IndexTestModel2)
+        self.assertIndexPropertyValue(index_name, 'name', 1, IndexTestModel2)
 
 class GridFSFieldTests(TestCase):
     def tearDown(self):
