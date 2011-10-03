@@ -329,6 +329,30 @@ class IndexTests(TestCase):
         self.assertHaveIndex('descending_index', DESCENDING)
         self.assertHaveIndex('bar', DESCENDING)
 
+
+class NewStyleIndexTests(TestCase):
+    class order_doesnt_matter(list):
+        def __eq__(self, other):
+            return sorted(self) == sorted(other)
+
+    def assertHaveIndex(self, key, **properties):
+        info = get_collection(NewStyleIndexesTestModel).index_information()
+        index_name = '_'.join('%s_%s' % pair for pair in key)
+        default_properties = {'key': self.order_doesnt_matter(key), 'v': 1}
+        self.assertIn(index_name, info)
+        self.assertEqual(info[index_name], dict(default_properties, **properties))
+
+    def test_indexes(self):
+        self.assertHaveIndex([('c', 1)])
+        self.assertHaveIndex([('f', 1)], unique=True)
+        self.assertHaveIndex([('a', 1), ('b2', 1)], unique=True)
+        self.assertHaveIndex([('a', 1), ('d', 1)], unique=True)
+        self.assertHaveIndex([('e', -1)])
+        self.assertHaveIndex([('a', 1)], sparse=True)
+        self.assertHaveIndex([('b2', -1), ('d', 1)])
+        self.assertHaveIndex([('geo', '2d')])
+        self.assertHaveIndex([('geo', '2d'), ('a', 1)], min=42, max=21)
+
 class GridFSFieldTests(TestCase):
     def tearDown(self):
         get_collection(GridFSFieldTestModel).files.remove()

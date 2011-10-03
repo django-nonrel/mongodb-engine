@@ -40,6 +40,28 @@ class IndexTestModel2(models.Model):
     class MongoMeta:
         index_together = ['a', ('b', -1)]
 
+class NewStyleIndexesTestModel(models.Model):
+    a = models.IntegerField()
+    b = models.IntegerField(db_column='b2')
+    c = models.IntegerField(db_index=True)
+    d = models.IntegerField()
+    e = models.IntegerField()
+    f = models.IntegerField(unique=True)
+    geo = models.IntegerField()
+    geo2 = models.IntegerField(db_column='geo')
+
+    class Meta:
+        unique_together = [('a', 'b'), ('a', 'd')]
+
+    class MongoMeta:
+        indexes = [
+            [('e', -1)],
+            {'fields': 'a', 'sparse': True},
+            {'fields': [('b', -1), 'd']},
+            [('geo', '2d')],
+            {'fields': [('geo2', '2d'), 'a'], 'min': 42, 'max': 21}
+        ]
+
 class GridFSFieldTestModel(models.Model):
     gridfile = GridFSField()
     gridfile_nodelete = GridFSField(delete=False)

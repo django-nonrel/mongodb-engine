@@ -24,6 +24,8 @@ def make_struct(*attrs):
     return _Struct
 
 def make_index_list(indexes):
+    if isinstance(indexes, basestring):
+        indexes = [indexes]
     for index in indexes:
         if not isinstance(index, tuple):
             index = index, ASCENDING

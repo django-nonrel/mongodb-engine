@@ -18,13 +18,7 @@ class DatabaseCreation(NonrelDatabaseCreation):
         if not meta.managed or meta.proxy:
             return []
 
-        sparse_indexes = []
         collection = self.connection.get_collection(meta.db_table)
-        descending_indexes = set(getattr(model._meta, 'descending_indexes', ()))
-
-        # Lets normalize the sparse_index values changing [], set() to ()
-        for idx in set(getattr(model._meta, 'sparse_indexes', ())):
-            sparse_indexes.append(isinstance(idx, (tuple, set, list)) and tuple(idx) or idx )
 
         def ensure_index(*args, **kwargs):
             if ensure_index.first_index:
@@ -32,6 +26,50 @@ class DatabaseCreation(NonrelDatabaseCreation):
                 ensure_index.first_index = False
             return collection.ensure_index(*args, **kwargs)
         ensure_index.first_index = True
+
+        newstyle_indexes = getattr(meta, 'indexes', None)
+        if newstyle_indexes:
+            self._handle_newstyle_indexes(ensure_index, meta, newstyle_indexes)
+        else:
+            self._handle_oldstyle_indexes(ensure_index, meta)
+
+    def _handle_newstyle_indexes(self, ensure_index, meta, indexes):
+        # Django indexes
+        for field in meta.local_fields:
+            if not (field.unique or field.db_index):
+                # field doesn't need an index
+                continue
+            column = '_id' if field.primary_key else field.column
+            ensure_index(column, unique=field.unique)
+
+        # Django unique_together indexes
+        indexes = list(indexes)
+        for fields in getattr(meta, 'unique_together', []):
+            assert isinstance(fields, (list, tuple))
+            indexes.append({'fields': make_index_list(fields), 'unique': True})
+
+        for index in indexes:
+            if isinstance(index, dict):
+                kwargs = index.copy()
+                fields = kwargs.pop('fields')
+            else:
+                fields, kwargs = index, {}
+            fields = [(meta.get_field(name).column, direction)
+                      for name, direction in make_index_list(fields)]
+            ensure_index(fields, **kwargs)
+
+
+    def _handle_oldstyle_indexes(self, ensure_index, meta):
+        from warnings import warn
+        warn("'descending_indexes', 'sparse_indexes' and 'index_together' are"
+             "deprecated and will be ignored as of version 0.6. "
+             "Use 'indexes' instead", DeprecationWarning)
+        sparse_indexes = []
+        descending_indexes = set(getattr(meta, 'descending_indexes', ()))
+
+        # Lets normalize the sparse_index values changing [], set() to ()
+        for idx in set(getattr(meta, 'sparse_indexes', ())):
+            sparse_indexes.append(isinstance(idx, (tuple, set, list)) and tuple(idx) or idx )
 
         # Ordinary indexes
         for field in meta.local_fields:
@@ -43,6 +81,7 @@ class DatabaseCreation(NonrelDatabaseCreation):
                 column = [(column, DESCENDING)]
             ensure_index(column, unique=field.unique,
                          sparse=field.name in sparse_indexes)
+
 
         def create_compound_indexes(indexes, **kwargs):
             # indexes: (field1, field2, ...)
