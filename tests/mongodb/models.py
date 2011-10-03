@@ -2,6 +2,7 @@ from django.db import models
 from djangotoolbox.fields import RawField, ListField, EmbeddedModelField
 from django_mongodb_engine.fields import GridFSField, GridFSString
 from query.models import Post
+from pymongo import ASCENDING
 
 class DescendingIndexModel(models.Model):
     desc = models.IntegerField()
@@ -26,19 +27,25 @@ class IndexTestModel(models.Model):
     sparse_index_unique = models.IntegerField(db_index=True, unique=True)
     sparse_index_cmp_1 = models.IntegerField(db_index=True)
     sparse_index_cmp_2 = models.IntegerField(db_index=True)
+    geo_index = ListField(db_index=True)
 
     class MongoMeta:
-        sparse_indexes = ["sparse_index", "sparse_index_unique", ('sparse_index_cmp_1', 'sparse_index_cmp_2')]
+        sparse_indexes = ["sparse_index", "sparse_index_unique", 
+                          ('sparse_index_cmp_1', 'sparse_index_cmp_2')]
         descending_indexes = ['descending_index', 'descending_index_custom_column']
+        geo_index = ['geo_index', ('regular_index',ASCENDING)]
         index_together = [{ 'fields' : ['regular_index', 'custom_column']},
                           { 'fields' : ('sparse_index_cmp_1', 'sparse_index_cmp_2')}]
 
 class IndexTestModel2(models.Model):
     a = models.IntegerField(db_index=True)
     b = models.IntegerField(db_index=True)
+    geo_index = ListField(db_index=True)
 
     class MongoMeta:
         index_together = ['a', ('b', -1)]
+        geo_index = {'fields' : ['geo_index','a'], 'min' : -10, 
+                     'max' : 15, 'name' : 'GeoIndex'}
 
 class GridFSFieldTestModel(models.Model):
     gridfile = GridFSField()

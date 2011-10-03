@@ -1,4 +1,4 @@
-from pymongo import DESCENDING
+from pymongo import DESCENDING, GEO2D
 from djangotoolbox.db.base import NonrelDatabaseCreation
 from .utils import make_index_list
 
@@ -21,6 +21,7 @@ class DatabaseCreation(NonrelDatabaseCreation):
         sparse_indexes = []
         collection = self.connection.get_collection(meta.db_table)
         descending_indexes = set(getattr(model._meta, 'descending_indexes', ()))
+        geo_indexes = set(getattr(model._meta, 'geo_indexes', ()))
 
         # Lets normalize the sparse_index values changing [], set() to ()
         for idx in set(getattr(model._meta, 'sparse_indexes', ())):
@@ -41,6 +42,8 @@ class DatabaseCreation(NonrelDatabaseCreation):
             column = '_id' if field.primary_key else field.column
             if field.name in descending_indexes:
                 column = [(column, DESCENDING)]
+            elif field.name in geo_indexes:
+                column = [(column, GEO2D)]
             ensure_index(column, unique=field.unique,
                          sparse=field.name in sparse_indexes)
 
@@ -50,8 +53,9 @@ class DatabaseCreation(NonrelDatabaseCreation):
                 return
             kwargs['sparse'] = tuple(indexes) in sparse_indexes
             indexes = [(meta.get_field(name).column, direction) for
-                       name, direction in make_index_list(indexes)]
+                   name, direction in make_index_list(indexes)]
             ensure_index(indexes, **kwargs)
+
 
         # Django unique_together indexes
         for indexes in getattr(meta, 'unique_together', []):
@@ -60,15 +64,30 @@ class DatabaseCreation(NonrelDatabaseCreation):
 
         # MongoDB compound indexes
         index_together = getattr(meta, 'index_together', [])
-        if index_together:
-            if isinstance(index_together[0], dict):
+
+        #Nest a list of indexes so we can iterate over them
+        if index_together and not isinstance(index_together[0],dict):
+            index_together = [index_together,]
+
+
+        # insert in 2d indexes 
+        geo_index = getattr(meta, 'geo_index', [])
+        if geo_index:
+            print geo_index
+            if isinstance(geo_index, dict):
+                geo_index['fields'][0] = (geo_index['fields'][0], GEO2D)
+            else:
+                geo_index[0] = (geo_index[0], GEO2D)
+            index_together.append(geo_index)
+
+        for indexes in index_together:
+            if isinstance(indexes, dict):
                 # assume index_together = [{'fields' : [...], ...}]
-                for args in index_together:
-                    kwargs = args.copy()
-                    create_compound_indexes(kwargs.pop('fields'), **kwargs)
+                kwargs = indexes.copy()
+                create_compound_indexes(kwargs.pop('fields'), **kwargs)
             else:
                 # assume index_together = ['foo', 'bar', ('spam', -1), etc]
-                create_compound_indexes(index_together)
+                create_compound_indexes(indexes)
 
         return []
 

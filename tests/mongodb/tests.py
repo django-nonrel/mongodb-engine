@@ -5,7 +5,7 @@ from django.db.utils import DatabaseError, IntegrityError
 from django.contrib.sites.models import Site
 
 from pymongo.objectid import InvalidId
-from pymongo import ASCENDING, DESCENDING
+from pymongo import ASCENDING, DESCENDING, GEO2D
 from gridfs import GridFS, GridOut
 
 from django_mongodb_engine.base import DatabaseWrapper
@@ -281,24 +281,34 @@ class DatabaseOptionTests(TestCase):
 
 
 class IndexTests(TestCase):
-    def assertHaveIndex(self, field_name, direction=ASCENDING):
+    def assertHaveIndex(self, field_name, sort=ASCENDING):
+        suffix = { ASCENDING : '_1',
+                   DESCENDING : '_-1',
+                   GEO2D : '_2d' }
         info = get_collection(IndexTestModel).index_information()
-        index_name = field_name + ['_1', '_-1'][direction==DESCENDING]
+        index_name = field_name + suffix[sort] 
         self.assertIn(index_name, info)
-        self.assertIn((field_name, direction), info[index_name]['key'])
+        self.assertIn((field_name, sort), info[index_name]['key'])
 
     # Assumes fields as [(name, direction), (name, direction)]
-    def assertCompoundIndex(self, fields, model=IndexTestModel):
+    def assertCompoundIndex(self, fields, model=IndexTestModel, index_name = None):
         info = get_collection(model).index_information()
-        index_names = [field[0] + ['_1', '_-1'][field[1]==DESCENDING] for field in fields]
-        index_name = "_".join(index_names)
+        if not index_name:
+            index_names = [field[0] + ['_1', '_-1'][field[1]==DESCENDING] for field in fields]
+            index_name = "_".join(index_names)
         self.assertIn(index_name, info)
         self.assertEqual(fields, info[index_name]['key'])
 
     def assertIndexProperty(self, field_name, name, direction=ASCENDING):
         info = get_collection(IndexTestModel).index_information()
-        index_name = field_name + ['_1', '_-1'][direction==DESCENDING]
+        index_name = field_name + ['_1', '_-1'][directione==DESCENDING]
         self.assertTrue(info.get(index_name, {}).get(name, False))
+
+    def assertIndexPropertyValue(self, index_name, name, 
+            value, model=IndexTestModel):
+        info = get_collection(model).index_information()
+        self.assertTrue(info.get(index_name, {}).get(name, False))
+        self.assertEqual(info.get(index_name, {}).get(name), value)
 
     def test_regular_indexes(self):
         self.assertHaveIndex('regular_index')
@@ -328,6 +338,18 @@ class IndexTests(TestCase):
     def test_descending(self):
         self.assertHaveIndex('descending_index', DESCENDING)
         self.assertHaveIndex('bar', DESCENDING)
+
+    def test_2d(self):
+        self.assertCompoundIndex([('geo_index', GEO2D),
+                                  ('regular_index', DESCENDING)],
+                                  index_name='geo_index__regular_index_1')
+        index_name = 'GeoIndex'
+        self.assertCompoundIndex([('geo_index', GEO2D),
+                                  ('a',DESCENDING)], 
+                                  IndexTestModel2, index_name)
+        self.assertIndexPropertyValue(index_name, 'min', -10, IndexTestModel2)
+        self.assertIndexPropertyValue(index_name, 'max', 15, IndexTestModel2)
+        self.assertIndexPropertyValue(index_name, 'name', 1, IndexTestModel2)
 
 class GridFSFieldTests(TestCase):
     def tearDown(self):
