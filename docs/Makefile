@@ -4,9 +4,11 @@
 # You can set these variables from the command line.
 SOURCEDIR     = source/
 SPHINXOPTS    =
-SPHINXBUILD   = DJANGO_SETTINGS_MODULE=tests.settings sphinx-build
+SPHINXBUILD   = $(ENV) sphinx-build
 PAPER         =
 BUILDDIR      = build
+ENV           = PYTHONPATH=. \
+                DJANGO_SETTINGS_MODULE=empty_project.settings
 
 # Internal variables.
 PAPEROPT_a4     = -D latex_paper_size=a4
