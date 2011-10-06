@@ -251,12 +251,9 @@ dl.class dd p:first { margin-top: 0; }
 /* ------------------- Footer ------------------- */
 
 .footer {
-  margin-left: 250px;
-  border-left: 1px solid #ccc;
   clear: both;
   font-size: 12px;
   margin-bottom: 5px;
   text-align: center;
   color: #616161;
 }
-#page-index + .footer { border: 0; }
