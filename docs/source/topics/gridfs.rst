@@ -38,13 +38,17 @@ Use :class:`~django_mongodb_engine.fields.GridFSField` to store "nameless" blobs
 besides documents that would normally go into the document itself.
 
 All that's kept in the document is a reference (an ObjectId) to the GridFS blobs
-which is retrieved on demand.
+which are retrieved on demand.
 
 Assuming you want to store a 10MiB blob "in" each document, this is what you
 *shouldn't* do::
 
+   # DON'T DO THIS
    class Bad(models.Model):
-      # DON'T DO THIS
+      blob = models.TextField()
+
+   # NEITHER THIS
+   class EventWorse(models.Model):
        blob = models.CharField(max_length=10*1024*1024)
 
 Instead, use :class:`~django_mongodb_engine.fields.GridFSField`::
@@ -52,7 +56,7 @@ Instead, use :class:`~django_mongodb_engine.fields.GridFSField`::
    class Better(models.Model):
        blob = GridFSField()
 
-A GridFSField may be feeded with anything that PyMongo can handle, that is,
+A GridFSField may be fed with anything that PyMongo can handle, that is,
 (preferably) file-like objects and strings.
 
 You'll always get a :class:`~gridfs.grid_file.GridOut` for documents from the

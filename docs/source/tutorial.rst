@@ -26,9 +26,9 @@ and excluding data.
 Perhaps a good way to get used to non-relational style data modeling is to ask
 yourself "What would I never do in SQL".
 
-Because most relational databases lack proper list data structures you
-may typically model the Posts ⇔ Tags ⇔ Comments relationship using three
-models/tables, one table one table per entity type.
+Because most relational databases lack proper list data structures you may
+typically model the Posts ⇔ Tags ⇔ Comments relationship using three
+models/tables, one table per entity type.
 
 Organizing your data using multiple relationships is the exact opposite of what
 we will do for our non-relational data model: Have one single collection (table)
