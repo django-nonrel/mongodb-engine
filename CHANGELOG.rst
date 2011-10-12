@@ -3,8 +3,20 @@ Changelog
 
 .. currentmodule:: djangotoolbox.fields
 
-Version 0.4
------------
+Version 0.5 (TBD)
+-----------------
+* PyPy support
+* MongoDB 2.0 support
+* New custom primary key behaviour (to be documented)
+* Deprecated the ``MongoMeta.{index_together,descending_indexes,sparse_indexes}``
+  properties in favor of the new ``MongoMeta.indexes`` setting
+* Deprecation of ``A()`` queries
+* Deprecation of the ``GridFSField.versioning`` feature
+* Numerous query generator fixes
+* Other bug fixes, cleanup, new tests etc.
+
+Version 0.4 (May 2011)
+----------------------
 * :doc:`GridFS storage backend </topics/gridfs>`
 * Fulltext search
 * Query logging support
@@ -17,8 +29,8 @@ Version 0.4
 * Defined a stable :ref:`lower-level database API <lowerlevel/pymongo>`
 * Numerous bug fixes, new tests, code improvements and deprecations
 
-Version 0.3
------------
+Version 0.3 (Jan 2011)
+----------------------
 * *OR* query support
 * Support for :class:`~django.db.models.DateTimeField` and friends
 * Support for atomic updates using F_
@@ -28,8 +40,8 @@ Version 0.3
 
 .. * Added a flag to enable :ref:`model-referencing`
 
-Version 0.2
------------
+Version 0.2 (Oct 2010)
+----------------------
 * :doc:`Aggregation support </topics/aggregations>`
 * :doc:`Map/Reduce support </topics/mapreduce>`
 * :class:`ListField`, :class:`SetListField`, :class:`DictField` and
