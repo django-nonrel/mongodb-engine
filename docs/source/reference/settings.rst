@@ -1,7 +1,7 @@
 Settings
 ========
 
-TODO fix highlighting
+.. TODO fix highlighting
 
 Connection Settings
 -------------------
@@ -51,7 +51,7 @@ this configuration passes ``safe=True, w=3`` as keyword arguments to each of
 
 Get a more fine-grained setup by introducing another layer to this dict:
 
-.. code-block:: py
+.. code-block:: python
 
    'OPTIONS' : {
        'OPERATIONS' : {

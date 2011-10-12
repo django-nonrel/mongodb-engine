@@ -1,7 +1,7 @@
 Model Options
 =============
 
-In addition to Django's `default Meta options`, Django MongoDB Engine supports
+In addition to Django's `default Meta options`_, Django MongoDB Engine supports
 various options specific to MongoDB through a special ``class MongoMeta``. ::
 
    class FooModel(models.Model):
