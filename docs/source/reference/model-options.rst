@@ -7,63 +7,41 @@ various options specific to MongoDB through a special ``class MongoMeta``. ::
    class FooModel(models.Model):
        ...
        class MongoMeta:
-           # mongo options here
+           # Mongo options here
            ...
 
 Indexes
 -------
-Make use of MongoDB's wide variety of indexes.
+Django MongoDB Engine already understands the standard
+:attr:`~django.db.models.Field.db_index` and
+:attr:`~django.db.models.Options.unique_together` options and generates the
+corresponding MongoDB indexes on ``syncdb``.
 
-``index_together``
-   **Form 1**: A tuple of field names or :samp:`({field name}, {index direction})`
-   tuples to index together. For instance, ::
+To make use of other index features, like multi-key indexes and Geospatial
+Indexing, additional indexes can be specified using the ``indexes`` setting. ::
 
+   class Club(models.Model):
+      location = ListField()
+      rating = models.FloatField()
+      admission = models.IntegerField()
+      ...
       class MongoMeta:
-          index_together = ['name', ('last_name', pymongo.DESCENDING)]
+         indexes = [
+            [('rating', -1)],
+            [('rating', -1), ('admission', 1)],
+            {'fields': [('location', '2d')], 'min': -42, 'max': 42},
+         ]
 
-   results in this call::
+``indexes`` can be specified in two ways:
 
-      collection.ensure_index([('name', 1), ('last_name', -1)])
+* The simple "without options" form is a list of ``(field, direction)`` pairs.
+  For example, a single ascending index (the same thing you get using ``db_index``)
+  is expressed as ``[(field, 1)]``. A multi-key, descending index can be written
+  as ``[(field1, -1), (field2, -1), ...]``.
+* The second form is slightly more verbose but takes additional MongoDB index
+  options. A descending, sparse index for instance may be expressed as
+  ``{'fields': [(field, -1)], 'sparse': True}``.
 
-   (``pymongo.DESCENDING`` being the same as -1)
-
-   **Form 2**: A list of dictionaries containing an item with the key *field*
-   and a list of field names or :samp:`({field name}, {index direction})` tuples
-   to index together as value, optionally containing keyword arguments to pass to
-   :meth:`pymongo.Collection.ensure_index`. For example, ::
-
-      index_together = [{'fields' : ['name', ('last_name', pymongo.DESCENDING)],
-                         'name' : 'name-lastname-index'}]
-
-   results in this call::
-
-      collection.ensure_index([('name', 1), ('last_name', -1)], name='name-lastname-index')
-
-``descending_indexes``
-   A list of fields whose index shall be descending rather than ascending.
-   For example, ::
-
-      class FooModel(models.Model):
-          a = models.CharField(db_index=True)
-          b = models.CharField(db_index=True)
-
-          class MongoMeta:
-              descending_indexes = ['b']
-
-   would create an ascending index on field ``a`` and a descending one on ``b``.
-
-``sparse_indexes``
-   A list of field names or tuples of field names whose index should be sparse_.
-   This example defines a sparse index on `a` and a sparse index on `b, c`::
-
-      class FooModel(models.Model):
-          a = models.IntegerField(null=True)
-          b = models.IntegerField(null=True)
-          c = models.IntegerField(null=True)
-
-          class MongoMeta:
-              index_together = ('b', 'c')
-              sparse_indexes = ['a', ('b', 'c')]
 
 Capped Collections
 ------------------
