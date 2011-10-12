@@ -38,10 +38,10 @@ class GridFSField(models.Field):
     :param delete:
         Whether to delete the data stored in the GridFS (as GridFS files) when
         model instances are deleted (default: :const:`True`).
-    :param versioning:
-        Whether to keep old versions of the data when new data is written to the
-        GridFS (default: :const:`False`).
-        `delete` and `versioning` are mutually exclusive.
+
+        Note that this doesn't have any influence on what happens if you update
+        the blob value by assigning a new file, in which case the old file is
+        always deleted.
     """
     forbids_updates = True
 
