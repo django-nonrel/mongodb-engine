@@ -234,18 +234,19 @@ dl.class dd p:first { margin-top: 0; }
 #page-index .sphinxsidebar { display: none; }
 #page-index .bodywrapper { margin-left: 0; }
 
-.highlight {
+.highlight, .highlight-python {
+  background: #f1f2e9 !important;
+}
+:not(.highlight-python) > .highlight, .highlight-python {
   margin-top: 2px;
   margin-bottom: 2px;
   padding: 0 0.7em;
-  background: #f1f2e9 !important;
   border: 1px solid #ccc;
   border-left: 0;
   border-right: 0;
   color: #442d22;
 }
 .highlight .go { color: #5c5c5c !important; } /* Generic.Output */
-
 .highlight-none pre { white-space: pre-wrap; }
 
 
