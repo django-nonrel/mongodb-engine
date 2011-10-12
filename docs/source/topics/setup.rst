@@ -31,22 +31,19 @@ Django-nonrel
 .............
 ::
 
-   hg clone http://bitbucket.org/wkornewald/django-nonrel
-   cd django-nonrel && python setup.py install
+   pip install hg+https://bitbucket.org/wkornewald/django-nonrel
 
 djangotoolbox
 .............
 ::
 
-   hg clone http://bitbucket.org/wkornewald/djangotoolbox
-   cd djangotoolbox && python setup.py install
+   pip install hg+https://bitbucket.org/wkornewald/djangotoolbox
 
 Django MongoDB Engine
 .....................
 You should use the latest Git revision. ::
 
-   git clone https://github.com/django-mongodb-engine/mongodb-engine
-   cd mongodb-engine && python setup.py install
+   pip install git+https://github.com/django-mongodb-engine/mongodb-engine
 
 
 Configuration
