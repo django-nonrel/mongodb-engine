@@ -1,4 +1,5 @@
 import copy
+import sys
 from django.core.exceptions import ImproperlyConfigured
 from django.db.backends.signals import connection_created
 from django.conf import settings
@@ -117,28 +118,13 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
         password = pop('PASSWORD')
         options = pop('OPTIONS', {})
 
-        if port:
-            try:
-                port = int(port)
-            except ValueError:
-                raise ImproperlyConfigured("If set, PORT must be an integer "
-                                           "(got %r instead)" % port)
-
         self.operation_flags = options.pop('OPERATIONS', {})
         if not any(k in ['save', 'delete', 'update'] for k in self.operation_flags):
             # flags apply to all operations
             flags = self.operation_flags
             self.operation_flags = {'save' : flags, 'delete' : flags, 'update' : flags}
 
-        # Compatibility to version < 0.4
-        if 'SAFE_INSERTS' in settings:
-            _warn_deprecated('SAFE_INSERTS')
-            self.operation_flags['save']['safe'] = settings['SAFE_INSERTS']
-        if 'WAIT_FOR_SLAVES' in settings:
-            _warn_deprecated('WAIT_FOR_SLAVES')
-            self.operation_flags['save']['w'] = settings['WAIT_FOR_SLAVES']
-
-        # lower-case all remaining OPTIONS
+        # lower-case all OPTIONS keys
         for key in options.iterkeys():
             options[key.lower()] = options.pop(key)
 
@@ -146,7 +132,6 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
             self.connection = Connection(host=host, port=port, **options)
             self.database = self.connection[db_name]
         except TypeError:
-            import sys
             exc_info = sys.exc_info()
             raise ImproperlyConfigured, exc_info[1], exc_info[2]
 
@@ -154,7 +139,10 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
             if not self.database.authenticate(user, password):
                 raise ImproperlyConfigured("Invalid username or password")
 
-        self._add_serializer()
+        if settings.get('MONGODB_AUTOMATIC_REFERENCING'):
+            from .serializer import TransformDjango
+            self.database.add_son_manipulator(TransformDjango())
+
         self.connected = True
         connection_created.send(sender=self.__class__, connection=self)
 
@@ -164,14 +152,6 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
             del self.database
             self.connected = False
         self._connect()
-
-    def _add_serializer(self):
-        for option in ['MONGODB_AUTOMATIC_REFERENCING',
-                       'MONGODB_ENGINE_ENABLE_MODEL_SERIALIZATION']:
-            if getattr(settings, option, False):
-                from .serializer import TransformDjango
-                self.database.add_son_manipulator(TransformDjango())
-                return
 
     def _commit(self):
         pass

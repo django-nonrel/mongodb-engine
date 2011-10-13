@@ -49,8 +49,8 @@ class MongoDBEngineTests(TestCase):
         obj.raw.append(related)
         self.assertRaises(InvalidDocument, obj.save)
 
-        settings.MONGODB_AUTOMATIC_REFERENCING = True
-        connections._connections.values()[0]._add_serializer()
+        connection.settings_dict['MONGODB_AUTOMATIC_REFERENCING'] = True
+        connection._reconnect()
         obj.save()
         self.assertNotEqual(related.id, None)
         obj = RawModel.objects.get(id=obj.id)
@@ -261,12 +261,6 @@ class DatabaseOptionTests(TestCase):
             update={'multi' : True},
             remove={'fsync' : True}
         )
-
-    def test_legacy_flags(self):
-        options = {'SAFE_INSERTS' : True, 'WAIT_FOR_SLAVES' : 5}
-        with self.custom_database_wrapper(options) as wrapper:
-            self.assertTrue(wrapper.operation_flags['save']['safe'])
-            self.assertEqual(wrapper.operation_flags['save']['w'], 5)
 
     def test_unique(self):
         with self.custom_database_wrapper({'OPTIONS': {}}):
