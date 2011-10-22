@@ -1,6 +1,7 @@
 import re
 import time
 from pymongo import ASCENDING
+from pymongo.cursor import Cursor
 from django.conf import settings
 from django.db.backends.util import logger
 
@@ -39,29 +40,54 @@ class CollectionDebugWrapper(object):
     def __getattr__(self, attr):
         return getattr(self.collection, attr)
 
-    def logging_wrapper(method, npositional=1):
+    def profile_call(self, func, args=(), kwargs={}):
+        start = time.time()
+        retval = func(*args, **kwargs)
+        duration = time.time() - start
+        return duration, retval
+
+    def log(self, op, duration, args, kwargs=None):
+        args = ' '.join(str(arg) for arg in args)
+        msg = '%s.%s (%.2f) %s' % (self.collection.name, op, duration, args)
+        if kwargs and any(kwargs.itervalues()):
+            msg += ' %s' % kwargs
+        if len(settings.DATABASES) > 1:
+            msg = self.alias + '.' + msg
+        logger.debug(msg, extra={'duration' : duration})
+
+    def find(self, *args, **kwargs):
+        if not 'slave_okay' in kwargs and self.collection.slave_okay:
+            kwargs['slave_okay'] = True
+        return DebugCursor(self, self.collection, *args, **kwargs)
+
+    def logging_wrapper(method):
         def wrapper(self, *args, **kwargs):
-            if npositional is not None:
-                assert len(args) == npositional
-            start = time.time()
-            try:
-                result = getattr(self.collection, method)(*args, **kwargs)
-            finally:
-                duration = time.time() - start
-                msg = '%s.%s (%.3f) %s' % (self.collection.name, method, duration,
-                                           ' '.join(str(arg) for arg in args))
-                if any(kwargs.itervalues()):
-                    msg += ' %s' % kwargs
-                if len(settings.DATABASES) > 1:
-                    msg = self.alias + '.' + msg
-                logger.debug(msg, extra={'duration' : duration})
-            return result
+            func = getattr(self.collection, method)
+            duration, retval = self.profile_call(func, args, kwargs)
+            self.log(method, duration, args, kwargs)
+            return retval
         return wrapper
 
-    find = logging_wrapper('find')
     save = logging_wrapper('save')
     remove = logging_wrapper('remove')
-    update = logging_wrapper('update', npositional=2)
-    map_reduce = logging_wrapper('map_reduce', npositional=None)
+    update = logging_wrapper('update')
+    map_reduce = logging_wrapper('map_reduce')
+    inline_map_reduce = logging_wrapper('inline_map_reduce')
 
     del logging_wrapper
+
+class DebugCursor(Cursor):
+    def __init__(self, collection_wrapper, *args, **kwargs):
+        self.collection_wrapper = collection_wrapper
+        super(DebugCursor, self).__init__(*args, **kwargs)
+
+    def _refresh(self):
+        super_meth = super(DebugCursor, self)._refresh
+        if self._Cursor__id is not None:
+            return super_meth()
+        # self.__id is None: first time the .find() iterator is entered.
+        # find() profiling happens here.
+        duration, retval = self.collection_wrapper.profile_call(super_meth)
+        kwargs = {'limit': self._Cursor__limit, 'skip': self._Cursor__skip}
+        self.collection_wrapper.log('find', duration, [self._Cursor__spec], kwargs)
+        return retval
