@@ -34,6 +34,8 @@ class DatabaseCreation(NonrelDatabaseCreation):
             self._handle_oldstyle_indexes(ensure_index, meta)
 
     def _handle_newstyle_indexes(self, ensure_index, meta, indexes):
+        from djangotoolbox.fields import AbstractIterableField, EmbeddedModelField
+
         # Django indexes
         for field in meta.local_fields:
             if not (field.unique or field.db_index):
@@ -49,25 +51,19 @@ class DatabaseCreation(NonrelDatabaseCreation):
             assert isinstance(fields, (list, tuple))
             indexes.append({'fields': make_index_list(fields), 'unique': True})
 
-        #Allow for embedded document indexes, with proper root field names
-        def find_field(name,meta):
-            dot = name.find('.')
-            if dot == -1:
-                dot = len(name)
-            field = meta.get_field(name[:dot])
-            model = None
-            new_field = field
-            #Allow arbitrarily deep nesting of ListFields or SetFields
-            while True:
-                if hasattr(new_field,'embedded_model'):
-                    model = new_field.embedded_model
+        def get_column_name(field):
+            opts = meta
+            parts = field.split('.')
+            for i, part in enumerate(parts):
+                field = opts.get_field(part)
+                parts[i] = field.column
+                if isinstance(field, AbstractIterableField):
+                    field = field.item_field
+                if isinstance(field, EmbeddedModelField):
+                    opts = field.embedded_model._meta
+                else:
                     break
-                elif hasattr(new_field, 'item_field'):
-                    new_field = new_field.item_field
-                else: 
-                    return field.column + name[dot:]
-             
-            return field.column + '.' + find_field(name[dot+1:], model._meta)
+            return '.'.join(parts)
 
         for index in indexes:
             if isinstance(index, dict):
@@ -75,7 +71,7 @@ class DatabaseCreation(NonrelDatabaseCreation):
                 fields = kwargs.pop('fields')
             else:
                 fields, kwargs = index, {}
-            fields = [(find_field(name,meta), direction)
+            fields = [(get_column_name(name), direction)
                       for name, direction in make_index_list(fields)]
             ensure_index(fields, **kwargs)
 
