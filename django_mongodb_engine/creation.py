@@ -44,17 +44,30 @@ class DatabaseCreation(NonrelDatabaseCreation):
 
         # Django unique_together indexes
         indexes = list(indexes)
+
         for fields in getattr(meta, 'unique_together', []):
             assert isinstance(fields, (list, tuple))
             indexes.append({'fields': make_index_list(fields), 'unique': True})
 
         #Allow for embedded document indexes, with proper root field names
-        def find_field(name):
+        def find_field(name,meta):
             dot = name.find('.')
             if dot == -1:
                 dot = len(name)
-            root = meta.get_field(name[0:dot]).column
-            return root + name[dot:]
+            field = meta.get_field(name[:dot])
+            model = None
+            new_field = field
+            #Allow arbitrarily deep nesting of ListFields or SetFields
+            while True:
+                if hasattr(new_field,'embedded_model'):
+                    model = new_field.embedded_model
+                    break
+                elif hasattr(new_field, 'item_field'):
+                    new_field = new_field.item_field
+                else: 
+                    return field.column + name[dot:]
+             
+            return field.column + '.' + find_field(name[dot+1:], model._meta)
 
         for index in indexes:
             if isinstance(index, dict):
@@ -62,7 +75,7 @@ class DatabaseCreation(NonrelDatabaseCreation):
                 fields = kwargs.pop('fields')
             else:
                 fields, kwargs = index, {}
-            fields = [(find_field(name), direction)
+            fields = [(find_field(name,meta), direction)
                       for name, direction in make_index_list(fields)]
             ensure_index(fields, **kwargs)
 

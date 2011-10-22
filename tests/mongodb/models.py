@@ -40,6 +40,9 @@ class IndexTestModel2(models.Model):
     class MongoMeta:
         index_together = ['a', ('b', -1)]
 
+class CustomColumnEmbeddedModel(models.Model):
+    a = models.IntegerField(db_column='a2')
+
 class NewStyleIndexesTestModel(models.Model):
     a = models.IntegerField()
     b = models.IntegerField(db_column='b2')
@@ -49,9 +52,12 @@ class NewStyleIndexesTestModel(models.Model):
     f = models.IntegerField(unique=True)
     geo = models.IntegerField()
     geo2 = models.IntegerField(db_column='geo')
+    # Embedded Keys
     h = DictField()
     i = DictField(db_column='i2')
-
+    # Embedded Keys in Embedded Models
+    j = EmbeddedModelField(CustomColumnEmbeddedModel)
+    k = ListField(EmbeddedModelField(CustomColumnEmbeddedModel))
     class Meta:
         unique_together = [('a', 'b'), ('a', 'd')]
 
@@ -63,7 +69,10 @@ class NewStyleIndexesTestModel(models.Model):
             [('geo', '2d')],
             {'fields': [('geo2', '2d'), 'a'], 'min': 42, 'max': 21},
             {'fields': [('h.q',1)]},
-            {'fields': [('i.q',1)]} 
+            {'fields': [('i.q',1)]},
+            {'fields' :[('j.a',1)]},
+            {'fields' :[('k.a',1)]},
+
         ]
 
 class GridFSFieldTestModel(models.Model):
