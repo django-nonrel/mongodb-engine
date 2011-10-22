@@ -346,6 +346,8 @@ class NewStyleIndexTests(TestCase):
         self.assertHaveIndex([('b2', -1), ('d', 1)])
         self.assertHaveIndex([('geo', '2d')])
         self.assertHaveIndex([('geo', '2d'), ('a', 1)], min=42, max=21)
+        self.assertHaveIndex([('h.q', 1)])
+        self.assertHaveIndex([('i2.q', 1)])
 
 class GridFSFieldTests(TestCase):
     def tearDown(self):

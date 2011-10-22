@@ -48,13 +48,21 @@ class DatabaseCreation(NonrelDatabaseCreation):
             assert isinstance(fields, (list, tuple))
             indexes.append({'fields': make_index_list(fields), 'unique': True})
 
+        #Allow for embedded document indexes, with proper root field names
+        def find_field(name):
+            dot = name.find('.')
+            if dot == -1:
+                dot = len(name)
+            root = meta.get_field(name[0:dot]).column
+            return root + name[dot:]
+
         for index in indexes:
             if isinstance(index, dict):
                 kwargs = index.copy()
                 fields = kwargs.pop('fields')
             else:
                 fields, kwargs = index, {}
-            fields = [(meta.get_field(name).column, direction)
+            fields = [(find_field(name), direction)
                       for name, direction in make_index_list(fields)]
             ensure_index(fields, **kwargs)
 

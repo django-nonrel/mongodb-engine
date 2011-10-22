@@ -1,5 +1,5 @@
 from django.db import models
-from djangotoolbox.fields import RawField, ListField, EmbeddedModelField
+from djangotoolbox.fields import RawField, ListField, EmbeddedModelField, DictField
 from django_mongodb_engine.fields import GridFSField, GridFSString
 from query.models import Post
 
@@ -49,6 +49,8 @@ class NewStyleIndexesTestModel(models.Model):
     f = models.IntegerField(unique=True)
     geo = models.IntegerField()
     geo2 = models.IntegerField(db_column='geo')
+    h = DictField()
+    i = DictField(db_column='i2')
 
     class Meta:
         unique_together = [('a', 'b'), ('a', 'd')]
@@ -59,7 +61,9 @@ class NewStyleIndexesTestModel(models.Model):
             {'fields': 'a', 'sparse': True},
             {'fields': [('b', -1), 'd']},
             [('geo', '2d')],
-            {'fields': [('geo2', '2d'), 'a'], 'min': 42, 'max': 21}
+            {'fields': [('geo2', '2d'), 'a'], 'min': 42, 'max': 21},
+            {'fields': [('h.q',1)]},
+            {'fields': [('i.q',1)]} 
         ]
 
 class GridFSFieldTestModel(models.Model):
