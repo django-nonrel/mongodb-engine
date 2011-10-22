@@ -49,7 +49,8 @@ class CollectionDebugWrapper(object):
     def log(self, op, duration, args, kwargs=None):
         args = ' '.join(str(arg) for arg in args)
         msg = '%s.%s (%.2f) %s' % (self.collection.name, op, duration, args)
-        if kwargs and any(kwargs.itervalues()):
+        kwargs = dict((k, v) for k, v in kwargs.iteritems() if v)
+        if kwargs:
             msg += ' %s' % kwargs
         if len(settings.DATABASES) > 1:
             msg = self.alias + '.' + msg
@@ -88,6 +89,7 @@ class DebugCursor(Cursor):
         # self.__id is None: first time the .find() iterator is entered.
         # find() profiling happens here.
         duration, retval = self.collection_wrapper.profile_call(super_meth)
-        kwargs = {'limit': self._Cursor__limit, 'skip': self._Cursor__skip}
+        kwargs = {'limit': self._Cursor__limit, 'skip': self._Cursor__skip,
+                  'sort': self._Cursor__ordering}
         self.collection_wrapper.log('find', duration, [self._Cursor__spec], kwargs)
         return retval
