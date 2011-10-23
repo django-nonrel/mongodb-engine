@@ -2,12 +2,13 @@ from pymongo import DESCENDING
 from djangotoolbox.db.base import NonrelDatabaseCreation
 from .utils import make_index_list
 
+
 class DatabaseCreation(NonrelDatabaseCreation):
     data_types = dict(NonrelDatabaseCreation.data_types, **{
         'AutoField': 'objectid',
         'ForeignKey': 'objectid',
         'OneToOneField': 'objectid',
-        'RelatedAutoField' : 'objectid',
+        'RelatedAutoField': 'objectid',
         'DecimalField': 'float',
     })
 
@@ -22,7 +23,8 @@ class DatabaseCreation(NonrelDatabaseCreation):
 
         def ensure_index(*args, **kwargs):
             if ensure_index.first_index:
-                print "Installing indices for %s.%s model" % (meta.app_label, meta.object_name)
+                print "Installing indices for %s.%s model" % (meta.app_label,
+                                                              meta.object_name)
                 ensure_index.first_index = False
             return collection.ensure_index(*args, **kwargs)
         ensure_index.first_index = True
@@ -50,7 +52,7 @@ class DatabaseCreation(NonrelDatabaseCreation):
             indexes.append({'fields': make_index_list(fields), 'unique': True})
 
         #Allow for embedded document indexes, with proper root field names
-        def find_field(name,meta):
+        def find_field(name, meta):
             dot = name.find('.')
             if dot == -1:
                 dot = len(name)
@@ -59,15 +61,15 @@ class DatabaseCreation(NonrelDatabaseCreation):
             new_field = field
             #Allow arbitrarily deep nesting of ListFields or SetFields
             while True:
-                if hasattr(new_field,'embedded_model'):
+                if hasattr(new_field, 'embedded_model'):
                     model = new_field.embedded_model
                     break
                 elif hasattr(new_field, 'item_field'):
                     new_field = new_field.item_field
-                else: 
+                else:
                     return field.column + name[dot:]
-             
-            return field.column + '.' + find_field(name[dot+1:], model._meta)
+
+            return field.column + '.' + find_field(name[dot + 1:], model._meta)
 
         for index in indexes:
             if isinstance(index, dict):
@@ -75,10 +77,9 @@ class DatabaseCreation(NonrelDatabaseCreation):
                 fields = kwargs.pop('fields')
             else:
                 fields, kwargs = index, {}
-            fields = [(find_field(name,meta), direction)
+            fields = [(find_field(name, meta), direction)
                       for name, direction in make_index_list(fields)]
             ensure_index(fields, **kwargs)
-
 
     def _handle_oldstyle_indexes(self, ensure_index, meta):
         from warnings import warn
@@ -90,7 +91,8 @@ class DatabaseCreation(NonrelDatabaseCreation):
 
         # Lets normalize the sparse_index values changing [], set() to ()
         for idx in set(getattr(meta, 'sparse_indexes', ())):
-            sparse_indexes.append(isinstance(idx, (tuple, set, list)) and tuple(idx) or idx )
+            sparse_indexes.append(isinstance(idx, (tuple, set, list))
+                                  and tuple(idx) or idx)
 
         # Ordinary indexes
         for field in meta.local_fields:
@@ -102,7 +104,6 @@ class DatabaseCreation(NonrelDatabaseCreation):
                 column = [(column, DESCENDING)]
             ensure_index(column, unique=field.unique,
                          sparse=field.name in sparse_indexes)
-
 
         def create_compound_indexes(indexes, **kwargs):
             # indexes: (field1, field2, ...)
@@ -133,7 +134,8 @@ class DatabaseCreation(NonrelDatabaseCreation):
         return []
 
     def sql_create_model(self, model, *unused):
-        """ Creates the collection for model. Mostly used for capped collections. """
+        """ Creates the collection for model.
+            Mostly used for capped collections. """
         kwargs = {}
         for option in ('capped', 'collection_max', 'collection_size'):
             x = getattr(model._meta, option, None)
@@ -168,14 +170,15 @@ class DatabaseCreation(NonrelDatabaseCreation):
         self._drop_database(test_database_name)
 
         from django.core.management import call_command
-        call_command('syncdb', verbosity=max(verbosity-1, 0),
+        call_command('syncdb', verbosity=max(verbosity - 1, 0),
                      interactive=False, database=self.connection.alias)
 
         return test_database_name
 
     def destroy_test_db(self, old_database_name, verbosity=1):
         if verbosity >= 1:
-            print "Destroying test database for alias '%s'..." % self.connection.alias
+            print ("Destroying test database for alias '%s'..."
+                   % self.connection.alias)
         test_database_name = self.connection.settings_dict['NAME']
         self._drop_database(test_database_name)
         self.connection.settings_dict['NAME'] = old_database_name
