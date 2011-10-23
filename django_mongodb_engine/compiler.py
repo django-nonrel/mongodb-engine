@@ -337,19 +337,6 @@ class SQLCompiler(NonrelCompiler):
                                  value.microsecond)
         return value
 
-    def _save(self, data, return_id=False):
-        collection = self.get_collection()
-        options = self.connection.operation_flags.get('save', {})
-        if data.get('_id', NOT_PROVIDED) is None:
-            if len(data) == 1:
-                # insert with empty model
-                data = {}
-            else:
-                raise DatabaseError("Can't save entity with _id set to None")
-        primary_key = collection.save(data, **options)
-        if return_id:
-            return unicode(primary_key)
-
     def execute_sql(self, result_type=MULTI):
         """
         Handles aggregate/count queries
@@ -405,12 +392,23 @@ class SQLCompiler(NonrelCompiler):
 
 class SQLInsertCompiler(NonrelInsertCompiler, SQLCompiler):
     @safe_call
-    def insert(self, data, return_id=False):
-        try:
-            data['_id'] = data.pop(get_pk_column(self))
-        except KeyError:
-            pass
-        return self._save(data, return_id)
+    def insert(self, docs, return_id=False):
+        for doc in docs:
+            try:
+                doc['_id'] = doc.pop(get_pk_column(self))
+            except KeyError:
+                pass
+            if doc.get('_id', NOT_PROVIDED) is None:
+                if len(doc) == 1:
+                    # insert with empty model
+                    doc.clear()
+                else:
+                    raise DatabaseError("Can't save entity with _id set to None")
+        collection = self.get_collection()
+        options = self.connection.operation_flags.get('save', {})
+        pks = collection.save(doc, **options)
+        if return_id:
+            return unicode(pks)
 
 # TODO: Define a common nonrel API for updates and add it to the nonrel
 # backend base classes and port this code to that API

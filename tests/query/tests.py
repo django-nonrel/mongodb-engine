@@ -618,3 +618,7 @@ class OrLookupsTests(TestCase):
             Article.objects.filter(Q(headline__startswith='Hello')).in_bulk([self.a1, self.a2]),
             {self.a1: Article.objects.get(pk=self.a1)}
         )
+
+class A(TestCase):
+    def test_a(self):
+        Blog().save()
