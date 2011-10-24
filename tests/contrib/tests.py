@@ -194,3 +194,13 @@ class FullTextTest(TestCase):
         with self.assertRaises(DatabaseError):
             Post.objects.get(content_tokenized__iexact="django mongodb")
             Post.objects.get(content_tokenized__icontains="django mongodb")
+
+
+class DistinctTests(TestCase):
+    def test_distinct(self):
+        for i in xrange(10):
+            for j in xrange(i):
+                MapReduceModel.objects.create(n=i, m=i*2)
+
+        self.assertEqual(MapReduceModel.objects.distinct('m'),
+                        [2, 4, 6, 8, 10, 12, 14, 16, 18])
