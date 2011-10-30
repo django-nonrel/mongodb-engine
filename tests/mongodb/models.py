@@ -1,5 +1,5 @@
 from django.db import models
-from djangotoolbox.fields import RawField, ListField, EmbeddedModelField
+from djangotoolbox.fields import RawField, ListField, EmbeddedModelField, DictField
 from django_mongodb_engine.fields import GridFSField, GridFSString
 from query.models import Post
 
@@ -40,26 +40,40 @@ class IndexTestModel2(models.Model):
     class MongoMeta:
         index_together = ['a', ('b', -1)]
 
+class CustomColumnEmbeddedModel(models.Model):
+    a = models.IntegerField(db_column='a2')
+
 class NewStyleIndexesTestModel(models.Model):
-    a = models.IntegerField()
-    b = models.IntegerField(db_column='b2')
-    c = models.IntegerField(db_index=True)
-    d = models.IntegerField()
-    e = models.IntegerField()
-    f = models.IntegerField(unique=True)
+    f1 = models.IntegerField()
+    f2 = models.IntegerField()
+    f3 = models.IntegerField()
+
+    db_index = models.IntegerField(db_index=True)
+    unique = models.IntegerField(unique=True)
+    custom_column = models.IntegerField(db_column='custom')
     geo = models.IntegerField()
-    geo2 = models.IntegerField(db_column='geo')
+    geo_custom_column = models.IntegerField(db_column='geo')
+
+    dict1 = DictField()
+    dict_custom_column = DictField(db_column='dict_custom')
+    embedded = EmbeddedModelField(CustomColumnEmbeddedModel)
+    embedded_list = ListField(EmbeddedModelField(CustomColumnEmbeddedModel))
 
     class Meta:
-        unique_together = [('a', 'b'), ('a', 'd')]
+        unique_together = [('f2', 'custom_column'), ('f2', 'f3')]
 
     class MongoMeta:
         indexes = [
-            [('e', -1)],
-            {'fields': 'a', 'sparse': True},
-            {'fields': [('b', -1), 'd']},
+            [('f1', -1)],
+            {'fields': 'f2', 'sparse': True},
+            {'fields': [('custom_column', -1), 'f3']},
             [('geo', '2d')],
-            {'fields': [('geo2', '2d'), 'a'], 'min': 42, 'max': 21}
+            {'fields': [('geo_custom_column', '2d'), 'f2'], 'min': 42, 'max': 21},
+            {'fields': [('dict1.foo', 1)]},
+            {'fields': [('dict_custom_column.foo', 1)]},
+            {'fields' :[('embedded.a', 1)]},
+            {'fields' :[('embedded_list.a', 1)]},
+
         ]
 
 class GridFSFieldTestModel(models.Model):
