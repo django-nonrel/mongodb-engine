@@ -337,19 +337,19 @@ class NewStyleIndexTests(TestCase):
         self.assertEqual(info[index_name], dict(default_properties, **properties))
 
     def test_indexes(self):
-        self.assertHaveIndex([('c', 1)])
-        self.assertHaveIndex([('f', 1)], unique=True)
-        self.assertHaveIndex([('a', 1), ('b2', 1)], unique=True)
-        self.assertHaveIndex([('a', 1), ('d', 1)], unique=True)
-        self.assertHaveIndex([('e', -1)])
-        self.assertHaveIndex([('a', 1)], sparse=True)
-        self.assertHaveIndex([('b2', -1), ('d', 1)])
+        self.assertHaveIndex([('db_index', 1)])
+        self.assertHaveIndex([('unique', 1)], unique=True)
+        self.assertHaveIndex([('f2', 1), ('custom', 1)], unique=True)
+        self.assertHaveIndex([('f2', 1), ('f3', 1)], unique=True)
+        self.assertHaveIndex([('f1', -1)])
+        self.assertHaveIndex([('f2', 1)], sparse=True)
+        self.assertHaveIndex([('custom', -1), ('f3', 1)])
         self.assertHaveIndex([('geo', '2d')])
-        self.assertHaveIndex([('geo', '2d'), ('a', 1)], min=42, max=21)
-        self.assertHaveIndex([('h.q', 1)])
-        self.assertHaveIndex([('i2.q', 1)])
-        self.assertHaveIndex([('j.a2',1)])
-        self.assertHaveIndex([('k.a2',1)])
+        self.assertHaveIndex([('geo', '2d'), ('f2', 1)], min=42, max=21)
+        self.assertHaveIndex([('dict1.foo', 1)])
+        self.assertHaveIndex([('dict_custom.foo', 1)])
+        self.assertHaveIndex([('embedded.a2', 1)])
+        self.assertHaveIndex([('embedded_list.a2', 1)])
 
 class GridFSFieldTests(TestCase):
     def tearDown(self):
