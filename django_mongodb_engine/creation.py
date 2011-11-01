@@ -39,10 +39,12 @@ class DatabaseCreation(NonrelDatabaseCreation):
 
         # Django indexes
         for field in meta.local_fields:
+            column = '_id' if field.primary_key else field.column
+            if field.unique and field.null:
+                ensure_index(column, unique=True, sparse=True)
             if not (field.unique or field.db_index):
                 # field doesn't need an index
                 continue
-            column = '_id' if field.primary_key else field.column
             ensure_index(column, unique=field.unique)
 
         # Django unique_together indexes
@@ -90,10 +92,12 @@ class DatabaseCreation(NonrelDatabaseCreation):
 
         # Ordinary indexes
         for field in meta.local_fields:
+            column = '_id' if field.primary_key else field.column
+            if field.unique and field.null:
+                ensure_index(column, unique=True, sparse=True)
             if not (field.unique or field.db_index):
                 # field doesn't need an index
                 continue
-            column = '_id' if field.primary_key else field.column
             if field.name in descending_indexes:
                 column = [(column, DESCENDING)]
             ensure_index(column, unique=field.unique,
