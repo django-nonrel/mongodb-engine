@@ -340,6 +340,16 @@ class SQLCompiler(NonrelCompiler):
     def _save(self, data, return_id=False):
         collection = self.get_collection()
         options = self.connection.operation_flags.get('save', {})
+
+        # Check for fields set to None
+        if None in data.values():
+            # Check if we have null + unique fields set to None. If so delete
+            # those from data, so that the sparse index works
+            fields = self.get_fields()
+            for field in fields:
+                if field.null and field.unique and data[field.column] is None:
+                    del data[field.column] 
+
         if data.get('_id', NOT_PROVIDED) is None:
             if len(data) == 1:
                 # insert with empty model
