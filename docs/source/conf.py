@@ -1,12 +1,12 @@
 # coding: utf-8
-import django_mongodb_engine
+import sys; sys.path.append('.')
+from .utils import get_version_string, get_current_year, get_git_head
 
 project = 'Django MongoDB Engine'
-copyright = '2011, Jonas Haag, Flavio Percoco Premoli and contributors'
-version = release = ''.join(map(str, django_mongodb_engine.__version__))
+#version = release = get_version_string()
+copyright = '2010-%d, Jonas Haag, Flavio Percoco Premoli and contributors' % get_current_year()
 
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.intersphinx', 'sphinx.ext.todo',
-              'sphinx.ext.coverage']
+extensions = ['sphinx.ext.autodoc', 'sphinx.ext.intersphinx']
 
 master_doc = 'index'
 exclude_patterns = ['_build']
@@ -22,27 +22,19 @@ intersphinx_mapping = {
 
 # -- Options for HTML output ---------------------------------------------------
 
-from subprocess import check_output, CalledProcessError
-GIT_HEAD = None
-try:
-    GIT_HEAD = check_output(['git', 'rev-parse', 'HEAD'])
-except CalledProcessError:
-    pass
-except OSError, exc:
-    if exc.errno != 2:
-        raise
-
-
 html_title = project
+
 html_last_updated_fmt = '%b %d, %Y'
-if GIT_HEAD:
-    html_last_updated_fmt += ' (%s)' % GIT_HEAD[:7]
-html_show_copyright = False
+git_head = get_git_head()
+if git_head:
+    html_last_updated_fmt += ' (%s)' % git_head[:7]
+
 html_theme = 'mongodbtheme'
 html_theme_path = ['mongodbtheme', '.']
+html_show_copyright = False
 
 # Custom sidebar templates, maps document names to template names.
-html_sidebars = {'**' : 'sidebar-contribute.html'}
+html_sidebars = {'**' : ['localtoc.html', 'sidebar.html']}
 
 # If false, no module index is generated.
 html_domain_indices = False
