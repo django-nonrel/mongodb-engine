@@ -1,9 +1,8 @@
 # coding: utf-8
 import sys; sys.path.append('.')
-from .utils import get_version_string, get_current_year, get_git_head
+from .utils import get_current_year, get_git_head
 
 project = 'Django MongoDB Engine'
-#version = release = get_version_string()
 copyright = '2010-%d, Jonas Haag, Flavio Percoco Premoli and contributors' % get_current_year()
 
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.intersphinx']
