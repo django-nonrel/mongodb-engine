@@ -280,6 +280,9 @@ class SQLCompiler(NonrelCompiler):
             elif isinstance(value, dict):
                 return dict((key, self.convert_value_for_db(db_subtype, subvalue))
                             for key, subvalue in value.iteritems())
+            elif isinstance(value, unicode):
+                # This handles the case where the db_type = ListField:objectid
+                return self.convert_value_for_db(db_subtype, value)
 
         if isinstance(value, (set, list, tuple)):
             # most likely a list of ObjectIds when doing a .delete() query
