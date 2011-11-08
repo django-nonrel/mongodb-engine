@@ -15,12 +15,13 @@ class GridFSStorageTest(TestCase):
         self.storage = self.get_storage(self.temp_dir)
 
     def tearDown(self):
-        for collection in self.storage._db.collection_names():
-            if not collection.startswith('system.'):
-                self.storage._db.drop_collection(collection)
+        if hasattr(self.storage, '_db'):
+            for collection in self.storage._db.collection_names():
+                if not collection.startswith('system.'):
+                    self.storage._db.drop_collection(collection)
 
-    def get_storage(self, location):
-        return self.storage_class(location=location)
+    def get_storage(self, location, **kwargs):
+        return self.storage_class(location=location, **kwargs)
 
     def test_file_access_options(self):
         """
@@ -113,15 +114,15 @@ class GridFSStorageTest(TestCase):
     #
     #     self.storage.delete(f_name)
 
-    # def test_file_url(self):
-    #     """
-    #     File storage returns a url to access a given file from the Web.
-    #     """
-    #     self.assertEqual(self.storage.url('test.file'),
-    #         '%s%s' % (self.storage.base_url, 'test.file'))
-    #
-    #     self.storage.base_url = None
-    #     self.assertRaises(ValueError, self.storage.url, 'test.file')
+    def test_file_url(self):
+        """
+        File storage returns a url to access a given file from the Web.
+        """
+        self.assertRaises(ValueError, self.storage.url, 'test.file')
+
+        self.storage = self.get_storage(self.storage.location, base_url='foo/')
+        self.assertEqual(self.storage.url('test.file'),
+            '%s%s' % (self.storage.base_url, 'test.file'))
 
     def test_file_with_mixin(self):
         """

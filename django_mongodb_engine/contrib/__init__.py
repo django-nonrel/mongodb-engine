@@ -46,7 +46,7 @@ class RawQueryMixin:
             queryset = self.filter(spec_or_q)
         queryset._for_write = True
         compiler = _compiler_for_queryset(queryset, 'SQLUpdateCompiler')
-        compiler.execute_raw(update_dict, **kwargs)
+        compiler.execute_update(update_dict, **kwargs)
 
     raw_update.alters_data = True
 
