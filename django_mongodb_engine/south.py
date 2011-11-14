@@ -7,6 +7,7 @@ class DatabaseOperations(object):
 
     supports_foreign_keys = False
     has_check_constraints = False
+    has_ddl_transactions = False
 
     def __init__(self, db_alias):
         pass
@@ -36,4 +37,31 @@ class DatabaseOperations(object):
         pass
 
     def connection_init(self):
+        pass
+
+    def send_pending_create_signals(self, verbosity=False, interactive=False):
+        pass
+
+    def get_pending_creates(self):
+        pass
+
+    def start_transaction(self):
+        pass
+
+    def rollback_transactions_dry_run(self):
+        pass
+
+    def clear_run_data(self, pending_creates):
+        pass
+
+    def create_table(self, unique=True, null=True, blank=True):
+        pass
+
+    def send_create_signal(self, verbosity=False, interactive=False):
+        pass
+
+    def execute_deferred_sql(self):
+        pass
+
+    def commit_transaction(self):
         pass
