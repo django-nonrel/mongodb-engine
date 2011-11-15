@@ -46,7 +46,7 @@ class RawQueryMixin:
             queryset = self.filter(spec_or_q)
         queryset._for_write = True
         compiler = _compiler_for_queryset(queryset, 'SQLUpdateCompiler')
-        compiler.execute_raw(update_dict, **kwargs)
+        compiler.execute_update(update_dict, **kwargs)
 
     raw_update.alters_data = True
 
@@ -131,6 +131,10 @@ class MongoDBQuerySet(QuerySet):
     def _get_query(self):
         return _compiler_for_queryset(self).build_query()
 
+    def distinct(self, *args, **kwargs):
+        query = self._get_query()
+        return query.collection.distinct(*args, **kwargs)
+
 class MongoDBManager(models.Manager, RawQueryMixin):
     """
     Lets you use Map/Reduce and raw query/update with your models::
@@ -147,3 +151,6 @@ class MongoDBManager(models.Manager, RawQueryMixin):
 
     def get_query_set(self):
         return MongoDBQuerySet(self.model, using=self._db)
+
+    def distinct(self, *args, **kwargs):
+        return self.get_query_set().distinct(*args, **kwargs)

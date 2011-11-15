@@ -2,12 +2,13 @@ from pymongo import DESCENDING
 from djangotoolbox.db.base import NonrelDatabaseCreation
 from .utils import make_index_list
 
+
 class DatabaseCreation(NonrelDatabaseCreation):
     data_types = dict(NonrelDatabaseCreation.data_types, **{
         'AutoField': 'objectid',
         'ForeignKey': 'objectid',
         'OneToOneField': 'objectid',
-        'RelatedAutoField' : 'objectid',
+        'RelatedAutoField': 'objectid',
         'DecimalField': 'float',
     })
 
@@ -34,6 +35,8 @@ class DatabaseCreation(NonrelDatabaseCreation):
             self._handle_oldstyle_indexes(ensure_index, meta)
 
     def _handle_newstyle_indexes(self, ensure_index, meta, indexes):
+        from djangotoolbox.fields import AbstractIterableField, EmbeddedModelField
+
         # Django indexes
         for field in meta.local_fields:
             if not (field.unique or field.db_index):
@@ -44,9 +47,24 @@ class DatabaseCreation(NonrelDatabaseCreation):
 
         # Django unique_together indexes
         indexes = list(indexes)
+
         for fields in getattr(meta, 'unique_together', []):
             assert isinstance(fields, (list, tuple))
             indexes.append({'fields': make_index_list(fields), 'unique': True})
+
+        def get_column_name(field):
+            opts = meta
+            parts = field.split('.')
+            for i, part in enumerate(parts):
+                field = opts.get_field(part)
+                parts[i] = field.column
+                if isinstance(field, AbstractIterableField):
+                    field = field.item_field
+                if isinstance(field, EmbeddedModelField):
+                    opts = field.embedded_model._meta
+                else:
+                    break
+            return '.'.join(parts)
 
         for index in indexes:
             if isinstance(index, dict):
@@ -54,10 +72,9 @@ class DatabaseCreation(NonrelDatabaseCreation):
                 fields = kwargs.pop('fields')
             else:
                 fields, kwargs = index, {}
-            fields = [(meta.get_field(name).column, direction)
+            fields = [(get_column_name(name), direction)
                       for name, direction in make_index_list(fields)]
             ensure_index(fields, **kwargs)
-
 
     def _handle_oldstyle_indexes(self, ensure_index, meta):
         from warnings import warn
