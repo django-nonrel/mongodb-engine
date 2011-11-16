@@ -25,6 +25,7 @@ class Person(models.Model):
     name = models.CharField(max_length=20)
     surname = models.CharField(max_length=20)
     age = models.IntegerField(null=True, blank=True)
+    another_age = models.IntegerField(null=True, blank=True, db_column='age2')
 
     class Meta:
         unique_together = ("name", "surname")
