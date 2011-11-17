@@ -423,30 +423,31 @@ class SQLUpdateCompiler(NonrelUpdateCompiler, SQLCompiler):
         multi = True
         spec = {}
         for field, value in values:
+            if field.primary_key:
+                raise DatabaseError("Can not modify _id")
             if getattr(field, 'forbids_updates', False):
                 raise DatabaseError("Updates on %ss are not allowed" %
                                     field.__class__.__name__)
+            if hasattr(value, 'evaluate'):
+                # .update(foo=F('foo') + 42) --> {'$inc': {'foo': 42}}
+                lhs, rhs = value.children
+                assert value.connector in (value.ADD, value.SUB) \
+                   and not value.negated \
+                   and not value.subtree_parents \
+                   and isinstance(lhs, F) \
+                   and not isinstance(rhs, F) \
+                   and lhs.name == field.name
+                if value.connector == value.SUB:
+                    rhs = -rhs
+                action = '$inc'
+                value = rhs
+            else:
+                # .update(foo=123) --> {'$set': {'foo': 123}}
+                action = '$set'
+            spec.setdefault(action, {})[field.column] = value
+
             if field.unique:
                 multi = False
-            if hasattr(value, "evaluate"):
-                assert value.connector in (value.ADD, value.SUB)
-                assert not value.negated
-                assert not value.subtree_parents
-                lhs, rhs = value.children
-                if isinstance(lhs, F):
-                    assert not isinstance(rhs, F)
-                    assert lhs.name == field.name
-                    if value.connector == value.SUB:
-                        rhs = -rhs
-                else:
-                    assert value.connector == value.ADD
-                    rhs, lhs = lhs, rhs
-                action, column, value = '$inc', lhs.name, rhs
-            else:
-                action, column, value = '$set', field.column, value
-            if column == get_pk_column(self):
-                raise DatabaseError("Can not modify _id")
-            spec.setdefault(action, {})[column] = value
 
         return self.execute_update(spec, multi)
 
