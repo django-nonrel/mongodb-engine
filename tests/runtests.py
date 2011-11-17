@@ -64,10 +64,10 @@ if __name__ == '__main__':
     if 'coverage' in sys.argv:
         def _new_check_call_closure(old_check_call):
             def _new_check_call(cmd, **kwargs):
-                if cmd[0] != 'python':
+                if not cmd[0].endswith('python'):
                     cmd = ['coverage', 'run', '-a', '--source',
                            '../django_mongodb_engine'] + cmd
                 return old_check_call(cmd, **kwargs)
             return _new_check_call
-        check_call = _new_check_call_closure(check_call)
+        execute = _new_check_call_closure(execute)
     main('short' in sys.argv)
