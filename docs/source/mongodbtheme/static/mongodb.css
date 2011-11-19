@@ -158,7 +158,7 @@ h3 { margin-bottom: 0; }
 .section > div   { margin-left: 1px; }
 .section > p, dl { margin-left: 3px; }
 
-.section p, .section ul, .section .admonition, .section table,
+.section p, .section ul, .admonition, .section table,
 .sphinxsidebar p, .sphinxsidebar ul {
   font-size: 14px;
   line-height: 1.3;

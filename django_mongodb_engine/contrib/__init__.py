@@ -153,4 +153,5 @@ class MongoDBManager(models.Manager, RawQueryMixin):
         return MongoDBQuerySet(self.model, using=self._db)
 
     def distinct(self, *args, **kwargs):
+        """ Runs a :meth:`~pymongo.Collection.distinct` query against the database. """
         return self.get_query_set().distinct(*args, **kwargs)
