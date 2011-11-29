@@ -48,6 +48,9 @@ class DatabaseOperations(object):
     def start_transaction(self):
         pass
 
+    def rollback_transaction(self):
+        pass
+
     def rollback_transactions_dry_run(self):
         pass
 
