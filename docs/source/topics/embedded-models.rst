@@ -90,6 +90,27 @@ Embedded objects are represented as subobjects on MongoDB::
      ]
    }
 
+Sometimes you just want the Embedded Model to be used as a base class
+for other models. If that is the case, you don't want the model to
+create a collection of his own in the database. 
+This is possible by using it as an abstract base class::
+
+   from djangotoolbox.fields import ListField, EmbeddedModelField
+
+   class Comment(models.Model):
+      text = models.TextField()
+
+      class Meta:
+        	   abstract = True
+
+   class Post(models.Model):
+       ...
+       comments = ListField(EmbeddedModelField(Comment))
+
+Note that this is slightly different than before. The EmbeddedModelField
+argument is no longer a string but the class itself. That means that you
+have to declare your abstract base class first.
+
 Generic Embedding
 -----------------
 Similar to Django's `generic relations`_, it's possible to embed objects of any
