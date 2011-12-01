@@ -78,7 +78,7 @@ class DatabaseCreation(NonrelDatabaseCreation):
 
     def _handle_oldstyle_indexes(self, ensure_index, meta):
         from warnings import warn
-        warn("'descending_indexes', 'sparse_indexes' and 'index_together' are"
+        warn("'descending_indexes', 'sparse_indexes' and 'index_together' are "
              "deprecated and will be ignored as of version 0.6. "
              "Use 'indexes' instead", DeprecationWarning)
         sparse_indexes = []
