@@ -28,7 +28,7 @@ Installation
 ------------
 .. code-block:: bash
 
-   git clone https://github.com/django-mongodb-engine/mongodb-cache
+   git clone https://github.com/django-nonrel/mongodb-cache
    cd mongodb-cache
    python setup.py install
 
@@ -50,5 +50,5 @@ Django MongoDB Cache will also honor all optional settings the default database
 cache backend takes care of (``TIMEOUT``, ``OPTIONS``, etc).
 
 .. _Django's caching framework: http://docs.djangoproject.com/en/dev/topics/cache/
-.. _Django MongoDB Cache: https://github.com/django-mongodb-engine/mongodb-cache
+.. _Django MongoDB Cache: https://github.com/django-nonrel/mongodb-cache
 .. _Django db cache setup docs: http://docs.djangoproject.com/en/dev/topics/cache/#database-caching
