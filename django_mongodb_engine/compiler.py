@@ -24,6 +24,7 @@ from .query import A
 from .aggregations import get_aggregation_class_by_name
 from .utils import safe_regex, first
 
+
 OPERATORS_MAP = {
     'exact':  lambda val: val,
     'gt':     lambda val: {'$gt': val},
@@ -34,7 +35,7 @@ OPERATORS_MAP = {
     'range':  lambda val: {'$gte': val[0], '$lte': val[1]},
     'isnull': lambda val: None if val else {'$ne': None},
 
-    # regex matchers
+    # Regex matchers
     'iexact':      safe_regex('^%s$', re.IGNORECASE),
     'startswith':  safe_regex('^%s'),
     'istartswith': safe_regex('^%s', re.IGNORECASE),
@@ -45,7 +46,7 @@ OPERATORS_MAP = {
     'regex':       lambda val: re.compile(val),
     'iregex':      lambda val: re.compile(val, re.IGNORECASE),
 
-    #Date OPs
+    # Date OPs
     'year' : lambda val: {'$gte': val[0], '$lt': val[1]},
 }
 
@@ -58,6 +59,7 @@ NEGATED_OPERATORS_MAP = {
     'in':     lambda val: {'$nin' : val},
     'isnull': lambda val: {'$ne': None} if val else None,
 }
+
 
 def safe_call(func):
     @wraps(func)
@@ -73,26 +75,35 @@ def safe_call(func):
 def get_pk_column(duck):
     return duck.query.get_meta().pk.column
 
+# TODO: move to djangotoolbox baseclass
+def _split_db_type(db_type):
+    try:
+        db_type, db_subtype = db_type.split(':', 1)
+    except ValueError:
+        db_subtype = None
+    return db_type, db_subtype
+
+
 class MongoQuery(NonrelQuery):
     def __init__(self, compiler, fields):
         super(MongoQuery, self).__init__(compiler, fields)
-        db_table = self.query.get_meta().db_table
-        self.collection = self.connection.get_collection(db_table)
-        self._ordering = []
-        self._mongo_query = getattr(compiler.query, 'raw_query', {})
+        self.ordering = []
+        self.collection = self.compiler.get_collection()
+        self.mongo_query = getattr(compiler.query, 'raw_query', {})
 
     def __repr__(self):
-        return '<MongoQuery: %r ORDER %r>' % (self._mongo_query, self._ordering)
+        return '<MongoQuery: %r ORDER %r>' % (self.mongo_query, self.ordering)
 
+    # safe_call?
     def fetch(self, low_mark, high_mark):
-        results = self._get_results()
+        results = self.get_cursor()
         for entity in results:
             entity[get_pk_column(self)] = entity.pop('_id')
             yield entity
 
     @safe_call
     def count(self, limit=None):
-        results = self._get_results()
+        results = self.get_cursor()
         if limit is not None:
             results.limit(limit)
         return results.count()
@@ -106,34 +117,36 @@ class MongoQuery(NonrelQuery):
                 direction = ASCENDING
             if order == get_pk_column(self):
                 order = '_id'
-            self._ordering.append((order, direction))
+            self.ordering.append((order, direction))
         return self
 
     @safe_call
     def delete(self):
         options = self.connection.operation_flags.get('delete', {})
-        self.collection.remove(self._mongo_query, **options)
+        self.collection.remove(self.mongo_query, **options)
 
-    def _get_results(self):
+    def get_cursor(self):
         if self.query.low_mark == self.query.high_mark:
             return []
+
         fields = None
         if self.query.select_fields and not self.query.aggregates:
-            fields = dict((field.column, 1) for field in self.query.select_fields)
-        results = self.collection.find(self._mongo_query, fields=fields)
-        if self._ordering:
-            results.sort(self._ordering)
+            fields = [field.column for field in self.query.select_fields]
+
+        cursor = self.collection.find(self.mongo_query, fields=fields)
+        if self.ordering:
+            cursor.sort(self.ordering)
         if self.query.low_mark > 0:
-            results.skip(self.query.low_mark)
+            cursor.skip(self.query.low_mark)
         if self.query.high_mark is not None:
-            results.limit(int(self.query.high_mark - self.query.low_mark))
-        return results
+            cursor.limit(int(self.query.high_mark - self.query.low_mark))
+        return cursor
 
     def add_filters(self, filters, query=None):
         children = self._get_children(filters.children)
 
         if query is None:
-            query = self._mongo_query
+            query = self.mongo_query
 
         if filters.connector == OR:
             assert '$or' not in query, "Multiple ORs are not supported"
@@ -251,28 +264,20 @@ class MongoQuery(NonrelQuery):
         if filters.negated:
             self._negated = not self._negated
 
+
 class SQLCompiler(NonrelCompiler):
-    """
-    A simple query: no joins, no distinct, etc.
-    """
     query_class = MongoQuery
 
     def get_collection(self):
-        return self.connection.get_collection(self.query.get_meta().db_table)
-
-    def _split_db_type(self, db_type):
-        try:
-            db_type, db_subtype = db_type.split(':', 1)
-        except ValueError:
-            db_subtype = None
-        return db_type, db_subtype
+        db_table = self.query.get_meta().db_table
+        return self.connection.get_collection(db_table)
 
     @safe_call # see #7
     def convert_value_for_db(self, db_type, value):
         if db_type is None or value is None:
             return value
 
-        db_type, db_subtype = self._split_db_type(db_type)
+        db_type, db_subtype = _split_db_type(db_type)
         if db_subtype is not None:
             if isinstance(value, (set, list, tuple)):
                 # Sets are converted to lists here because MongoDB has no sets.
@@ -317,7 +322,7 @@ class SQLCompiler(NonrelCompiler):
             # is an instance of serializer.LazyModelInstance does a database query.
             return None
 
-        db_type, db_subtype = self._split_db_type(db_type)
+        db_type, db_subtype = _split_db_type(db_type)
         if db_subtype is not None:
             for field, type_ in [('SetField', set), ('ListField', list)]:
                 if db_type == field:
@@ -338,23 +343,11 @@ class SQLCompiler(NonrelCompiler):
                                  value.microsecond)
         return value
 
-    def _save(self, data, return_id=False):
-        collection = self.get_collection()
-        options = self.connection.operation_flags.get('save', {})
-        if data.get('_id', NOT_PROVIDED) is None:
-            if len(data) == 1:
-                # insert with empty model
-                data = {}
-            else:
-                raise DatabaseError("Can't save entity with _id set to None")
-        primary_key = collection.save(data, **options)
-        if return_id:
-            return unicode(primary_key)
-
     def execute_sql(self, result_type=MULTI):
         """
         Handles aggregate/count queries
         """
+        collection = self.get_collection()
         aggregations = self.query.aggregate_select.items()
 
         if len(aggregations) == 1 and isinstance(aggregations[0][1], sqlaggregates.Count):
@@ -382,9 +375,9 @@ class SQLCompiler(NonrelCompiler):
                 # lookup is a (table_name, column_name) tuple.
                 # Get rid of the table name as aggregations can't span
                 # multiple tables anyway
-                if lookup[0] != query.collection.name:
+                if lookup[0] != collection.name:
                     raise DatabaseError("Aggregations can not span multiple tables (tried %r and %r)"
-                                        % (lookup[0], query.collection.name))
+                                        % (lookup[0], collection.name))
                 lookup = lookup[1]
             self.query.aggregates[alias] = aggregate = aggregate_class(alias, lookup, aggregate.source)
             order.append(alias) # just to keep the right order
@@ -394,7 +387,7 @@ class SQLCompiler(NonrelCompiler):
 
         reduce = "function(doc, out){ %s }" % "; ".join(reduce)
         finalize = "function(out){ %s }" % "; ".join(finalize)
-        cursor = query.collection.group(None, query._mongo_query, initial, reduce, finalize)
+        cursor = collection.group(None, query.mongo_query, initial, reduce, finalize)
 
         ret = []
         for alias in order:
@@ -409,59 +402,76 @@ class SQLInsertCompiler(NonrelInsertCompiler, SQLCompiler):
     @safe_call
     def insert(self, data, return_id=False):
         try:
+            # Primary key always needs to be named '_id'
             data['_id'] = data.pop(get_pk_column(self))
         except KeyError:
             pass
-        return self._save(data, return_id)
+
+        if data == {'_id': None}:
+            # Insert with empty model
+            data = {}
+
+        collection = self.get_collection()
+        options = self.connection.operation_flags.get('save', {})
+        primary_key = collection.save(data, **options)
+
+        if return_id:
+            return unicode(primary_key)
 
 
-# TODO: Define a common nonrel API for updates and add it to the nonrel
-# backend base classes and port this code to that API
 class SQLUpdateCompiler(NonrelUpdateCompiler, SQLCompiler):
     query_class = MongoQuery
 
     def update(self, values):
-        multi = True
-        spec = {}
-        for field, value in values:
-            if field.primary_key:
-                raise DatabaseError("Can not modify _id")
-            if getattr(field, 'forbids_updates', False):
-                raise DatabaseError("Updates on %ss are not allowed" %
-                                    field.__class__.__name__)
-            if hasattr(value, 'evaluate'):
-                # .update(foo=F('foo') + 42) --> {'$inc': {'foo': 42}}
-                lhs, rhs = value.children
-                assert value.connector in (value.ADD, value.SUB) \
-                   and not value.negated \
-                   and not value.subtree_parents \
-                   and isinstance(lhs, F) \
-                   and not isinstance(rhs, F) \
-                   and lhs.name == field.name
-                if value.connector == value.SUB:
-                    rhs = -rhs
-                action = '$inc'
-                value = rhs
-            else:
-                # .update(foo=123) --> {'$set': {'foo': 123}}
-                action = '$set'
-            spec.setdefault(action, {})[field.column] = value
-
-            if field.unique:
-                multi = False
-
-        return self.execute_update(spec, multi)
+        return self.execute_update(self.get_update_spec(values))
 
     @safe_call
-    def execute_update(self, update_spec, multi=True, **kwargs):
-        collection = self.get_collection()
-        criteria = self.build_query()._mongo_query
+    def execute_update(self, spec, multi=True, **kwargs):
+        query = self.build_query().mongo_query
+
         options = self.connection.operation_flags.get('update', {})
-        options = dict(options, **kwargs)
-        info = collection.update(criteria, update_spec, multi=multi, **options)
+        options.update(kwargs)
+
+        collection = self.get_collection()
+        info = collection.update(query, spec, multi=multi, **options)
+
         if info is not None:
             return info.get('n')
 
+    def get_update_spec(self, values):
+        spec = {'$inc': {}, '$set': {}}
+        for field, value in values:
+            self.assert_can_updates_on(field)
+            if hasattr(value, 'evaluate'):
+                # .update(foo=F('foo') + 42) --> {'$inc': {'foo': 42}}
+                self.assert_incr_F_node(value, field)
+                _, delta = value.children
+                if value.connector == value.SUB:
+                    delta = -delta
+                spec['$inc'][field.column] = delta
+            else:
+                # .update(foo=123) --> {'$set': {'foo': 123}}
+                spec['$set'][field.column] = value
+        return spec
+
+    def assert_can_updates_on(self, field):
+        if field.primary_key:
+            raise DatabaseError("Can not modify _id")
+        if getattr(field, 'forbids_updates', False):
+            raise DatabaseError("Updates on %ss are not allowed" %
+                                field.__class__.__name__)
+
+    def assert_incr_F_node(self, node, field):
+        lhs, rhs = node.children
+        if not (
+            isinstance(lhs, F)
+            and not isinstance(rhs, F)
+            and node.connector in (node.ADD, node.SUB)
+            and not node.negated
+            and not node.subtree_parents
+            and lhs.name == field.name
+        ):
+            raise DatabaseError("Unsupported usage of F()")
 
 class SQLDeleteCompiler(NonrelDeleteCompiler, SQLCompiler):
     pass

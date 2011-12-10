@@ -1,4 +1,3 @@
-from django.core.exceptions import ImproperlyConfigured
 from django.db import connections, models
 
 from pymongo.objectid import ObjectId
