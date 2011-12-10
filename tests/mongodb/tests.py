@@ -171,10 +171,6 @@ class RegressionTests(TestCase):
                 q = getattr(q, 'filter' if randint(0, 1) else 'exclude')(raw=i)
             list(q)
 
-    def test_issue_89(self):
-        query = [Q(raw='a') | Q(raw='b'),
-                 Q(raw='c') | Q(raw='d')]
-        self.assertRaises(AssertionError, RawModel.objects.get, *query)
 
 class DatabaseOptionTests(TestCase):
     """ Tests for MongoDB-specific database options """

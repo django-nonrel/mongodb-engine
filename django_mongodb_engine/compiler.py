@@ -10,7 +10,7 @@ from django.db.models.fields import NOT_PROVIDED
 from django.db.models import F
 from django.db.models.sql import aggregates as sqlaggregates
 from django.db.models.sql.constants import MULTI
-from django.db.models.sql.where import OR
+from django.db.models.sql.where import AND, OR
 from django.utils.tree import Node
 
 from pymongo.errors import PyMongoError, DuplicateKeyError
@@ -134,47 +134,52 @@ class MongoQuery(NonrelQuery):
             fields = [field.column for field in self.query.select_fields]
 
         cursor = self.collection.find(self.mongo_query, fields=fields)
+
         if self.ordering:
             cursor.sort(self.ordering)
         if self.query.low_mark > 0:
             cursor.skip(self.query.low_mark)
         if self.query.high_mark is not None:
             cursor.limit(int(self.query.high_mark - self.query.low_mark))
+
         return cursor
 
-    def add_filters(self, filters, query=None):
-        children = self._get_children(filters.children)
+    # TODO get rid of global negated state
+    def add_filters(self, filters):
+        self.mongo_query = self._build_mongo_query(filters, self.mongo_query)
 
-        if query is None:
-            query = self.mongo_query
+    def _build_mongo_query(self, filters, mongo_query=None):
+        if filters.negated:
+            self._negated = not self._negated
 
-        if filters.connector == OR:
-            assert '$or' not in query, "Multiple ORs are not supported"
-            or_conditions = query['$or'] = []
+        if self._negated:
+            connector = [AND, OR][filters.connector == AND]
+        else:
+            connector = filters.connector
+
+        mongo_conditions = list(self._convert_filters(self._get_children(filters.children)))
 
         if filters.negated:
             self._negated = not self._negated
 
-        for child in children:
-            if filters.connector == OR:
-                subquery = {}
-            else:
-                subquery = query
+        if mongo_query:
+            mongo_conditions.append(mongo_query)
 
+        if not mongo_conditions:
+            return {}
+
+        if len(mongo_conditions) == 1:
+            # {'$and|$or': [x]} <=> x
+            return mongo_conditions[0]
+
+        return {('$or' if connector == OR else '$and'): mongo_conditions}
+
+    def _convert_filters(self, filters):
+        for child in filters:
             if isinstance(child, Node):
-                if filters.connector == OR and child.connector == OR:
-                    if len(child.children) > 1:
-                        raise DatabaseError("Nested ORs are not supported")
-
-                if filters.connector == OR and filters.negated:
-                    raise NotImplementedError("Negated ORs are not supported")
-
-                self.add_filters(child, query=subquery)
-
-                if filters.connector == OR and subquery:
-                    or_conditions.extend(subquery.pop('$or', []))
-                    or_conditions.append(subquery)
-
+                subquery = self._build_mongo_query(child)
+                if subquery:
+                    yield subquery
                 continue
 
             column, lookup_type, db_type, value = self._decode_child(child)
@@ -187,82 +192,24 @@ class MongoQuery(NonrelQuery):
             if column == get_pk_column(self):
                 column = '_id'
 
-            existing = subquery.get(column)
-
             if isinstance(value, A):
                 field = first(lambda field: field.column == column, self.fields)
                 column, value = value.as_q(field)
 
-            if self._negated and lookup_type in NEGATED_OPERATORS_MAP:
-                op_func = NEGATED_OPERATORS_MAP[lookup_type]
-                already_negated = True
+            if self._negated:
+                if lookup_type in NEGATED_OPERATORS_MAP:
+                    op_func = NEGATED_OPERATORS_MAP[lookup_type]
+                else:
+                    op_func = lambda val: {'$not': OPERATORS_MAP[lookup_type](val)}
             else:
                 op_func = OPERATORS_MAP[lookup_type]
-                if self._negated:
-                    already_negated = False
 
             if lookup_type == 'isnull':
                 lookup = op_func(value)
             else:
                 lookup = op_func(self.convert_value_for_db(db_type, value))
 
-            if existing is None:
-                if self._negated and not already_negated:
-                    lookup = {'$not': lookup}
-                subquery[column] = lookup
-                query.update(subquery)
-                continue
-
-            if not isinstance(existing, dict):
-                if not self._negated:
-                    # {'a': o1} + {'a': o2} --> {'a': {'$all': [o1, o2]}}
-                    assert not isinstance(lookup, dict)
-                    subquery[column] = {'$all': [existing, lookup]}
-                else:
-                    # {'a': o1} + {'a': {'$not': o2}} --> {'a': {'$all': [o1], '$nin': [o2]}}
-                    if already_negated:
-                        assert lookup.keys() == ['$ne']
-                        lookup = lookup['$ne']
-                    assert not isinstance(lookup, dict)
-                    subquery[column] = {'$all': [existing], '$nin': [lookup]}
-            else:
-                not_ = existing.pop('$not', None)
-                if not_:
-                    assert not existing
-                    if isinstance(lookup, dict):
-                        assert lookup.keys() == ['$ne']
-                        lookup = lookup.values()[0]
-                    assert not isinstance(lookup, dict), (not_, lookup)
-                    if self._negated:
-                        # {'not': {'a': o1}} + {'a': o2} --> {'a': {'nin': [o1], 'all': [o2]}}
-                        subquery[column] = {'$nin': [not_, lookup]}
-                    else:
-                        # {'not': {'a': o1}} + {'a': {'not': o2}} --> {'a': {'nin': [o1, o2]}}
-                        subquery[column] = {'$nin': [not_], '$all': [lookup]}
-                else:
-                    if isinstance(lookup, dict):
-                        if '$ne' in lookup:
-                            if '$nin' in existing:
-                                # {'$nin': [o1, o2]} + {'$ne': o3} --> {'$nin': [o1, o2, o3]}
-                                assert '$ne' not in existing
-                                existing['$nin'].append(lookup['$ne'])
-                            elif '$ne' in existing:
-                                # {'$ne': o1} + {'$ne': o2} --> {'$nin': [o1, o2]}
-                                existing['$nin'] = [existing.pop('$ne'), lookup['$ne']]
-                            else:
-                                existing.update(lookup)
-                        else:
-                            # {'$gt': o1} + {'$lt': o2} --> {'$gt': o1, '$lt': o2}
-                            assert all(key not in existing for key in lookup.keys()), [lookup, existing]
-                            existing.update(lookup)
-                    else:
-                        key = '$nin' if self._negated else '$all'
-                        existing.setdefault(key, []).append(lookup)
-
-                query.update(subquery)
-
-        if filters.negated:
-            self._negated = not self._negated
+            yield {column: lookup}
 
 
 class SQLCompiler(NonrelCompiler):

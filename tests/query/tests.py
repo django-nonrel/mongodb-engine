@@ -206,7 +206,7 @@ class BasicQueryTests(TestCase):
         self.assertEqual(
             Post.objects.filter(title__startswith='T', title__contains=' ') \
                         .filter(content__startswith='C') \
-                        .get(~Q(content__contains='Y', content__icontains='B')),
+                        .get(~Q(content__contains='e', content__icontains='B')),
             Post.objects.all()[0]
         )
 
@@ -242,8 +242,8 @@ class BasicQueryTests(TestCase):
             [blogs[0], blogs[1]]
         )
         self.assertEqual(
-            blogs[2],
-            Blog.objects.get(~Q(title='blog') & ~Q(title='other blog'))
+            Blog.objects.get(~Q(title='blog') & ~Q(title='other blog')),
+            blogs[2]
         )
         self.assertEqualLists(
             Blog.objects.filter(~Q(title='another blog')
@@ -261,6 +261,10 @@ class BasicQueryTests(TestCase):
         self.assertEqual(
             Blog.objects.filter().exclude(~Q(title='blog')).get(),
             blogs[0]
+        )
+        self.assertEqualLists(
+            Blog.objects.filter(~(Q(title__endswith=' blog') & Q(title__endswith='blog'))),
+            [blogs[0]]
         )
 
     def test_exclude_plus_filter(self):
@@ -387,7 +391,7 @@ class UpdateTests(TestCase):
         self.assertEqual(Person.objects.get(name='john').another_age, 39)
 
     def test_invalid_update_with_F(self):
-        self.assertRaises(AssertionError, Person.objects.update, age=F('name')+1)
+        self.assertRaises(DatabaseError, Person.objects.update, age=F('name')+1)
 
 
 class OrderingTests(TestCase):

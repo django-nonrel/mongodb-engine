@@ -14,6 +14,9 @@ class IntegerModel(models.Model):
 class Blog(models.Model):
     title = models.CharField(max_length=200, db_index=True)
 
+    def __str__(self):
+        return self.title
+
 class Post(models.Model):
     title = models.CharField(max_length=200, db_index=True, unique=True)
     content = models.CharField(max_length=1000, db_column='text')

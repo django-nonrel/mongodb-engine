@@ -26,6 +26,7 @@ def main(short):
     execute_python('''
         from mongodb.models import RawModel
         RawModel.objects.create(raw=41)
+        list(RawModel.objects.all())
         RawModel.objects.update(raw=42)
         RawModel.objects.all().delete()
         RawModel.objects.create(raw=42)

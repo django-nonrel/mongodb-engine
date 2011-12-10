@@ -108,6 +108,7 @@ class MapReduceTests(TestCase):
 
 class RawQueryTests(TestCase):
     def setUp(self):
+        super(RawQueryTests, self).setUp()
         for i in xrange(10):
             MapReduceModel.objects.create(n=i, m=i*2)
 
