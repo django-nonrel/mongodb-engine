@@ -6,7 +6,7 @@ schema design and the tools Django MongoDB Engine provides to put that design
 into action.
 
 This tutorial assumes that you are already familiar with Django_ and have a
-basic idea of MongoDB operation and a :doc:`configured MongoDB installation <setup>`.
+basic idea of MongoDB operation and a :doc:`configured MongoDB installation <topic/setup>`.
 
 Our example project covers the development of a simple single-user blog
 application with tag and comment capabilities.
