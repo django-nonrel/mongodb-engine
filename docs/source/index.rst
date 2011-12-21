@@ -16,6 +16,7 @@ Contents
 
    Intro <self>
    tutorial
+   setup
    topics/index
    reference/index
    troubleshooting
