@@ -99,14 +99,11 @@ class MongoQuery(NonrelQuery):
 
     @safe_call
     def order_by(self, ordering):
-        for order in ordering:
-            if order.startswith('-'):
-                order, direction = order[1:], DESCENDING
-            else:
-                direction = ASCENDING
-            if order == get_pk_column(self):
-                order = '_id'
-            self._ordering.append((order, direction))
+        for column, descending in ordering:
+            direction = DESCENDING if descending else ASCENDING
+            if column == get_pk_column(self):
+                column = '_id'
+            self._ordering.append((column, direction))
         return self
 
     @safe_call
