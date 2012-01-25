@@ -239,9 +239,12 @@ class MongoQuery(NonrelQuery):
                             else:
                                 existing.update(lookup)
                         else:
-                            # {'$gt': o1} + {'$lt': o2} --> {'$gt': o1, '$lt': o2}
-                            assert all(key not in existing for key in lookup.keys()), [lookup, existing]
-                            existing.update(lookup)
+                            if '$in' in lookup and '$in' in existing:
+                                existing['$in'] = list(set(lookup['$in'] + existing['$in']))
+                            else:
+                                # {'$gt': o1} + {'$lt': o2} --> {'$gt': o1, '$lt': o2}
+                                assert all(key not in existing for key in lookup.keys()), [lookup, existing]
+                                existing.update(lookup)
                     else:
                         key = '$nin' if self._negated else '$all'
                         existing.setdefault(key, []).append(lookup)
