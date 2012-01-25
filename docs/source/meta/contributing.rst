@@ -44,6 +44,6 @@ use `GitHub's pull requests`_. It's perfectly fine, however, to send regular
 patches to :ref:`the mailing list <contributing/mailinglist>`.
 
 .. _mailing list: http://groups.google.com/group/django-non-relational
-.. _on Github: https://github.com/django-mongodb-engine
-.. _ticket tracker on GitHub: https://github.com/django-mongodb-engine/mongodb-engine/issues/
+.. _on Github: https://github.com/django-nonrel
+.. _ticket tracker on GitHub: https://github.com/django-nonrel/mongodb-engine/issues/
 .. _GitHub's pull requests: http://help.github.com/pull-requests/
