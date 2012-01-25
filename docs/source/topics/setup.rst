@@ -43,7 +43,7 @@ Django MongoDB Engine
 .....................
 You should use the latest Git revision. ::
 
-   pip install git+https://github.com/django-mongodb-engine/mongodb-engine
+   pip install git+https://github.com/django-nonrel/mongodb-engine
 
 
 Configuration

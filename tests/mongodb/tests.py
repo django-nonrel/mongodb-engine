@@ -2,6 +2,7 @@ from cStringIO import StringIO
 from django.core.management import call_command
 from django.db import connection, connections
 from django.db.utils import DatabaseError, IntegrityError
+from django.db.models import Q
 from django.contrib.sites.models import Site
 
 from pymongo.objectid import InvalidId
@@ -169,6 +170,11 @@ class RegressionTests(TestCase):
             for i in xrange(randint(0, 20)):
                 q = getattr(q, 'filter' if randint(0, 1) else 'exclude')(raw=i)
             list(q)
+
+    def test_issue_89(self):
+        query = [Q(raw='a') | Q(raw='b'),
+                 Q(raw='c') | Q(raw='d')]
+        self.assertRaises(AssertionError, RawModel.objects.get, *query)
 
 class DatabaseOptionTests(TestCase):
     """ Tests for MongoDB-specific database options """
