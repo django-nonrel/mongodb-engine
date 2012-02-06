@@ -1,3 +1,5 @@
+from __future__ import with_statement
+
 from cStringIO import StringIO
 from django.core.management import call_command
 from django.db import connection, connections
@@ -12,8 +14,9 @@ from gridfs import GridFS, GridOut
 from django_mongodb_engine.base import DatabaseWrapper
 from django_mongodb_engine.serializer import LazyModelInstance
 
-from .models import *
-from .utils import *
+from mongodb.models import *
+from mongodb.utils import *
+
 
 class MongoDBEngineTests(TestCase):
     """ Tests for mongodb-engine specific features """

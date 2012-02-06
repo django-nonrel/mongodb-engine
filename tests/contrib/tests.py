@@ -1,10 +1,13 @@
+from __future__ import with_statement
+
 from functools import partial
 from django.db.models import Q
 from django.db.utils import DatabaseError
 from django_mongodb_engine.contrib import MapReduceResult
 
-from .utils import TestCase, get_collection, skip
-from .models import *
+from contrib.utils import TestCase, get_collection, skip
+from contrib.models import *
+
 
 class MapReduceTests(TestCase):
     def test_map_reduce(self, inline=False):
