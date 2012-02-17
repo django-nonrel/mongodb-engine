@@ -1,8 +1,8 @@
 DATABASES = {
-    'default' : {
+    'default': {
         'ENGINE': 'django_mongodb_engine',
-        'NAME': 'mapreduce'
-    }
+        'NAME': 'mapreduce',
+    },
 }
 
 INSTALLED_APPS = ['mr']

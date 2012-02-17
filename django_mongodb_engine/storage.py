@@ -1,18 +1,18 @@
 import os
 import urlparse
 
-from gridfs import GridFS, NoFile
-
 from django.core.exceptions import ImproperlyConfigured
 from django.core.files.storage import Storage
 from django.utils.encoding import filepath_to_uri
+
+from gridfs import GridFS, NoFile
 
 
 def _get_subcollections(collection):
     """
     Returns all sub-collections of `collection`.
     """
-    # XXX: Use the MongoDB API for this once it exists
+    # TODO: Use the MongoDB API for this once it exists.
     for name in collection.database.collection_names():
         cleaned = name[:name.rfind('.')]
         if cleaned != collection.name and cleaned.startswith(collection.name):
@@ -26,25 +26,28 @@ class GridFSStorage(Storage):
     This backend aims to add a GridFS storage to upload files to
     using Django's file fields.
 
-    For performance, the file hirarchy is represented as a tree of MongoDB
-    sub-collections.
+    For performance, the file hirarchy is represented as a tree of
+    MongoDB sub-collections.
 
-    (One could use a flat list, but to list a directory '/this/path/' we would
-    have to execute a search over the whole collection and then filter the
-    results to exclude those not starting by '/this/path' using that model.)
+    (One could use a flat list, but to list a directory '/this/path/'
+    we would have to execute a search over the whole collection and
+    then filter the results to exclude those not starting by
+    '/this/path' using that model.)
 
     :param location:
-       (optional) Name of the top-level node that holds the files. This value of
-       `location` is prepended to all file paths, so it works like the `location`
-       setting for Django's built-in :class:`~django.core.files.storage.FileSystemStorage`.
+       (optional) Name of the top-level node that holds the files. This
+       value of `location` is prepended to all file paths, so it works
+       like the `location` setting for Django's built-in
+       :class:`~django.core.files.storage.FileSystemStorage`.
     :param collection:
         Name of the collection the file tree shall be stored in.
         Defaults to 'storage'.
     :param database:
-        Alias of the Django database to use. Defaults to 'default' (the default
-        Django database).
+        Alias of the Django database to use. Defaults to 'default' (the
+        default Django database).
     :param base_url:
-        URL that serves the files in GridFS (for instance, through nginx-gridfs).
+        URL that serves the files in GridFS (for instance, through
+        nginx-gridfs).
         Defaults to None (file not accessible through a URL).
     """
 
@@ -56,16 +59,17 @@ class GridFSStorage(Storage):
         self.base_url = base_url
 
         if not self.collection:
-            raise ImproperlyConfigured("'collection' may not be empty")
+            raise ImproperlyConfigured("'collection' may not be empty.")
 
         if self.base_url and not self.base_url.endswith('/'):
-            raise ImproperlyConfigured("If set, 'base_url' must end with a slash")
+            raise ImproperlyConfigured("If set, 'base_url' must end with a "
+                                       "slash.")
 
     def _open(self, path, mode='rb'):
         """
-        Returns a :class:`~gridfs.GridOut` file opened in `mode`, or raises
-        :exc:`~gridfs.errors.NoFile` if the requested file doesn't exist and
-        mode is not 'w'.
+        Returns a :class:`~gridfs.GridOut` file opened in `mode`, or
+        raises :exc:`~gridfs.errors.NoFile` if the requested file
+        doesn't exist and mode is not 'w'.
         """
         gridfs, filename = self._get_gridfs(path)
         try:
@@ -103,7 +107,8 @@ class GridFSStorage(Storage):
 
     def listdir(self, path):
         """
-        Returns a tuple (folders, lists) that are contained in the folder `path`.
+        Returns a tuple (folders, lists) that are contained in the
+        folder `path`.
         """
         gridfs, filename = self._get_gridfs(path)
         assert not filename
@@ -131,7 +136,8 @@ class GridFSStorage(Storage):
 
     def _get_gridfs(self, path):
         """
-        Returns a :class:`~gridfs.GridFS` using the sub-collection for `path`.
+        Returns a :class:`~gridfs.GridFS` using the sub-collection for
+        `path`.
         """
         path, filename = os.path.split(path)
         path = os.path.join(self.collection, self.location, path.strip(os.sep))

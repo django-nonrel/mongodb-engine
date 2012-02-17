@@ -1,35 +1,29 @@
 import copy
+import datetime
 import sys
+
+from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.db.backends.signals import connection_created
-from django.conf import settings
 
-from pymongo.connection import Connection
 from pymongo.collection import Collection
+from pymongo.connection import Connection
+
+from djangotoolbox.db.base import \
+    NonrelDatabaseClient, NonrelDatabaseFeatures, \
+    NonrelDatabaseIntrospection, NonrelDatabaseOperations, \
+    NonrelDatabaseValidation, NonrelDatabaseWrapper
 
 from .creation import DatabaseCreation
 from .utils import CollectionDebugWrapper
 
-from djangotoolbox.db.base import (
-    NonrelDatabaseFeatures,
-    NonrelDatabaseWrapper,
-    NonrelDatabaseValidation,
-    NonrelDatabaseIntrospection,
-    NonrelDatabaseOperations
-)
-
-from datetime import datetime
-
-def _warn_deprecated(opt):
-    import warnings
-    warnings.warn("The %r option is deprecated as of version 0.4 in flavor of "
-                  "the 'OPERATIONS' setting" % opt, PendingDeprecationWarning)
 
 class DatabaseFeatures(NonrelDatabaseFeatures):
     supports_microsecond_precision = False
     string_based_auto_field = True
     supports_dicts = True
     supports_long_model_names = False
+
 
 class DatabaseOperations(NonrelDatabaseOperations):
     compiler_module = __name__.rsplit('.', 1)[0] + '.compiler'
@@ -42,18 +36,18 @@ class DatabaseOperations(NonrelDatabaseOperations):
         try:
             getattr(aggregations, aggregate.__class__.__name__)
         except AttributeError:
-            raise NotImplementedError("django-mongodb-engine does not support %r "
-                                      "aggregates" % type(aggregate))
+            raise NotImplementedError("django-mongodb-engine doesn't support "
+                                      "%r aggregates." % type(aggregate))
 
     def sql_flush(self, style, tables, sequence_list):
         """
-        Returns a list of SQL statements that have to be executed to drop
-        all `tables`. No SQL in MongoDB, so just clear all tables here and
-        return an empty list.
+        Returns a list of SQL statements that have to be executed to
+        drop all `tables`. No SQL in MongoDB, so just clear all tables
+        here and return an empty list.
         """
         for table in tables:
             if table.startswith('system.'):
-                # do not try to drop system collections
+                # Do not try to drop system collections.
                 continue
             self.connection.database[table].remove()
         return []
@@ -61,26 +55,39 @@ class DatabaseOperations(NonrelDatabaseOperations):
     def value_to_db_date(self, value):
         if value is None:
             return None
-        return datetime(value.year, value.month, value.day)
+        return datetime.datetime(value.year, value.month, value.day)
 
     def value_to_db_time(self, value):
         if value is None:
             return None
-        return datetime(1, 1, 1, value.hour, value.minute, value.second,
+        return datetime.datetime(1, 1, 1,
+                                 value.hour, value.minute, value.second,
                                  value.microsecond)
+
+
+class DatabaseClient(NonrelDatabaseClient):
+    pass
+
 
 class DatabaseValidation(NonrelDatabaseValidation):
     pass
 
+
 class DatabaseIntrospection(NonrelDatabaseIntrospection):
+
     def table_names(self):
         return self.connection.database.collection_names()
 
     def sequence_list(self):
-        # Only required for backends that use integer primary keys
+        # Only required for backends that use integer primary keys.
         pass
 
+
 class DatabaseWrapper(NonrelDatabaseWrapper):
+    """
+    Public API: connection, database, get_collection.
+    """
+
     def __init__(self, *args, **kwargs):
         self.collection_class = kwargs.pop('collection_class', Collection)
         super(DatabaseWrapper, self).__init__(*args, **kwargs)
@@ -92,8 +99,6 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
         self.validation = DatabaseValidation(self)
         self.connected = False
         del self.connection
-
-    # Public API: connection, database, get_collection
 
     def get_collection(self, name, **kwargs):
         collection = self.collection_class(self.database, name, **kwargs)
@@ -110,6 +115,7 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
 
     def _connect(self):
         settings = copy.deepcopy(self.settings_dict)
+
         def pop(name, default=None):
             return settings.pop(name) or default
         db_name = pop('NAME')
@@ -120,12 +126,14 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
         options = pop('OPTIONS', {})
 
         self.operation_flags = options.pop('OPERATIONS', {})
-        if not any(k in ['save', 'delete', 'update'] for k in self.operation_flags):
-            # flags apply to all operations
+        if not any(k in ['save', 'delete', 'update']
+                   for k in self.operation_flags):
+            # Flags apply to all operations.
             flags = self.operation_flags
-            self.operation_flags = {'save' : flags, 'delete' : flags, 'update' : flags}
+            self.operation_flags = {'save': flags, 'delete': flags,
+                                    'update': flags}
 
-        # lower-case all OPTIONS keys
+        # Lower-case all OPTIONS keys.
         for key in options.iterkeys():
             options[key.lower()] = options.pop(key)
 
@@ -138,7 +146,7 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
 
         if user and password:
             if not self.database.authenticate(user, password):
-                raise ImproperlyConfigured("Invalid username or password")
+                raise ImproperlyConfigured("Invalid username or password.")
 
         if settings.get('MONGODB_AUTOMATIC_REFERENCING'):
             from .serializer import TransformDjango

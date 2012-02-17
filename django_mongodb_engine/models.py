@@ -1,7 +1,7 @@
-
 # If you wonder what this file is about please head over to '__init__.py' :-)
 
 from django.db.models import signals
+
 
 def class_prepared_mongodb_signal(sender, *args, **kwargs):
     mongo_meta = getattr(sender, 'MongoMeta', None)

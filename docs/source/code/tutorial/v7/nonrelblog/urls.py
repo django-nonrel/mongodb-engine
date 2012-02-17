@@ -7,5 +7,5 @@ post_list = ListView.as_view(model=Post)
 
 urlpatterns = patterns('',
     url(r'^post/(?P<pk>[a-z\d]+)/$', post_detail, name='post_detail'),
-    url(r'^$', post_list, name='post_list')
+    url(r'^$', post_list, name='post_list'),
 )
