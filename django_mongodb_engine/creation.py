@@ -10,6 +10,17 @@ class DatabaseCreation(NonrelDatabaseCreation):
         'DecimalField': 'float',
     })
 
+    def db_type(self, field):
+        """
+        Returns the db_type of the field for non-relation fields, and
+        the db_type of a primary key field of a related model for
+        ForeignKeys, OneToOneFields and ManyToManyFields.
+        """
+        if field.rel is not None:
+            return field.rel.get_related_field().db_type(
+                connection=self.connection)
+        return field.db_type(connection=self.connection)
+
     def sql_indexes_for_model(self, model, termstyle):
         """Creates indexes for all fields in ``model``."""
         meta = model._meta

@@ -198,7 +198,7 @@ class MongoQuery(NonrelQuery):
                 lookup = op_func(value)
             else:
                 lookup = op_func(self.convert_value_for_db(
-                    field.db_type(connection=self.connection), value))
+                    self.creation.nonrel_db_type(field), value))
 
             if existing is None:
                 if self._negated and not already_negated:
