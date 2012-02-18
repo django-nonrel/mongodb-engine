@@ -1,8 +1,7 @@
 from django.db import models
 
-from djangotoolbox.fields import DictField, EmbeddedModelField
-
-from django_mongodb_engine.fields import LegacyEmbeddedModelField
+from djangotoolbox.fields import DictField, EmbeddedModelField, \
+    LegacyEmbeddedModelField
 
 
 class EmbeddedModel(models.Model):
