@@ -356,19 +356,6 @@ class SQLCompiler(NonrelCompiler):
                                  value.microsecond)
         return value
 
-    def _save(self, data, return_id=False):
-        collection = self.get_collection()
-        options = self.connection.operation_flags.get('save', {})
-        if data.get('_id', NOT_PROVIDED) is None:
-            if len(data) == 1:
-                # insert with empty model
-                data = {}
-            else:
-                raise DatabaseError("Can't save entity with _id set to None.")
-        primary_key = collection.save(data, **options)
-        if return_id:
-            return unicode(primary_key)
-
     def execute_sql(self, result_type=MULTI):
         """
         Handles aggregate/count queries.
@@ -434,11 +421,31 @@ class SQLInsertCompiler(NonrelInsertCompiler, SQLCompiler):
 
     @safe_call
     def insert(self, data, return_id=False):
-        try:
-            data['_id'] = data.pop(get_pk_column(self))
-        except KeyError:
-            pass
-        return self._save(data, return_id)
+        """
+        Stores a document using field columns as element names, except
+        for the primary key field for which "_id" is used.
+
+        If just a {pk_field: None} mapping is given a new empty
+        document is created, otherwise value for a primary key may not
+        be None.
+        """
+        collection = self.get_collection()
+        options = self.connection.operation_flags.get('save', {})
+        document = {}
+        for field, value in data.iteritems():
+            if field.primary_key:
+                if value is None:
+                    if len(data) != 1:
+                        raise DatabaseError("Can't save entity with _id "
+                                            "set to None.")
+                else:
+                    document['_id'] = value
+            else:
+                document[field.column] = value
+
+        key = collection.save(document, **options)
+        if return_id:
+            return unicode(key)
 
 
 # TODO: Define a common nonrel API for updates and add it to the nonrel
