@@ -365,7 +365,7 @@ class SQLInsertCompiler(NonrelInsertCompiler, SQLCompiler):
 
         key = collection.save(document, **options)
         if return_id:
-            return unicode(key)
+            return key
 
 
 # TODO: Define a common nonrel API for updates and add it to the nonrel
