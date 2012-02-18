@@ -168,7 +168,8 @@ class MongoQuery(NonrelQuery):
 
                 continue
 
-            column, lookup_type, db_type, value = self._decode_child(child)
+            field, lookup_type, value = self._decode_child(child)
+            column = field.column
 
             if lookup_type in ('month', 'day'):
                 raise DatabaseError("MongoDB does not support month/day "
@@ -177,13 +178,12 @@ class MongoQuery(NonrelQuery):
                 raise DatabaseError("Negated range lookups are not "
                                     "supported.")
 
-            if column == get_pk_column(self):
+            if field.primary_key:
                 column = '_id'
 
             existing = subquery.get(column)
 
             if isinstance(value, A):
-                field = first(lambda field: field.column == column, self.fields)
                 column, value = value.as_q(field)
 
             if self._negated and lookup_type in NEGATED_OPERATORS_MAP:
@@ -197,7 +197,8 @@ class MongoQuery(NonrelQuery):
             if lookup_type == 'isnull':
                 lookup = op_func(value)
             else:
-                lookup = op_func(self.convert_value_for_db(db_type, value))
+                lookup = op_func(self.convert_value_for_db(
+                    field.db_type(connection=self.connection), value))
 
             if existing is None:
                 if self._negated and not already_negated:
