@@ -6,8 +6,11 @@ from .utils import make_index_list
 
 
 class DatabaseCreation(NonrelDatabaseCreation):
+
+    # Store decimals as floats and sets as lists.
     data_types = dict(NonrelDatabaseCreation.data_types, **{
         'DecimalField': 'float',
+        'SetField':     'list',
     })
 
     def db_type(self, field):

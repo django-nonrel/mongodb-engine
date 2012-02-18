@@ -7,7 +7,6 @@ from django.db.utils import DatabaseError, IntegrityError
 from django.db.models import Q
 
 from gridfs import GridFS, GridOut
-from pymongo.objectid import InvalidId
 from pymongo import ASCENDING, DESCENDING
 
 from django_mongodb_engine.base import DatabaseWrapper
@@ -74,10 +73,10 @@ class MongoDBEngineTests(TestCase):
         msg = "AutoField \(default primary key\) values must be strings " \
               "representing an ObjectId on MongoDB \(got %r instead\)."
         self.assertRaisesRegexp(
-                InvalidId, msg % u'helloworld...',
+                DatabaseError, msg % u'helloworld...',
                 RawModel.objects.create, id='helloworldwhatsup')
         self.assertRaisesRegexp(
-            InvalidId, (msg % u'5') +
+            DatabaseError, (msg % u'5') +
                 " Please make sure your SITE_ID contains a valid ObjectId.",
             Site.objects.get, id='5')
 
@@ -120,7 +119,6 @@ class MongoDBEngineTests(TestCase):
 
 class RegressionTests(TestCase):
 
-    @skip("Needs changes in ListField/db_type.")
     def test_issue_47(self):
         """
         ForeignKeys in subobjects should be ObjectIds, not unicode.

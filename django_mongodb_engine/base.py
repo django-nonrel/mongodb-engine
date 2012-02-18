@@ -5,9 +5,11 @@ import sys
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.db.backends.signals import connection_created
+from django.db.utils import DatabaseError
 
 from pymongo.collection import Collection
 from pymongo.connection import Connection
+from pymongo.objectid import ObjectId, InvalidId
 
 from djangotoolbox.db.base import \
     NonrelDatabaseClient, NonrelDatabaseFeatures, \
@@ -58,17 +60,83 @@ class DatabaseOperations(NonrelDatabaseOperations):
             return None
         return unicode(value)
 
-    def value_to_db_date(self, value):
-        if value is None:
-            return None
-        return datetime.datetime(value.year, value.month, value.day)
+    def value_for_db(self, value, field, field_kind, db_type, lookup):
+        """
+        Allows parent to handle nonrel fields, convert AutoField
+        keys to ObjectIds and date and times to datetimes.
 
-    def value_to_db_time(self, value):
+        Let everything else pass to PyMongo -- when the value is used
+        the driver will raise an exception if it got anything
+        unacceptable.
+        """
         if value is None:
             return None
-        return datetime.datetime(1, 1, 1,
-                                 value.hour, value.minute, value.second,
-                                 value.microsecond)
+
+        # Parent can handle iterable fields and Django wrappers.
+        value = super(DatabaseOperations, self).value_for_db(
+            value, field, field_kind, db_type, lookup)
+
+        # Anything with the "key" db_type is converted to an ObjectId.
+        if db_type == 'key':
+
+            # When doing batch deletes we may be asked to convert a
+            # list of keys at once.
+            if isinstance(value, (list, tuple, set)):
+                return [self.value_for_db(subvalue, field,
+                                          field_kind, db_type, lookup)
+                        for subvalue in value]
+
+            try:
+                return ObjectId(value)
+
+            # Provide a better message for invalid IDs.
+            except InvalidId:
+                assert isinstance(value, unicode)
+                if len(value) > 13:
+                    value = value[:10] + '...'
+                msg = "AutoField (default primary key) values must be " \
+                      "strings representing an ObjectId on MongoDB (got " \
+                      "%r instead)." % value
+                if field.model._meta.db_table == 'django_site':
+                    # Also provide some useful tips for (very common) issues
+                    # with settings.SITE_ID.
+                    msg += " Please make sure your SITE_ID contains a " \
+                           "valid ObjectId string."
+                raise DatabaseError(msg)
+
+        # PyMongo can only process datatimes?
+        elif db_type == 'date':
+            return datetime.datetime(value.year, value.month, value.day)
+        elif db_type == 'time':
+            return datetime.datetime(1, 1, 1, value.hour, value.minute,
+                                     value.second, value.microsecond)
+
+        return value
+
+    def value_from_db(self, value, field, field_kind, db_type):
+        """
+        Deconverts keys, dates and times (also in collections).
+        """
+
+        # It is *crucial* that this is written as a direct check --
+        # when value is an instance of serializer.LazyModelInstance
+        # calling its __eq__ method does a database query.
+        if value is None:
+            return None
+
+        # All keys have been turned into ObjectIds.
+        if db_type == 'key':
+            value = unicode(value)
+
+        # We've converted dates and times to datetimes.
+        elif db_type == 'date':
+            value = datetime.date(value.year, value.month, value.day)
+        elif db_type == 'time':
+            value = datetime.time(value.hour, value.minute, value.second,
+                                  value.microsecond)
+
+        return super(DatabaseOperations, self).value_from_db(
+            value, field, field_kind, db_type)
 
 
 class DatabaseClient(NonrelDatabaseClient):
