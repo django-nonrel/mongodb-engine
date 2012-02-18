@@ -303,7 +303,7 @@ class SQLCompiler(NonrelCompiler):
             # Most likely a list of ObjectIds when doing a .delete() query.
             return [self.convert_value_for_db(db_type, val) for val in value]
 
-        if db_type == 'objectid':
+        if db_type == 'key':
             try:
                 return ObjectId(value)
             except InvalidId:
@@ -344,7 +344,7 @@ class SQLCompiler(NonrelCompiler):
                 return dict((key, self.convert_value_from_db(db_subtype, subvalue))
                             for key, subvalue in value.iteritems())
 
-        if db_type == 'objectid':
+        if db_type == 'key':
             return unicode(value)
 
         if db_type == 'date':

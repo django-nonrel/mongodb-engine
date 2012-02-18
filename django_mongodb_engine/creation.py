@@ -7,10 +7,6 @@ from .utils import make_index_list
 
 class DatabaseCreation(NonrelDatabaseCreation):
     data_types = dict(NonrelDatabaseCreation.data_types, **{
-        'AutoField': 'objectid',
-        'ForeignKey': 'objectid',
-        'OneToOneField': 'objectid',
-        'RelatedAutoField': 'objectid',
         'DecimalField': 'float',
     })
 

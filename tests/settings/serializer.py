@@ -5,7 +5,7 @@ from django.core.serializers.json import \
 
 def get_objectid_fields(modelopts, typemap=DatabaseCreation.data_types):
     return [field for field in modelopts.fields if
-            typemap.get(field.__class__.__name__) == 'objectid']
+            typemap.get(field.__class__.__name__) == 'key']
 
 
 def Deserializer(*args, **kwargs):
