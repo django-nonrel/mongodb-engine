@@ -480,3 +480,14 @@ class GridFSFieldTests(TestCase):
             DatabaseError, "Updates on GridFSFields are not allowed",
             GridFSFieldTestModel.objects.update, gridfile='x'
         )
+
+class CappedCollectionTests(TestCase):
+    def test_collection_size(self):
+        for _ in range(100):
+            CappedCollection.objects.create()
+        self.assertLess(CappedCollection.objects.count(), 100)
+
+    def test_collection_max(self):
+        for _ in range(100):
+            CappedCollection2.objects.create()
+        self.assertEqual(CappedCollection2.objects.count(), 2)

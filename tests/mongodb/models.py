@@ -92,3 +92,14 @@ class CustomIDModel(models.Model):
 
 class CustomIDModel2(models.Model):
     id = models.IntegerField(primary_key=True, db_column='blah')
+
+
+class CappedCollection(models.Model):
+    class MongoMeta:
+        capped = True
+        collection_size = 10
+
+class CappedCollection2(models.Model):
+    class MongoMeta:
+        capped = True
+        collection_max = 2
