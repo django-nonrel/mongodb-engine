@@ -95,6 +95,8 @@ class CustomIDModel2(models.Model):
 
 
 class CappedCollection(models.Model):
+    n = models.IntegerField(default=42)
+
     class MongoMeta:
         capped = True
         collection_size = 10
