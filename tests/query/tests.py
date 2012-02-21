@@ -152,7 +152,7 @@ class BasicQueryTests(TestCase):
         self.assertEqualLists(
             Post.objects.filter(blog=blog1.pk).order_by('pk'),
             [entry1, entry2])
-        # TODO: Uncomment this if the corresponding Django has been fixed.
+        # XXX: Uncomment this if the corresponding Django has been fixed.
         # entry_without_blog = Post.objects.create(title='x')
         # self.assertEqual(Post.objects.get(blog=None), entry_without_blog)
         # self.assertEqual(Post.objects.get(blog__isnull=True),

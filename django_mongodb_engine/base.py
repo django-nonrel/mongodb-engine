@@ -11,10 +11,13 @@ from pymongo.collection import Collection
 from pymongo.connection import Connection
 from pymongo.objectid import ObjectId, InvalidId
 
-from djangotoolbox.db.base import \
-    NonrelDatabaseClient, NonrelDatabaseFeatures, \
-    NonrelDatabaseIntrospection, NonrelDatabaseOperations, \
-    NonrelDatabaseValidation, NonrelDatabaseWrapper
+from djangotoolbox.db.base import (
+    NonrelDatabaseClient,
+    NonrelDatabaseFeatures,
+    NonrelDatabaseIntrospection,
+    NonrelDatabaseOperations,
+    NonrelDatabaseValidation,
+    NonrelDatabaseWrapper)
 
 from .creation import DatabaseCreation
 from .utils import CollectionDebugWrapper

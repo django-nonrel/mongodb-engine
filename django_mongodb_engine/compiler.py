@@ -14,8 +14,12 @@ from django.utils.tree import Node
 from pymongo import ASCENDING, DESCENDING
 from pymongo.errors import PyMongoError, DuplicateKeyError
 
-from djangotoolbox.db.basecompiler import NonrelQuery, NonrelCompiler, \
-    NonrelInsertCompiler, NonrelUpdateCompiler, NonrelDeleteCompiler
+from djangotoolbox.db.basecompiler import (
+    NonrelQuery,
+    NonrelCompiler,
+    NonrelInsertCompiler,
+    NonrelUpdateCompiler,
+    NonrelDeleteCompiler)
 
 from .aggregations import get_aggregation_class_by_name
 from .query import A
@@ -300,7 +304,7 @@ class SQLCompiler(NonrelCompiler):
                 order.append(None)
                 # Needed to keep the iteration order which is important
                 # in the returned value.
-                # TODO: This actually does a separate query... performance?
+                # XXX: This actually does a separate query... performance?
                 counts.append(self.get_count())
                 continue
 

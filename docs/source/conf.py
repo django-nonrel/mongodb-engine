@@ -20,7 +20,7 @@ intersphinx_mapping = {
                 'http://docs.djangoproject.com/en/dev/_objects/'),
 }
 
-# -- Options for HTML output -------------------------------------------------
+# -- Options for HTML output ---------------------------------------------------
 
 html_title = project
 
