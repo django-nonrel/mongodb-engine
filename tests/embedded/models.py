@@ -1,7 +1,6 @@
 from django.db import models
 
-from djangotoolbox.fields import DictField, EmbeddedModelField, \
-    LegacyEmbeddedModelField
+from djangotoolbox.fields import DictField, EmbeddedModelField
 
 
 class EmbeddedModel(models.Model):
@@ -15,10 +14,6 @@ class Model(models.Model):
     x = models.IntegerField()
     em = EmbeddedModelField(EmbeddedModel)
     dict_emb = DictField(EmbeddedModelField(EmbeddedModel))
-
-
-class LegacyModel(models.Model):
-    legacy = LegacyEmbeddedModelField(EmbeddedModel)
 
 
 # Docstring example copy.
