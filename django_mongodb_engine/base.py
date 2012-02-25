@@ -1,9 +1,11 @@
 import copy
 import datetime
+import decimal
 import sys
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
+from django.db.backends import util
 from django.db.backends.signals import connection_created
 from django.db.utils import DatabaseError
 
@@ -60,6 +62,22 @@ class DatabaseOperations(NonrelDatabaseOperations):
         if value is None:
             return None
         return unicode(value)
+
+    def value_to_db_decimal(self, value, max_digits, decimal_places):
+        if value is None:
+            return None
+        return util.format_number(value, max_digits, decimal_places)
+
+    def convert_values(self, value, field):
+        if value is None:
+            return None
+
+        field_kind = field.get_internal_type()
+
+        if field_kind == 'DecimalField':
+            return decimal.Decimal(value)
+
+        return value
 
     def value_for_db(self, value, field, field_kind, db_type, lookup):
         """

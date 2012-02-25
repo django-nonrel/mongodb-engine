@@ -7,10 +7,10 @@ from .utils import make_index_list
 
 class DatabaseCreation(NonrelDatabaseCreation):
 
-    # Store decimals as floats and sets as lists.
+    # We'll store decimals as strings, dates and times as datetimes,
+    # sets as lists and automatic keys as ObjectIds.
     data_types = dict(NonrelDatabaseCreation.data_types, **{
-        'DecimalField': 'float',
-        'SetField':     'list',
+        'SetField': 'list',
     })
 
     def db_type(self, field):
