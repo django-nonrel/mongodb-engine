@@ -86,14 +86,6 @@ class DatabaseOperations(NonrelDatabaseOperations):
 
         # Anything with the "key" db_type is converted to an ObjectId.
         if db_type == 'key':
-
-            # When doing batch deletes we may be asked to convert a
-            # list of keys at once.
-            if isinstance(value, (list, tuple, set)):
-                return [self.value_for_db(subvalue, field,
-                                          field_kind, db_type, lookup)
-                        for subvalue in value]
-
             try:
                 return ObjectId(value)
 

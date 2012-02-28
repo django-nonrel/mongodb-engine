@@ -197,11 +197,7 @@ class MongoQuery(NonrelQuery):
                 if self._negated:
                     already_negated = False
 
-            if lookup_type == 'isnull':
-                lookup = op_func(value)
-            else:
-                lookup = op_func(
-                    self.compiler.value_for_db(value, field, True))
+            lookup = op_func(value)
 
             if existing is None:
                 if self._negated and not already_negated:
