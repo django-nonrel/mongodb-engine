@@ -5,7 +5,6 @@ import sys
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
-from django.db.backends import util
 from django.db.backends.signals import connection_created
 from django.db.utils import DatabaseError
 
@@ -20,6 +19,7 @@ from djangotoolbox.db.base import (
     NonrelDatabaseOperations,
     NonrelDatabaseValidation,
     NonrelDatabaseWrapper)
+from djangotoolbox.db.utils import decimal_to_string
 
 from .creation import DatabaseCreation
 from .utils import CollectionDebugWrapper
@@ -63,22 +63,6 @@ class DatabaseOperations(NonrelDatabaseOperations):
             return None
         return unicode(value)
 
-    def value_to_db_decimal(self, value, max_digits, decimal_places):
-        if value is None:
-            return None
-        return util.format_number(value, max_digits, decimal_places)
-
-    def convert_values(self, value, field):
-        if value is None:
-            return None
-
-        field_kind = field.get_internal_type()
-
-        if field_kind == 'DecimalField':
-            return decimal.Decimal(value)
-
-        return value
-
     def value_for_db(self, value, field, field_kind, db_type, lookup):
         """
         Allows parent to handle nonrel fields, convert AutoField
@@ -94,6 +78,11 @@ class DatabaseOperations(NonrelDatabaseOperations):
         # Parent can handle iterable fields and Django wrappers.
         value = super(DatabaseOperations, self).value_for_db(
             value, field, field_kind, db_type, lookup)
+
+        # Convert decimals to strings preserving order.
+        if field_kind == 'DecimalField':
+            value = decimal_to_string(
+                value, field.max_digits, field.decimal_places)
 
         # Anything with the "key" db_type is converted to an ObjectId.
         if db_type == 'key':
@@ -153,6 +142,10 @@ class DatabaseOperations(NonrelDatabaseOperations):
         elif db_type == 'time':
             value = datetime.time(value.hour, value.minute, value.second,
                                   value.microsecond)
+
+        # Revert the decimal-to-string encoding.
+        if field_kind == 'DecimalField':
+            value = decimal.Decimal(value)
 
         return super(DatabaseOperations, self).value_from_db(
             value, field, field_kind, db_type)
