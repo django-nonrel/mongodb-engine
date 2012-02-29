@@ -23,7 +23,7 @@ class DatabaseCreation(NonrelDatabaseCreation):
 
         def ensure_index(*args, **kwargs):
             if ensure_index.first_index:
-                print "Installing indices for %s.%s model" % (meta.app_label, meta.object_name)
+                # print "Installing indices for %s.%s model" % (meta.app_label, meta.object_name)
                 ensure_index.first_index = False
             return collection.ensure_index(*args, **kwargs)
         ensure_index.first_index = True
