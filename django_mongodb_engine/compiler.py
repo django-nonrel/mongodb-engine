@@ -80,10 +80,6 @@ def safe_call(func):
     return wrapper
 
 
-def get_pk_column(duck):
-    return duck.query.get_meta().pk.column
-
-
 class MongoQuery(NonrelQuery):
 
     def __init__(self, compiler, fields):
@@ -97,8 +93,9 @@ class MongoQuery(NonrelQuery):
 
     def fetch(self, low_mark, high_mark):
         results = self.get_cursor()
+        pk_column = self.query.get_meta().pk.column
         for entity in results:
-            entity[get_pk_column(self)] = entity.pop('_id')
+            entity[pk_column] = entity.pop('_id')
             yield entity
 
     @safe_call
@@ -110,12 +107,10 @@ class MongoQuery(NonrelQuery):
 
     @safe_call
     def order_by(self, ordering):
-        for column, descending in ordering:
+        for field, descending in ordering:
+            column = '_id' if field.primary_key else field.column
             direction = DESCENDING if descending else ASCENDING
-            if column == get_pk_column(self):
-                column = '_id'
             self.ordering.append((column, direction))
-        return self
 
     @safe_call
     def delete(self):
