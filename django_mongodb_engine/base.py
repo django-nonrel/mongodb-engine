@@ -57,12 +57,6 @@ class DatabaseOperations(NonrelDatabaseOperations):
             self.connection.database[table].remove()
         return []
 
-    def value_to_db_auto(self, value):
-        """Mongo uses string / ObjectId based AutoFields."""
-        if value is None:
-            return None
-        return unicode(value)
-
     def value_for_db(self, value, field, field_kind, db_type, lookup):
         """
         Allows parent to handle nonrel fields, convert AutoField

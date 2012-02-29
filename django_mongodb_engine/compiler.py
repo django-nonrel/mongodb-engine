@@ -4,7 +4,7 @@ import re
 import sys
 
 from django.db.models import F
-from django.db.models.fields import NOT_PROVIDED
+from django.db.models.fields import AutoField
 from django.db.models.sql import aggregates as sqlaggregates
 from django.db.models.sql.constants import MULTI
 from django.db.models.sql.where import OR
@@ -24,6 +24,10 @@ from djangotoolbox.db.basecompiler import (
 from .aggregations import get_aggregation_class_by_name
 from .query import A
 from .utils import safe_regex, first
+
+
+# Mongo wants string-based AutoFields.
+AutoField.value_type = unicode
 
 
 OPERATORS_MAP = {
