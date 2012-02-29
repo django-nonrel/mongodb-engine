@@ -88,24 +88,22 @@ class MongoQuery(NonrelQuery):
 
     def __init__(self, compiler, fields):
         super(MongoQuery, self).__init__(compiler, fields)
-        db_table = self.query.get_meta().db_table
-        self.collection = self.connection.get_collection(db_table)
-        self._ordering = []
-        self._mongo_query = getattr(compiler.query, 'raw_query', {})
+        self.ordering = []
+        self.collection = self.compiler.get_collection()
+        self.mongo_query = getattr(compiler.query, 'raw_query', {})
 
     def __repr__(self):
-        return '<MongoQuery: %r ORDER %r>' % \
-               (self._mongo_query, self._ordering)
+        return '<MongoQuery: %r ORDER %r>' % (self.mongo_query, self.ordering)
 
     def fetch(self, low_mark, high_mark):
-        results = self._get_results()
+        results = self.get_cursor()
         for entity in results:
             entity[get_pk_column(self)] = entity.pop('_id')
             yield entity
 
     @safe_call
     def count(self, limit=None):
-        results = self._get_results()
+        results = self.get_cursor()
         if limit is not None:
             results.limit(limit)
         return results.count()
@@ -116,35 +114,35 @@ class MongoQuery(NonrelQuery):
             direction = DESCENDING if descending else ASCENDING
             if column == get_pk_column(self):
                 column = '_id'
-            self._ordering.append((column, direction))
+            self.ordering.append((column, direction))
         return self
 
     @safe_call
     def delete(self):
         options = self.connection.operation_flags.get('delete', {})
-        self.collection.remove(self._mongo_query, **options)
+        self.collection.remove(self.mongo_query, **options)
 
-    def _get_results(self):
+    def get_cursor(self):
         if self.query.low_mark == self.query.high_mark:
             return []
+
         fields = None
         if self.query.select_fields and not self.query.aggregates:
-            fields = dict((field.column, 1)
-                          for field in self.query.select_fields)
-        results = self.collection.find(self._mongo_query, fields=fields)
-        if self._ordering:
-            results.sort(self._ordering)
+            fields = [field.column for field in self.query.select_fields]
+        cursor = self.collection.find(self.mongo_query, fields=fields)
+        if self.ordering:
+            cursor.sort(self.ordering)
         if self.query.low_mark > 0:
-            results.skip(self.query.low_mark)
+            cursor.skip(self.query.low_mark)
         if self.query.high_mark is not None:
-            results.limit(int(self.query.high_mark - self.query.low_mark))
-        return results
+            cursor.limit(int(self.query.high_mark - self.query.low_mark))
+        return cursor
 
     def add_filters(self, filters, query=None):
         children = self._get_children(filters.children)
 
         if query is None:
-            query = self._mongo_query
+            query = self.mongo_query
 
         if filters.connector == OR:
             assert '$or' not in query, "Multiple ORs are not supported."
@@ -273,7 +271,7 @@ class MongoQuery(NonrelQuery):
 
 class SQLCompiler(NonrelCompiler):
     """
-    A simple query: no joins, no distinct, etc.
+    Base class for all Mongo compilers.
     """
     query_class = MongoQuery
 
@@ -284,6 +282,7 @@ class SQLCompiler(NonrelCompiler):
         """
         Handles aggregate/count queries.
         """
+        collection = self.get_collection()
         aggregations = self.query.aggregate_select.items()
 
         if len(aggregations) == 1 and isinstance(aggregations[0][1],
@@ -315,10 +314,10 @@ class SQLCompiler(NonrelCompiler):
                 # lookup is a (table_name, column_name) tuple.
                 # Get rid of the table name as aggregations can't span
                 # multiple tables anyway.
-                if lookup[0] != query.collection.name:
+                if lookup[0] != collection.name:
                     raise DatabaseError("Aggregations can not span multiple "
                                         "tables (tried %r and %r)." %
-                                        (lookup[0], query.collection.name))
+                                        (lookup[0], collection.name))
                 lookup = lookup[1]
             self.query.aggregates[alias] = aggregate = aggregate_class(
                 alias, lookup, aggregate.source)
@@ -329,8 +328,8 @@ class SQLCompiler(NonrelCompiler):
 
         reduce = 'function(doc, out){ %s }' % '; '.join(reduce)
         finalize = 'function(out){ %s }' % '; '.join(finalize)
-        cursor = query.collection.group(None, query._mongo_query, initial,
-                                        reduce, finalize)
+        cursor = collection.group(None, query.mongo_query, initial, reduce,
+                                  finalize)
 
         ret = []
         for alias in order:
@@ -353,8 +352,6 @@ class SQLInsertCompiler(NonrelInsertCompiler, SQLCompiler):
         document is created, otherwise value for a primary key may not
         be None.
         """
-        collection = self.get_collection()
-        options = self.connection.operation_flags.get('save', {})
         document = {}
         for field, value in data.iteritems():
             if field.primary_key:
@@ -367,6 +364,8 @@ class SQLInsertCompiler(NonrelInsertCompiler, SQLCompiler):
             else:
                 document[field.column] = value
 
+        collection = self.get_collection()
+        options = self.connection.operation_flags.get('save', {})
         key = collection.save(document, **options)
         if return_id:
             return key
@@ -410,7 +409,7 @@ class SQLUpdateCompiler(NonrelUpdateCompiler, SQLCompiler):
     @safe_call
     def execute_update(self, update_spec, multi=True, **kwargs):
         collection = self.get_collection()
-        criteria = self.build_query()._mongo_query
+        criteria = self.build_query().mongo_query
         options = self.connection.operation_flags.get('update', {})
         options = dict(options, **kwargs)
         info = collection.update(criteria, update_spec, multi=multi, **options)

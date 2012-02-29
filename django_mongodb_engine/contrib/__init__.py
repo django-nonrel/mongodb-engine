@@ -99,7 +99,7 @@ class MongoDBQuerySet(QuerySet):
         # TODO: Field name substitution (e.g. id -> _id).
         drop_collection = kwargs.pop('drop_collection', False)
         query = self._get_query()
-        kwargs.setdefault('query', query._mongo_query)
+        kwargs.setdefault('query', query.mongo_query)
         result_collection = query.collection.map_reduce(*args, **kwargs)
         # TODO: Get rid of this.
         # PyPy has no guaranteed garbage collection so we can't rely on
@@ -139,7 +139,7 @@ class MongoDBQuerySet(QuerySet):
         collection is involved for in-memory Map/Reduce operations.
         """
         query = self._get_query()
-        kwargs.setdefault('query', query._mongo_query)
+        kwargs.setdefault('query', query.mongo_query)
         return [MapReduceResult.from_entity(self.model, entity) for entity in
                 query.collection.inline_map_reduce(*args, **kwargs)]
 
