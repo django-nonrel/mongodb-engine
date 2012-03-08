@@ -57,7 +57,7 @@ class DatabaseOperations(NonrelDatabaseOperations):
             self.connection.database[table].remove()
         return []
 
-    def value_for_db(self, value, field, field_kind, db_type, lookup):
+    def _value_for_db(self, value, field, field_kind, db_type, lookup):
         """
         Allows parent to handle nonrel fields, convert AutoField
         keys to ObjectIds and date and times to datetimes.
@@ -70,7 +70,7 @@ class DatabaseOperations(NonrelDatabaseOperations):
             return None
 
         # Parent can handle iterable fields and Django wrappers.
-        value = super(DatabaseOperations, self).value_for_db(
+        value = super(DatabaseOperations, self)._value_for_db(
             value, field, field_kind, db_type, lookup)
 
         # Convert decimals to strings preserving order.
@@ -107,7 +107,7 @@ class DatabaseOperations(NonrelDatabaseOperations):
 
         return value
 
-    def value_from_db(self, value, field, field_kind, db_type):
+    def _value_from_db(self, value, field, field_kind, db_type):
         """
         Deconverts keys, dates and times (also in collections).
         """
@@ -133,7 +133,7 @@ class DatabaseOperations(NonrelDatabaseOperations):
         if field_kind == 'DecimalField':
             value = decimal.Decimal(value)
 
-        return super(DatabaseOperations, self).value_from_db(
+        return super(DatabaseOperations, self)._value_from_db(
             value, field, field_kind, db_type)
 
 
