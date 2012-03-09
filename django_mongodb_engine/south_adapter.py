@@ -1,4 +1,4 @@
-# This is needed until the sibling south model is removed
+# This is needed until the sibling south module is removed
 from __future__ import absolute_import 
 
 from django.core.exceptions import ImproperlyConfigured
