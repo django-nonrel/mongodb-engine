@@ -131,11 +131,16 @@ class DatabaseCreation(NonrelDatabaseCreation):
     def sql_create_model(self, model, *unused):
         """ Creates the collection for model. Mostly used for capped collections. """
         kwargs = {}
-        for option in ('capped', 'collection_max', 'collection_size'):
-            x = getattr(model._meta, option, None)
-            if x:
-                kwargs[option] = x
+        for option, mongo_option in [
+            ('capped', 'capped'),
+            ('collection_size', 'size'),
+            ('collection_max', 'max')
+        ]:
+            kwargs[mongo_option] = getattr(model._meta, option, False)
+
+        # Initialize the capped collection:
         self.connection.get_collection(model._meta.db_table, **kwargs)
+
         return [], {}
 
     def set_autocommit(self):

@@ -29,6 +29,7 @@ class DatabaseFeatures(NonrelDatabaseFeatures):
     supports_microsecond_precision = False
     string_based_auto_field = True
     supports_dicts = True
+    supports_long_model_names = False
 
 class DatabaseOperations(NonrelDatabaseOperations):
     compiler_module = __name__.rsplit('.', 1)[0] + '.compiler'
