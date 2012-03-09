@@ -31,30 +31,32 @@ class DatabaseOperations(DatabaseOperations):
         return self._get_connection().get_collection(name)
 
     def add_column(self, table_name, field_name, field, keep_default=True):
-        collection = self._get_collection(table_name)
-        __, name = field.get_attname_column()
+        # Make sure the field is correctly prepared
+        field.set_attributes_from_name(field_name)
         if field.has_default():
             default = field.get_default()
             if default is not None:
-                # Update all the documents that have not this field yet
                 connection = self._get_connection()
+                collection = self._get_collection(table_name)
+                name = field.column
                 default = field.get_db_prep_save(default, connection=connection)
+                # Update all the documents that haven't got this field yet
                 collection.update({name: {'$exists': False}},
                                   {'$set': {name: default}})
             if not keep_default:
                 field.default = NOT_PROVIDED
 
     def alter_column(self, table_name, column_name, field, explicit_name=True):
-        # There's not much we can do here
+        # Since MongoDB is schemaless there's no way to coerce field datatype
         pass
 
     def delete_column(self, table_name, name):
         collection = self._get_collection(table_name)
-        collection.update(dict(), {'$unset': {name: 1}})
+        collection.update({}, {'$unset': {name: 1}})
 
     def rename_column(self, table_name, old, new):
         collection = self._get_collection(table_name)
-        collection.update(dict(), {'$rename': {old: new}})
+        collection.update({}, {'$rename': {old: new}})
 
     def create_unique(self, table_name, columns, drop_dups=False):
         collection = self._get_collection(table_name)
@@ -70,11 +72,13 @@ class DatabaseOperations(DatabaseOperations):
         collection.drop_index(index_list)
 
     def delete_primary_key(self, table_name):
+        # MongoDB doesn't support primary key deletion
         pass
 
     def create_table(self, table_name, fields, **kwargs):
         # Collection creation is automatic but code calling this might expect
-        # it to exist, thus we create it here.
+        # it to exist, thus we create it here. i.e. Calls to `rename_table` will
+        # fail if the collection doesn't already exist.
         connection = self._get_connection()
         connection.database.create_collection(table_name, **kwargs)
     
@@ -86,32 +90,18 @@ class DatabaseOperations(DatabaseOperations):
         connection = self._get_connection()
         connection.database.drop_collection(table_name)
 
-    def connection_init(self):
-        pass
-
-    def send_pending_create_signals(self, verbosity=False, interactive=False):
-        pass
-
-    def get_pending_creates(self):
-        pass
-
     def start_transaction(self):
+        # MongoDB doesn't support transactions
         pass
 
     def rollback_transaction(self):
-        pass
-
-    def rollback_transactions_dry_run(self):
-        pass
-
-    def clear_run_data(self, pending_creates):
-        pass
-
-    def send_create_signal(self, verbosity=False, interactive=False):
-        pass
-
-    def execute_deferred_sql(self):
+        # MongoDB doesn't support transactions
         pass
 
     def commit_transaction(self):
+        # MongoDB doesn't support transactions
+        pass
+    
+    def rollback_transactions_dry_run(self):
+        # MongoDB doesn't support transactions
         pass
