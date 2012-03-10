@@ -9,6 +9,9 @@ __homepage__ = "https://django-mongodb.org"
 __docformat__ = "restructuredtext"
 
 
+from django.conf import settings
+
+
 # It might be irritating that django-mongodb-engine registers itself as
 # an app, and I think this is worth an explanation - so here you go:
 # django-mongodb-engine provides a way to set MongoDB-specific options
@@ -28,8 +31,10 @@ __docformat__ = "restructuredtext"
 # order implied by iterating over the INSTALLED_APPS list. As we have
 # to make sure that django-mongodb-engine is loaded very first, we
 # prepend it to the list.
-try:
-    from django.conf import settings
+if 'django_mongodb_engine' not in settings.INSTALLED_APPS:
     settings.INSTALLED_APPS.insert(0, 'django_mongodb_engine')
-except ImportError:
-    pass
+
+# ObjectIds are the natural, scalable choice, but ints are the only
+# choice if you'd like to run Django tests.
+if not hasattr(settings, 'MONGO_INT_BASED_AUTOFIELDS'):
+    settings.MONGO_INT_BASED_AUTOFIELDS = False
