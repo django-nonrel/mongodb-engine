@@ -27,10 +27,6 @@ from .query import A
 from .utils import safe_regex, first
 
 
-if not settings.MONGO_INT_BASED_AUTOFIELDS:
-    AutoField.value_type = unicode
-
-
 OPERATORS_MAP = {
     'exact':  lambda val: val,
     'gt':     lambda val: {'$gt': val},

@@ -38,3 +38,5 @@ if 'django_mongodb_engine' not in settings.INSTALLED_APPS:
 # choice if you'd like to run Django tests.
 if not hasattr(settings, 'MONGO_INT_BASED_AUTOFIELDS'):
     settings.MONGO_INT_BASED_AUTOFIELDS = False
+if not settings.MONGO_INT_BASED_AUTOFIELDS:
+    settings.AUTOFIELD_TYPE = unicode
