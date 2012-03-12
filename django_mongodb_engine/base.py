@@ -173,6 +173,9 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
         del self.connection
 
     def get_collection(self, name, **kwargs):
+        if (kwargs.pop('existing', False) and
+                name not in self.connection.database.collection_names()):
+            return None
         collection = self.collection_class(self.database, name, **kwargs)
         if settings.DEBUG:
             collection = CollectionDebugWrapper(collection, self.alias)

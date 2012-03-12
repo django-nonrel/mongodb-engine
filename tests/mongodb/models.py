@@ -127,3 +127,10 @@ class CappedCollection2(models.Model):
     class MongoMeta:
         capped = True
         collection_max = 2
+
+
+class CappedCollection3(models.Model):
+    n = models.IntegerField(default=43)
+
+    class MongoMeta:
+        capped = True

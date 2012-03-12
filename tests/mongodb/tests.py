@@ -524,12 +524,12 @@ class CappedCollectionTests(TestCase):
 
     def test_reverse_natural(self):
         for n in [1, 2, 3]:
-            CappedCollection.objects.create(n=n)
+            CappedCollection3.objects.create(n=n)
 
         self.assertEqualLists(
-            CappedCollection.objects.values_list('n', flat=True),
+            CappedCollection3.objects.values_list('n', flat=True),
             [1, 2, 3])
 
         self.assertEqualLists(
-            CappedCollection.objects.reverse().values_list('n', flat=True),
+            CappedCollection3.objects.reverse().values_list('n', flat=True),
             [3, 2, 1])
