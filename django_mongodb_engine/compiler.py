@@ -104,10 +104,14 @@ class MongoQuery(NonrelQuery):
 
     @safe_call
     def order_by(self, ordering):
-        for field, descending in ordering:
-            column = '_id' if field.primary_key else field.column
-            direction = DESCENDING if descending else ASCENDING
-            self.ordering.append((column, direction))
+        if isinstance(ordering, bool):
+            direction = ASCENDING if ordering else DESCENDING
+            self.ordering.append(('$natural', direction))
+        else:
+            for field, ascending in ordering:
+                column = '_id' if field.primary_key else field.column
+                direction = ASCENDING if ascending else DESCENDING
+                self.ordering.append((column, direction))
 
     @safe_call
     def delete(self):
