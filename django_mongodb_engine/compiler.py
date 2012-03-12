@@ -166,7 +166,6 @@ class MongoQuery(NonrelQuery):
                 continue
 
             field, lookup_type, value = self._decode_child(child)
-            column = field.column
 
             if lookup_type in ('month', 'day'):
                 raise DatabaseError("MongoDB does not support month/day "
@@ -177,6 +176,8 @@ class MongoQuery(NonrelQuery):
 
             if field.primary_key:
                 column = '_id'
+            else:
+                column = field.column
 
             existing = subquery.get(column)
 
@@ -222,12 +223,12 @@ class MongoQuery(NonrelQuery):
                         lookup = lookup.values()[0]
                     assert not isinstance(lookup, dict), (not_, lookup)
                     if self._negated:
-                        # {'not': {'a': o1}} + {'a': o2} -->
-                        #     {'a': {'nin': [o1], 'all': [o2]}}
-                        subquery[column] = {'$nin': [not_, lookup]}
-                    else:
                         # {'not': {'a': o1}} + {'a': {'not': o2}} -->
                         #     {'a': {'nin': [o1, o2]}}
+                        subquery[column] = {'$nin': [not_, lookup]}
+                    else:
+                        # {'not': {'a': o1}} + {'a': o2} -->
+                        #     {'a': {'nin': [o1], 'all': [o2]}}
                         subquery[column] = {'$nin': [not_], '$all': [lookup]}
                 else:
                     if isinstance(lookup, dict):
@@ -245,12 +246,18 @@ class MongoQuery(NonrelQuery):
                             else:
                                 existing.update(lookup)
                         else:
-                            # {'$gt': o1} + {'$lt': o2} -->
-                            #     {'$gt': o1, '$lt': o2}
-                            assert all(key not in existing
-                                       for key in lookup.keys()), \
+                            if '$in' in lookup and '$in' in existing:
+                                # {'$in': o1} + {'$in': o2}
+                                #    --> {'$in': o1 union o2}
+                                existing['$in'] = list(
+                                    set(lookup['$in'] + existing['$in']))
+                            else:
+                                # {'$gt': o1} + {'$lt': o2}
+                                #    --> {'$gt': o1, '$lt': o2}
+                                assert all(key not in existing
+                                           for key in lookup.keys()), \
                                        [lookup, existing]
-                            existing.update(lookup)
+                                existing.update(lookup)
                     else:
                         key = '$nin' if self._negated else '$all'
                         existing.setdefault(key, []).append(lookup)

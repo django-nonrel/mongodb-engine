@@ -253,6 +253,12 @@ class BasicQueryTests(TestCase):
                         .filter(title='a'),
             [])
 
+        # Tests chaining on primary keys.
+        blog_id = Blog.objects.get().id
+        self.assertEqual(
+            Blog.objects.filter(pk=blog_id).filter(pk=blog_id).get(),
+            Blog.objects.get())
+
     def test_negated_Q(self):
         blogs = [Blog.objects.create(title=title) for title in
                  ('blog', 'other blog', 'another blog')]
