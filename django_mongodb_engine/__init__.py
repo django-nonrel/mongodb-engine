@@ -34,5 +34,9 @@ from django.conf import settings
 if 'django_mongodb_engine' not in settings.INSTALLED_APPS:
     settings.INSTALLED_APPS.insert(0, 'django_mongodb_engine')
 
-# Mongo uses ObjectId-based AutoFields.
-settings.AUTOFIELD_TYPE = unicode
+# ObjectIds are the natural, scalable choice, but ints are the only
+# choice if you'd like to run Django tests.
+if not hasattr(settings, 'MONGO_INT_BASED_AUTOFIELDS'):
+    settings.MONGO_INT_BASED_AUTOFIELDS = False
+if not settings.MONGO_INT_BASED_AUTOFIELDS:
+    settings.AUTOFIELD_TYPE = unicode
