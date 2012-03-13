@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.db.utils import DatabaseError
 
 from pymongo import DESCENDING
@@ -23,15 +22,8 @@ class DatabaseCreation(NonrelDatabaseCreation):
         ForeignKeys, OneToOneFields and ManyToManyFields.
         """
         if field.rel is not None:
-            db_type = field.rel.get_related_field().db_type(
-                connection=self.connection)
-        else:
-            db_type = field.db_type(connection=self.connection)
-
-        if settings.MONGO_INT_BASED_AUTOFIELDS and db_type == 'key':
-            db_type = 'integer'
-
-        return db_type
+            field = field.rel.get_related_field()
+        return field.db_type(connection=self.connection)
 
     def sql_indexes_for_model(self, model, termstyle):
         """Creates indexes for all fields in ``model``."""

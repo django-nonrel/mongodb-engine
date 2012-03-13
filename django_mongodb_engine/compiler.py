@@ -3,7 +3,6 @@ from functools import wraps
 import re
 import sys
 
-from django.conf import settings
 from django.db.models import F
 from django.db.models.fields import AutoField
 from django.db.models.sql import aggregates as sqlaggregates
@@ -366,12 +365,6 @@ class SQLInsertCompiler(NonrelInsertCompiler, SQLCompiler):
                     document['_id'] = value
             else:
                 document[field.column] = value
-
-        if settings.MONGO_INT_BASED_AUTOFIELDS and '_id' not in document:
-            counters = self.connection.get_collection('autofield_next_ints')
-            document['_id'] = counters.find_and_modify(
-                query={'_id': self.query.get_meta().db_table},
-                update={'$inc': {'next': 1}}, new=True, upsert=True)['next']
 
         collection = self.get_collection()
         options = self.connection.operation_flags.get('save', {})
