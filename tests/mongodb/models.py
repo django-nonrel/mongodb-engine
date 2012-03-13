@@ -126,6 +126,7 @@ class CappedCollection2(models.Model):
 
     class MongoMeta:
         capped = True
+        collection_size = 1000
         collection_max = 2
 
 
@@ -134,3 +135,4 @@ class CappedCollection3(models.Model):
 
     class MongoMeta:
         capped = True
+        collection_size = 1000

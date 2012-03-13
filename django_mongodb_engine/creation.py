@@ -161,10 +161,13 @@ class DatabaseCreation(NonrelDatabaseCreation):
         """
         name = model._meta.db_table
         if getattr(model._meta, 'capped', False):
-            kwargs = {
-                'capped': True,
-                'size': getattr(model._meta, 'collection_size', 10000000000),
-                'max': getattr(model._meta, 'collection_max', None)}
+            kwargs = {'capped': True}
+            size = getattr(model._meta, 'collection_size', None)
+            if size is not None:
+                kwargs['size'] = size
+            max_ = getattr(model._meta, 'collection_max', None)
+            if max_ is not None:
+                kwargs['max'] = max_
         else:
             kwargs = {}
 
