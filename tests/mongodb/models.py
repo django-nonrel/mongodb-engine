@@ -16,7 +16,11 @@ class DescendingIndexModel(models.Model):
 
 
 class DateModel(models.Model):
-    date = models.DateTimeField()
+    date = models.DateField()
+
+
+class DateTimeModel(models.Model):
+    datetime = models.DateTimeField()
 
 
 class RawModel(models.Model):
