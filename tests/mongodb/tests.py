@@ -7,13 +7,14 @@ from django.contrib.sites.models import Site
 
 from pymongo.objectid import InvalidId
 from pymongo import ASCENDING, DESCENDING
-from gridfs import GridFS, GridOut
+from gridfs import GridOut
 
 from django_mongodb_engine.base import DatabaseWrapper
 from django_mongodb_engine.serializer import LazyModelInstance
 
 from .models import *
 from .utils import *
+
 
 class MongoDBEngineTests(TestCase):
     """ Tests for mongodb-engine specific features """
@@ -42,7 +43,6 @@ class MongoDBEngineTests(TestCase):
         self.assertNotEqual(l3._wrapped, None)
 
     def test_lazy_model_instance_in_list(self):
-        from django.conf import settings
         from bson.errors import InvalidDocument
 
         obj = RawModel(raw=[])
@@ -102,12 +102,12 @@ class MongoDBEngineTests(TestCase):
 
     def test_tellsiteid(self):
         from django.contrib.sites.models import Site
-        from django.conf import settings
         site_id = Site.objects.create().id
         for kwargs in [{}, {'verbosity': 1}]:
             stdout = StringIO()
             call_command('tellsiteid', stdout=stdout, **kwargs)
             self.assertIn(site_id, stdout.getvalue())
+
 
 class RegressionTests(TestCase):
     @skip("Needs changes in ListField/db_type")
@@ -116,7 +116,7 @@ class RegressionTests(TestCase):
         from bson.objectid import ObjectId
         from query.models import Blog, Post
         post = Post.objects.create(blog=Blog.objects.create())
-        m = Issue47Model.objects.create(foo=[post])
+        Issue47Model.objects.create(foo=[post])
         collection = get_collection(Issue47Model)
         assert collection.count() == 1
         doc = collection.find_one()
@@ -164,7 +164,7 @@ class RegressionTests(TestCase):
 
     def test_multiple_exclude_random(self):
         from random import randint
-        objs = [RawModel.objects.create(raw=i) for i in xrange(20)]
+        [RawModel.objects.create(raw=i) for i in xrange(20)]
         for i in xrange(10):
             q = RawModel.objects.all()
             for i in xrange(randint(0, 20)):
@@ -175,6 +175,22 @@ class RegressionTests(TestCase):
         query = [Q(raw='a') | Q(raw='b'),
                  Q(raw='c') | Q(raw='d')]
         self.assertRaises(AssertionError, RawModel.objects.get, *query)
+
+    def test_issue_112(self):
+        from contrib.models import MapReduceModel
+
+        MapReduceModel.objects.create(n=42, m=0)
+
+        base_qs = MapReduceModel.objects.raw_query({'n': 42})
+
+        for filters in [
+            {'m__gte': 0},
+            {'n__gte': 0}
+        ]:
+            qs = base_qs.filter(**filters)
+            self.assertEqual(qs.count(), 1)
+            self.assertEqual(qs[0], MapReduceModel.objects.get())
+
 
 class DatabaseOptionTests(TestCase):
     """ Tests for MongoDB-specific database options """
@@ -216,8 +232,6 @@ class DatabaseOptionTests(TestCase):
                 self.assertEqual(connection.connection.__dict__[name], value)
 
     def test_operation_flags(self):
-        from textwrap import dedent
-
         def test_setup(flags, **method_kwargs):
             cls_code = [
                 'from pymongo.collection import Collection',
@@ -357,6 +371,7 @@ class NewStyleIndexTests(TestCase):
         self.assertHaveIndex([('embedded.a2', 1)])
         self.assertHaveIndex([('embedded_list.a2', 1)])
 
+
 class GridFSFieldTests(TestCase):
     def tearDown(self):
         get_collection(GridFSFieldTestModel).files.remove()
@@ -480,6 +495,7 @@ class GridFSFieldTests(TestCase):
             DatabaseError, "Updates on GridFSFields are not allowed",
             GridFSFieldTestModel.objects.update, gridfile='x'
         )
+
 
 class CappedCollectionTests(TestCase):
     def test_collection_size(self):
