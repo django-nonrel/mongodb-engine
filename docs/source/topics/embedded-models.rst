@@ -117,7 +117,7 @@ your data records. If you want to use them anyway, here's how you'd do it::
        foo = models.IntegerField()
 
    class BarModel(models.Model):
-       bar = models.CharField()
+       bar = models.CharField(max_length=255)
 
 ::
 
@@ -126,4 +126,4 @@ your data records. If you want to use them anyway, here's how you'd do it::
    )
 
 .. _MongoDB's subobjects: http://www.mongodb.org/display/DOCS/Dot+Notation+(Reaching+into+Objects)
-.. _generic relations: http://docs.djangoproject.com/en/dev/ref/contrib/contenttypes/ 
+.. _generic relations: http://docs.djangoproject.com/en/dev/ref/contrib/contenttypes/

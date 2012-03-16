@@ -53,7 +53,7 @@ For example, a logging collection fixed to 50MiB could be defined as follows::
 
    class LogEntry(models.Model):
        timestamp = models.DateTimeField()
-       message = models.CharField()
+       message = models.TextField()
        ...
        class MongoMeta:
            capped = True
