@@ -216,7 +216,7 @@ To make our blog less boring, we should add some nice pictures.
 As MongoDB disciples, what comes to mind when thinking about storing files?
 Of course! GridFS!
 
-Django MongoDB Engine provides a :class:`Django storage backend for GridFS <GridFSStorage>`
+Django MongoDB Engine provides a :doc:`Django storage backend for GridFS <topics/gridfs>`
 that allows you to use GridFS like any other file storage:
 
 .. literalinclude:: code/tutorial/v4/gridfsuploads/__init__.py
