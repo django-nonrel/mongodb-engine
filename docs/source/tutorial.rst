@@ -187,7 +187,7 @@ Neat, isn't it?
 
 Using lists, dictionaries and embedded objects, you can design your database
 schema very similar to the structure of the Python objects used all over your
-code.  No need to sequeeze your objects into primitive non-relational schemas.
+code.  No need to squeeze your objects into primitive non-relational schemas.
 
 Adding Some Templates
 ---------------------
