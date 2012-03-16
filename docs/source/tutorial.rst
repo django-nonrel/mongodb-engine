@@ -197,7 +197,7 @@ post overview page could look like:
 .. literalinclude:: code/tutorial/v3/nonrelblog/templates/nonrelblog/post_list.html
    :language: html+django
 
-Pretty straightward. Here's the single post template:
+Pretty straightforward. Here's the single post template:
 
 .. literalinclude:: code/tutorial/v3/nonrelblog/templates/nonrelblog/post_detail.html
    :language: html+django
