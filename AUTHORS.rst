@@ -5,6 +5,7 @@ Current Primary Authors
 -----------------------
 * Jonas Haag <jonas@lophus.org>
 * Flavio Percoco Premoli <flaper87@flaper87.org>
+* Wojtek Ruszczewski <github@wr.waw.pl>
 
 Past Primary Authors
 --------------------
