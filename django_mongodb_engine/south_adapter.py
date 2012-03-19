@@ -39,7 +39,8 @@ class DatabaseOperations(DatabaseOperations):
                 connection = self._get_connection()
                 collection = self._get_collection(table_name)
                 name = field.column
-                default = field.get_db_prep_save(default, connection=connection)
+                db_prep_save = field.get_db_prep_save(default, connection=connection)
+                default = connection.ops.value_for_db(db_prep_save, field)
                 # Update all the documents that haven't got this field yet
                 collection.update({name: {'$exists': False}},
                                   {'$set': {name: default}})
