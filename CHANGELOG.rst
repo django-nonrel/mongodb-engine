@@ -8,11 +8,14 @@ Version 0.5 (TBD)
 * PyPy support
 * MongoDB 2.0 support
 * New custom primary key behaviour (to be documented)
+* Sorting using ``$natural`` when no field ordering is defined
+* Dropped ``LegacyEmbeddedModelField``
 * Deprecated the ``MongoMeta.{index_together,descending_indexes,sparse_indexes}``
   properties in favor of the new ``MongoMeta.indexes`` setting
 * Deprecation of ``A()`` queries
 * Deprecation of the ``GridFSField.versioning`` feature
 * Numerous query generator fixes
+* Fixed ``DecimalField`` values sorting
 * Other bug fixes, cleanup, new tests etc.
 
 Version 0.4 (May 2011)

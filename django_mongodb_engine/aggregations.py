@@ -26,27 +26,32 @@ class MongoAggregate(object):
     def as_sql(self):
         raise NotImplementedError
 
+
 class Count(MongoAggregate):
     is_ordinal = True
     initial_value = 0
     reduce_template = '{alias}++'
 
+
 class Min(MongoAggregate):
     initial_value = float('inf')
     reduce_template = '{alias} = ({lookup} < {alias}) ? {lookup}: {alias}'
+
 
 class Max(MongoAggregate):
     initial_value = float('-inf')
     reduce_template = '{alias} = ({lookup} > {alias}) ? {lookup}: {alias}'
 
+
 class Avg(MongoAggregate):
     is_computed = True
 
     def initial(self):
-        return {'%s__count' % self.alias : 0, '%s__total' % self.alias : 0}
+        return {'%s__count' % self.alias: 0, '%s__total' % self.alias: 0}
 
-    reduce_template   = '{alias}__count++; {alias}__total += {lookup}'
+    reduce_template = '{alias}__count++; {alias}__total += {lookup}'
     finalize_template = '{alias} = {alias}__total / {alias}__count'
+
 
 class Sum(MongoAggregate):
     is_computed = True
@@ -54,6 +59,9 @@ class Sum(MongoAggregate):
 
     reduce_template = '{alias} += {lookup}'
 
-_AGGREGATION_CLASSES = dict((cls.__name__, cls) for cls in MongoAggregate.__subclasses__())
+
+_AGGREGATION_CLASSES = dict((cls.__name__, cls)
+                            for cls in MongoAggregate.__subclasses__())
+
 def get_aggregation_class_by_name(name):
     return _AGGREGATION_CLASSES[name]

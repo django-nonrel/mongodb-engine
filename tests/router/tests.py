@@ -1,10 +1,12 @@
-from django.test import TestCase
 from django.db.utils import DatabaseError
+from django.test import TestCase
+
 
 class RouterTest(TestCase):
+
     def test_managed_apps(self):
-        # MONGODB_MANAGED_APPS = ['query'] : Any 'query' model resides in
-        # the MongoDB 'other'
+        # MONGODB_MANAGED_APPS = ['query'] : Any 'query' model resides
+        # in the MongoDB 'other'.
         from query.models import Blog
         Blog.objects.create()
         self.assertEqual(Blog.objects.using('other').count(), 1)
@@ -12,8 +14,9 @@ class RouterTest(TestCase):
             Blog.objects.using('default').count)
 
     def test_managed_models(self):
-        # MONGODB_MANAGED_MODELS = ['router.MongoDBModel'] :
-        # router.models.MongoDBModel resides in MongoDB, .SQLiteModel in SQLite
+        # MONGODB_MANAGED_MODELS = ['router.MongoDBModel']:
+        # router.models.MongoDBModel resides in MongoDB,
+        # .SQLiteModel in SQLite.
         from router.models import MongoDBModel, SQLiteModel
         mongo_obj = MongoDBModel.objects.create()
         sql_obj = SQLiteModel.objects.create()

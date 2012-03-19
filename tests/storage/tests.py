@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
+from datetime import datetime, timedelta
 import os
 import tempfile
-from datetime import datetime, timedelta
+
 from django.core.files.base import ContentFile, File
+
 from django_mongodb_engine.storage import GridFSStorage
 
 from .utils import TestCase
+
 
 class GridFSStorageTest(TestCase):
     storage_class = GridFSStorage
@@ -25,7 +28,8 @@ class GridFSStorageTest(TestCase):
 
     def test_file_access_options(self):
         """
-        Standard file access options are available, and work as expected.
+        Standard file access options are available, and work as
+        expected.
         """
         self.assertFalse(self.storage.exists('storage_test'))
         f = self.storage.open('storage_test', 'w')
@@ -33,7 +37,7 @@ class GridFSStorageTest(TestCase):
         f.close()
         self.assert_(self.storage.exists('storage_test'))
 
-        test_file =  self.storage.open('storage_test', 'r')
+        test_file = self.storage.open('storage_test', 'r')
         self.assertEqual(test_file.read(), 'storage contents')
 
         self.storage.delete('storage_test')
@@ -41,8 +45,8 @@ class GridFSStorageTest(TestCase):
 
     # def test_file_accessed_time(self):
     #     """
-    #     File storage returns a Datetime object for the last accessed time of
-    #     a file.
+    #     File storage returns a Datetime object for the last accessed
+    #     time of a file.
     #     """
     #     self.assertFalse(self.storage.exists('test.file'))
     #
@@ -52,7 +56,8 @@ class GridFSStorageTest(TestCase):
     #
     #     self.assertEqual(atime, datetime.fromtimestamp(
     #         os.path.getatime(self.storage.path(f_name))))
-    #     self.assertTrue(datetime.now() - self.storage.accessed_time(f_name) < timedelta(seconds=2))
+    #     self.assertTrue(datetime.now() - self.storage.accessed_time(f_name) <
+    #                     timedelta(seconds=2))
     #     self.storage.delete(f_name)
 
     def test_file_created_time(self):
@@ -66,13 +71,14 @@ class GridFSStorageTest(TestCase):
         f_name = self.storage.save('test.file', f)
         ctime = self.storage.created_time(f_name)
 
-        self.assertTrue(datetime.now() - self.storage.created_time(f_name) < timedelta(seconds=2))
+        self.assertTrue(datetime.now() - self.storage.created_time(f_name) <
+                        timedelta(seconds=2))
         self.storage.delete(f_name)
 
     # def test_file_modified_time(self):
     #     """
-    #     File storage returns a Datetime object for the last modified time of
-    #     a file.
+    #     File storage returns a Datetime object for the last modified
+    #     time of a file.
     #     """
     #     self.assertFalse(self.storage.exists('test.file'))
     #
@@ -80,14 +86,15 @@ class GridFSStorageTest(TestCase):
     #     f_name = self.storage.save('test.file', f)
     #     mtime = self.storage.modified_time(f_name)
     #
-    #     self.assertTrue(datetime.now() - self.storage.modified_time(f_name) < timedelta(seconds=2))
+    #     self.assertTrue(datetime.now() - self.storage.modified_time(f_name) <
+    #                     timedelta(seconds=2))
     #
     #     self.storage.delete(f_name)
 
     def test_file_save_without_name(self):
         """
-        File storage extracts the filename from the content object if no
-        name is given explicitly.
+        File storage extracts the filename from the content object if
+        no name is given explicitly.
         """
         self.assertFalse(self.storage.exists('test.file'))
 
@@ -120,7 +127,8 @@ class GridFSStorageTest(TestCase):
         """
         self.assertRaises(ValueError, self.storage.url, 'test.file')
 
-        self.storage = self.get_storage(self.storage.location, base_url='foo/')
+        self.storage = self.get_storage(self.storage.location,
+                                        base_url='foo/')
         self.assertEqual(self.storage.url('test.file'),
             '%s%s' % (self.storage.base_url, 'test.file'))
 
@@ -137,10 +145,9 @@ class GridFSStorageTest(TestCase):
         f = ContentFile('custom contents')
         f_name = self.storage.save('test.file', f)
 
-        self.assert_(isinstance(
-            self.storage.open('test.file', mixin=TestFileMixin),
-            TestFileMixin
-        ))
+        self.assert_(
+            isinstance(self.storage.open('test.file', mixin=TestFileMixin),
+            TestFileMixin))
 
         self.storage.delete('test.file')
 
@@ -155,7 +162,8 @@ class GridFSStorageTest(TestCase):
 
         self.storage.save('storage_test_1', ContentFile('custom content'))
         self.storage.save('storage_test_2', ContentFile('custom content'))
-        storage = self.get_storage(location=os.path.join(self.temp_dir, 'storage_dir_1'))
+        storage = self.get_storage(location=os.path.join(self.temp_dir,
+                                                         'storage_dir_1'))
         storage.save('storage_test_3', ContentFile('custom content'))
 
         dirs, files = self.storage.listdir('')
@@ -163,6 +171,7 @@ class GridFSStorageTest(TestCase):
         self.assertEqual(set(files),
                          set([u'storage_test_1', u'storage_test_2']))
 
+
 class GridFSStorageTestWithoutLocation(GridFSStorageTest):
-    # Now test everything without passing a location argument
+    # Now test everything without passing a location argument.
     temp_dir = ''

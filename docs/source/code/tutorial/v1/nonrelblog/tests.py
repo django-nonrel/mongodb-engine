@@ -17,5 +17,4 @@ Look and see, it has actually been saved!
 
 >>> Post.objects.get().comments
 [u'Great post!', u'Please, do more of these!']
-"""
-}
+"""}
