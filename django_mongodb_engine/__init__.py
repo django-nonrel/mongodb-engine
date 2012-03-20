@@ -35,4 +35,8 @@ if 'django_mongodb_engine' not in settings.INSTALLED_APPS:
     settings.INSTALLED_APPS.insert(0, 'django_mongodb_engine')
 
 # Mongo uses ObjectId-based AutoFields.
-settings.AUTOFIELD_TYPE = unicode
+# TODO: Maybe it would be better to require the user to explicitly set
+#       the option and only check (later) if it's already there?
+for database, options in settings.DATABASES.iteritems():
+    if options['ENGINE'] == 'django_mongodb_engine':
+        options['AUTOFIELD_TYPE'] = unicode
