@@ -33,12 +33,6 @@ try:
     # prepend it to the list.
     settings.INSTALLED_APPS.insert(0, 'django_mongodb_engine')
 
-    # Mongo uses ObjectId-based AutoFields.
-    # TODO: Maybe it would be better to require the user to explicitly
-    #       set the option and only check (later) if it's already there?
-    for database, options in settings.DATABASES.iteritems():
-        if options['ENGINE'] == 'django_mongodb_engine':
-            options['AUTOFIELD_TYPE'] = unicode
 except ImportError:
     # setup.py imports this file in order to read version/author/... metadata
     # but does not necessarily have a Django context.
