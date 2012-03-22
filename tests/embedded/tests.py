@@ -1,7 +1,7 @@
 from django_mongodb_engine.query import A
 
-from embedded.models import *
-from embedded.utils import TestCase, get_collection
+from models import *
+from utils import TestCase, get_collection
 
 
 class EmbeddedModelFieldTestCase(TestCase):

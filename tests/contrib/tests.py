@@ -7,8 +7,8 @@ from django.db.utils import DatabaseError
 
 from django_mongodb_engine.contrib import MapReduceResult
 
-from contrib.models import *
-from contrib.utils import TestCase, get_collection, skip
+from models import *
+from utils import TestCase, get_collection, skip
 
 
 class MapReduceTests(TestCase):
