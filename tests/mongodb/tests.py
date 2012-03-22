@@ -244,8 +244,7 @@ class DatabaseOptionTests(TestCase):
                     'def %s(self, *args, **kwargs):',
                     '    assert %r not in self._method_kwargs',
                     '    self._method_kwargs[%r] = kwargs',
-                    '    return super(self.__class__, self).%s(*args, '
-                    '                                          **kwargs)',
+                    '    return super(self.__class__, self).%s(*args, **kwargs)\n',
                 ]:
                     cls_code.append('    ' + line % name)
 
