@@ -13,8 +13,8 @@ from pymongo import ASCENDING, DESCENDING
 from django_mongodb_engine.base import DatabaseWrapper
 from django_mongodb_engine.serializer import LazyModelInstance
 
-from .models import *
-from .utils import *
+from models import *
+from utils import *
 
 
 class MongoDBEngineTests(TestCase):
@@ -244,8 +244,7 @@ class DatabaseOptionTests(TestCase):
                     'def %s(self, *args, **kwargs):',
                     '    assert %r not in self._method_kwargs',
                     '    self._method_kwargs[%r] = kwargs',
-                    '    return super(self.__class__, self).%s(*args, '
-                    '                                          **kwargs)',
+                    '    return super(self.__class__, self).%s(*args, **kwargs)\n',
                 ]:
                     cls_code.append('    ' + line % name)
 
