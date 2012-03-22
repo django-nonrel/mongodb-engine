@@ -20,3 +20,8 @@ to send regular patches to the mailing list.
 :PyPI: http://pypi.python.org/pypi/django-mongodb-engine/
 :License: 2-clause BSD
 :Keywords: django, mongodb, orm, nosql, database, python
+
+Build status
+------------
+:Master branch: .. image:: https://secure.travis-ci.org/django-nonrel/mongodb-engine.png?branch=master
+:Develop branch: .. image:: https://secure.travis-ci.org/django-nonrel/mongodb-engine.png?branch=develop

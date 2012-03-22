@@ -1,0 +1,3 @@
+pymongo
+https://github.com/django-nonrel/djangotoolbox/tarball/develop
+https://github.com/django-nonrel/django-nonrel/tarball/develop
