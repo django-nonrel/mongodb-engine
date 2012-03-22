@@ -13,7 +13,7 @@ function reduce(key, values) {
 """
 
 __test__ = {
-    'mr' : """
+    'mr': """
 >>> from models import Author, Article
 
 >>> bob = Author.objects.create()
@@ -32,10 +32,10 @@ D 1.0
 E 1.0
 
 Map/Reduce over Bob's articles:
->>> for pair in Article.objects.filter(author=bob).map_reduce(mapfunc, reducefunc, 'wordcount'):
+>>> for pair in Article.objects.filter(author=bob).map_reduce(
+            mapfunc, reducefunc, 'wordcount'):
 ...    print pair.key, pair.value
 A 1.0
 B 1.0
 C 1.0
-"""
-}
+"""}

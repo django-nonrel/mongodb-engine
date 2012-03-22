@@ -2,7 +2,9 @@ from django.db import models
 from django.db.models.query import QuerySet
 from django.utils.functional import SimpleLazyObject
 from django.utils.importlib import import_module
+
 from pymongo.son_manipulator import SONManipulator
+
 
 def get_model_by_meta(model_meta):
     app, model = model_meta['_app'], model_meta['_model']
@@ -14,12 +16,15 @@ def get_model_by_meta(model_meta):
         try:
             return getattr(module, model)
         except AttributeError:
-            raise AttributeError("Could not find model %r in module %r" % (model, module))
+            raise AttributeError("Could not find model %r in module %r." %
+                                 (model, module))
+
 
 class LazyModelInstance(SimpleLazyObject):
     """
     Lazy model instance.
     """
+
     def __init__(self, model, pk):
         self.__dict__['_pk'] = pk
         self.__dict__['_model'] = model
@@ -36,9 +41,11 @@ class LazyModelInstance(SimpleLazyObject):
 
 
 class TransformDjango(SONManipulator):
+
     def transform_incoming(self, value, collection):
         if isinstance(value, (list, tuple, set, QuerySet)):
-            return [self.transform_incoming(item, collection) for item in value]
+            return [self.transform_incoming(item, collection)
+                    for item in value]
 
         if isinstance(value, dict):
             return dict((key, self.transform_incoming(subvalue, collection))
@@ -47,17 +54,18 @@ class TransformDjango(SONManipulator):
         if isinstance(value, models.Model):
             value.save()
             return {
-                '_app' : value._meta.app_label,
-                '_model' : value._meta.object_name,
-                'pk' : value.pk,
-                '_type' : 'django'
+                '_app': value._meta.app_label,
+                '_model': value._meta.object_name,
+                'pk': value.pk,
+                '_type': 'django',
             }
 
         return value
 
     def transform_outgoing(self, son, collection):
         if isinstance(son, (list, tuple, set)):
-            return [self.transform_outgoing(value, collection) for value in son]
+            return [self.transform_outgoing(value, collection)
+                    for value in son]
 
         if isinstance(son, dict):
             if son.get('_type') == 'django':

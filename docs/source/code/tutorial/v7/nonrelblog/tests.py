@@ -14,7 +14,7 @@ function reduce(id, values) {
 }
 """
 
-__test__ = {'mapreduce' : """
+__test__ = {'mapreduce': """
 >>> from nonrelblog.models import *
 
 Add some data so we can actually mapreduce anything.
@@ -27,7 +27,8 @@ Alice: 9 comments
 >>> for distribution in [(0, 1, 2), (1, 2, 3), (2, 3, 4)]:
 ...     comments = []
 ...     for author, ncomments in zip(authors, distribution):
-...         comments.extend([Comment(author=author) for i in xrange(ncomments)])
+...         comments.extend([Comment(author=author)
+...                         for i in xrange(ncomments)])
 ...     Post(comments=comments).save()
 
 ------------------------
