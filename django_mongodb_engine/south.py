@@ -1,3 +1,14 @@
+import warnings
+
+
+warnings.warn(
+    '`django_mongodb_engine.south.DatabaseOperations` south database backend '
+    'is actually a dummy backend that does nothing at all. It will be '
+    'removed in favor of the `django_mongodb_engine.south_adapter.DatabaseOperations` '
+    'that provides the correct behavior.',
+    DeprecationWarning
+)
+
 class DatabaseOperations(object):
     """
     MongoDB implementation of database operations.
