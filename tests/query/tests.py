@@ -6,8 +6,8 @@ from django.db.utils import DatabaseError
 
 from pymongo.objectid import ObjectId
 
-from .models import *
-from .utils import *
+from models import *
+from utils import *
 
 
 class BasicQueryTests(TestCase):
