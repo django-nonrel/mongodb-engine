@@ -241,3 +241,5 @@ class DistinctTests(TestCase):
 
         self.assertEqual(MapReduceModel.objects.distinct('m'),
                          [2, 4, 6, 8, 10, 12, 14, 16, 18])
+
+        self.assertEqual(MapReduceModel.objects.filter(n=6).distinct('m'), [12])
