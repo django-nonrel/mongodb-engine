@@ -9,6 +9,7 @@ from django.db.models.sql import aggregates as sqlaggregates
 from django.db.models.sql.constants import MULTI
 from django.db.models.sql.where import OR
 from django.db.utils import DatabaseError, IntegrityError
+from django.utils.encoding import smart_str
 from django.utils.tree import Node
 
 from pymongo import ASCENDING, DESCENDING
@@ -69,9 +70,9 @@ def safe_call(func):
         try:
             return func(*args, **kwargs)
         except DuplicateKeyError, e:
-            raise IntegrityError, IntegrityError(str(e)), sys.exc_info()[2]
+            raise IntegrityError, IntegrityError(smart_str(e)), sys.exc_info()[2]
         except PyMongoError, e:
-            raise DatabaseError, DatabaseError(str(e)), sys.exc_info()[2]
+            raise DatabaseError, DatabaseError(smart_str(e)), sys.exc_info()[2]
 
     return wrapper
 
