@@ -14,12 +14,16 @@ env:
   - MONGODB_VERSION=
   - MONGODB_VERSION=18
 
+before_script:
+  - if [ -z "$MONGODB_VERSION" ]; then
+      sudo apt-key adv --keyserver keyserver.ubuntu.com --recv 7F0CEB10 &&
+      sudo sh -c 'echo deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen >> /etc/apt/sources.list' &&
+      sudo apt-get update &&
+      sudo apt-get remove --purge mongodb-10gen &&
+      sudo apt-get install --yes mongodb$MONGODB_VERSION-10gen;
+    fi
+
 script:
-  sudo apt-key adv --keyserver keyserver.ubuntu.com --recv 7F0CEB10 &&
-  sudo sh -c 'echo deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen >> /etc/apt/sources.list' &&
-  sudo apt-get update &&
-  sudo apt-get remove --purge mongodb-10gen &&
-  sudo apt-get install --yes mongodb$MONGODB_VERSION-10gen &&
   python setup.py install &&
   cd tests &&
   python runtests.py
