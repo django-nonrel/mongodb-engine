@@ -31,19 +31,19 @@ Django-nonrel
 .............
 ::
 
-   pip install git+https://github.com/django-nonrel/django-nonrel
+   pip install https://github.com/django-nonrel/django-nonrel/tarball/master
 
 djangotoolbox
 .............
 ::
 
-   pip install git+https://github.com/django-nonrel/djangotoolbox
+   pip install https://github.com/django-nonrel/djangotoolbox/tarball/master
 
 Django MongoDB Engine
 .....................
 You should use the latest Git revision. ::
 
-   pip install git+https://github.com/django-nonrel/mongodb-engine
+   pip install https://github.com/django-nonrel/mongodb-engine/tarball/master
 
 
 Configuration
