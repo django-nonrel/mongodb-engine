@@ -31,13 +31,13 @@ Django-nonrel
 .............
 ::
 
-   pip install hg+https://bitbucket.org/wkornewald/django-nonrel
+   pip install git+https://github.com/django-nonrel/django-nonrel
 
 djangotoolbox
 .............
 ::
 
-   pip install hg+https://bitbucket.org/wkornewald/djangotoolbox
+   pip install git+https://github.com/django-nonrel/djangotoolbox
 
 Django MongoDB Engine
 .....................
