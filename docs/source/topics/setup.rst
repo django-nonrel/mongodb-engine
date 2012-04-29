@@ -43,7 +43,7 @@ Django MongoDB Engine
 .....................
 You should use the latest Git revision. ::
 
-   pip install https://github.com/django-nonrel/mongodb-engine/tarball/master
+   pip install django-mongodb-engine
 
 
 Configuration
