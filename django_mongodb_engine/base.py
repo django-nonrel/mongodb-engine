@@ -10,7 +10,8 @@ from django.db.utils import DatabaseError
 
 from pymongo.collection import Collection
 from pymongo.connection import Connection
-from pymongo.objectid import ObjectId, InvalidId
+from bson.objectid import ObjectId
+from bson.errors import InvalidId
 
 from djangotoolbox.db.base import (
     NonrelDatabaseClient,
