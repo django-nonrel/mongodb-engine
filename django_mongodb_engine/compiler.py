@@ -15,7 +15,14 @@ from django.utils.tree import Node
 
 from pymongo.errors import PyMongoError, DuplicateKeyError
 from pymongo import ASCENDING, DESCENDING
-from pymongo.objectid import ObjectId, InvalidId
+
+import warnings
+try:
+    from pymongo.objectid import ObjectId, InvalidId
+    warnings.warn("pymongo.objectid deprecated, use bson.objectid and bson.errors instead")
+except ImportError:
+    from bson.objectid import ObjectId
+    from bson.errors import InvalidId
 
 from djangotoolbox.db.basecompiler import NonrelQuery, NonrelCompiler, \
     NonrelInsertCompiler, NonrelUpdateCompiler, NonrelDeleteCompiler
