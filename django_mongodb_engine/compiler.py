@@ -15,7 +15,8 @@ from django.utils.tree import Node
 
 from pymongo.errors import PyMongoError, DuplicateKeyError
 from pymongo import ASCENDING, DESCENDING
-from pymongo.objectid import ObjectId, InvalidId
+from bson.objectid import ObjectId
+from bson.errors import InvalidId
 
 from djangotoolbox.db.basecompiler import NonrelQuery, NonrelCompiler, \
     NonrelInsertCompiler, NonrelUpdateCompiler, NonrelDeleteCompiler
