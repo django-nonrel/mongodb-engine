@@ -10,9 +10,14 @@ from django.db.utils import DatabaseError
 
 from pymongo.collection import Collection
 from pymongo.connection import Connection
-from bson.objectid import ObjectId
-from bson.errors import InvalidId
 
+# handle pymongo backward compatibility
+try:
+    from bson.objectid import ObjectId
+    from bson.errors import InvalidId
+except ImportError:
+    from pymongo.objectid import ObjectId, InvalidId
+    
 from djangotoolbox.db.base import (
     NonrelDatabaseClient,
     NonrelDatabaseFeatures,

@@ -5,7 +5,11 @@ from django.core.exceptions import FieldError
 from django.db import connection
 from django.test import TestCase, skipUnlessDBFeature
 
-from bson.objectid import ObjectId
+# handle pymongo backward compatibility
+try:
+    from bson.objectid import ObjectId
+except ImportError:
+    from pymongo.objectid import ObjectId 
 
 from models import Author, Article, Tag
 
