@@ -1,7 +1,7 @@
 from django.core.exceptions import ImproperlyConfigured
 from django.db import connections, models
 
-from pymongo.objectid import ObjectId
+from bson.objectid import ObjectId
 from gridfs import GridFS
 from gridfs.errors import NoFile
 
