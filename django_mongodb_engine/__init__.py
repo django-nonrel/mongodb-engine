@@ -30,8 +30,11 @@ try:
     # Django imports all apps defined in the project's 'settings.py' in the
     # order implied by iterating over the INSTALLED_APPS list. As we have
     # to make sure that django-mongodb-engine is loaded very first, we
-    # prepend it to the list.
-    settings.INSTALLED_APPS.insert(0, 'django_mongodb_engine')
+    # prepend it to the list and gracefully handle when it's a tuple.
+    if isinstance(settings.INSTALLED_APPS, tuple):
+        settings.INSTALLED_APPS = ('django_mongodb_engine',) + settings.INSTALLED_APPS
+    else:
+        settings.INSTALLED_APPS.insert(0, 'django_mongodb_engine')
 
 except ImportError:
     # setup.py imports this file in order to read version/author/... metadata
