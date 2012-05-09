@@ -10,7 +10,11 @@ __docformat__ = "restructuredtext"
 
 try:
     from django.conf import settings
-    settings.INSTALLED_APPS.insert(0, 'django_mongodb_engine')
+    # gracefully handle cases where the INSTALLED_APPS are either a tuple or a list
+    if isinstance(settings.INSTALLED_APPS, tuple):
+        settings.INSTALLED_APPS = ('django_mongodb_engine',) + settings.INSTALLED_APPS
+    else:
+        settings.INSTALLED_APPS.insert(0, 'django_mongodb_engine')
     # It might be irritating that django-mongodb-engine registers itself as an app,
     # and I think this is worth an explanation - so here you go:
     # django-mongodb-engine provides a way to set MongoDB-specific options for a
