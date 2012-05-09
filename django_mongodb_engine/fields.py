@@ -6,7 +6,7 @@ from gridfs.errors import NoFile
 try:
     from bson.objectid import ObjectId
 except ImportError:
-    from pymongo.objectid import ObjectId, 
+    from pymongo.objectid import ObjectId 
     
         
 from django_mongodb_engine.utils import make_struct
