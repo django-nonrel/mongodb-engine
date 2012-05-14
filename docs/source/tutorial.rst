@@ -142,7 +142,9 @@ To embed instances of models into other models, we can use
    :lines: 10-21
    :prepend: from djangotoolbox.fields import EmbeddedModelField
 
-Let's hop into the Django shell and test this:
+Let's hop into the Django shell and test this (note that you have to delete the
+``Post`` object we created earlier because the old schema is incompatible to
+the new one -- alternatively, you could also migrate the database by hand):
 
 .. literalinclude:: code/tutorial/v2/nonrelblog/tests.py
    :start-after: from
