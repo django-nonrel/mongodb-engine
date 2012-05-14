@@ -7,7 +7,7 @@ from django.db import connection, connections
 from django.db.utils import DatabaseError, IntegrityError
 from django.db.models import Q
 
-from gridfs import GridFS, GridOut
+from gridfs import GridOut
 from pymongo import ASCENDING, DESCENDING
 
 from django_mongodb_engine.base import DatabaseWrapper
@@ -45,7 +45,6 @@ class MongoDBEngineTests(TestCase):
         self.assertNotEqual(l3._wrapped, None)
 
     def test_lazy_model_instance_in_list(self):
-        from django.conf import settings
         from bson.errors import InvalidDocument
 
         obj = RawModel(raw=[])
@@ -109,7 +108,6 @@ class MongoDBEngineTests(TestCase):
 
     def test_tellsiteid(self):
         from django.contrib.sites.models import Site
-        from django.conf import settings
         site_id = Site.objects.create().id
         for kwargs in [{}, {'verbosity': 1}]:
             stdout = StringIO()
@@ -118,6 +116,18 @@ class MongoDBEngineTests(TestCase):
 
 
 class RegressionTests(TestCase):
+    def test_djangononrel_issue_8(self):
+        """
+        ForeignKeys should be ObjectIds, not unicode.
+        """
+        from bson.objectid import ObjectId
+        from query.models import Blog, Post
+
+        post = Post.objects.create(blog=Blog.objects.create())
+        collection = get_collection(Post)
+        assert collection.count() == 1
+        doc = collection.find_one()
+        self.assertIsInstance(doc['blog_id'], ObjectId)
 
     def test_issue_47(self):
         """
@@ -130,7 +140,7 @@ class RegressionTests(TestCase):
             from pymongo.objectid import ObjectId 
         from query.models import Blog, Post
         post = Post.objects.create(blog=Blog.objects.create())
-        m = Issue47Model.objects.create(foo=[post])
+        Issue47Model.objects.create(foo=[post])
         collection = get_collection(Issue47Model)
         assert collection.count() == 1
         doc = collection.find_one()
@@ -180,12 +190,14 @@ class RegressionTests(TestCase):
 
     def test_multiple_exclude_random(self):
         from random import randint
-        objs = [RawModel.objects.create(raw=i) for i in xrange(20)]
+
+        for i in xrange(20):
+            RawModel.objects.create(raw=i)
+
         for i in xrange(10):
             q = RawModel.objects.all()
             for i in xrange(randint(0, 20)):
-                q = getattr(q,
-                            'filter' if randint(0, 1) else 'exclude')(raw=i)
+                q = getattr(q, 'filter' if randint(0, 1) else 'exclude')(raw=i)
             list(q)
 
     def test_issue_89(self):
@@ -235,8 +247,6 @@ class DatabaseOptionTests(TestCase):
                 self.assertEqual(connection.connection.__dict__[name], value)
 
     def test_operation_flags(self):
-        from textwrap import dedent
-
         def test_setup(flags, **method_kwargs):
             cls_code = [
                 'from pymongo.collection import Collection',
