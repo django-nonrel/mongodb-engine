@@ -44,6 +44,13 @@ groups/permissions in the user edit form.
 To workaround this problem, add ``'djangotoolbox'`` to your ``INSTALLED_APPS``
 which makes the Django admin skip the groups and permissions widgets.
 
+
 No form field implemented for <class 'djangotoolbox.fields.ListField'>
 ----------------------------------------------------------------------
 See https://gist.github.com/1200165
+
+
+How can I log the MongoDB queries made by Django?
+-------------------------------------------------
+You can simply use Django's `query logging system <https://docs.djangoproject.com/en/dev/topics/logging/#django-db-backends>`_. 
+An example configuration can be found `here <https://github.com/django-nonrel/mongodb-engine/blob/8348371be5779dafe8cb47d54f8337fe17b27bdc/tests/settings/debug.py#L5>`_.
