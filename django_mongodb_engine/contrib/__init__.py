@@ -148,7 +148,7 @@ class MongoDBQuerySet(QuerySet):
 
     def distinct(self, *args, **kwargs):
         query = self._get_query()
-        return query._get_results().distinct(*args, **kwargs)
+        return query.get_cursor().distinct(*args, **kwargs)
 
 
 class MongoDBManager(models.Manager, RawQueryMixin):
