@@ -7,7 +7,6 @@ from django.contrib.auth.models import User
 from django.core import management
 from django.db import connections, router, DEFAULT_DB_ALIAS
 from django.db.models import signals
-from unittest.case import expectedFailure
 
 from .models import Book, Person, Pet, UserProfile
 
@@ -19,7 +18,7 @@ try:
 except ImportError:
     pass
 
-from .utils import TestCase
+from .utils import expectedFailure, TestCase
 
 class QueryTestCase(TestCase):
     multi_db = True

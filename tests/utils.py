@@ -3,7 +3,7 @@ from django.conf import settings
 from django.db import connections
 from django.db.models import Model
 from django.test import TestCase
-from django.utils.unittest import skip
+from django.utils.unittest import expectedFailure, skip
 
 class TestCase(TestCase):
 
