@@ -5,9 +5,13 @@ from django.db.utils import DatabaseError, IntegrityError
 from django.db.models import Q
 from django.contrib.sites.models import Site
 
-from pymongo.objectid import InvalidId
 from pymongo import ASCENDING, DESCENDING
 from gridfs import GridFS, GridOut
+# handle pymongo backward compatibility
+try:
+    from bson.objectid import InvalidId, ObjectId
+except ImportError:
+    from pymongo.objectid import InvalidId, ObjectId
 
 from django_mongodb_engine.base import DatabaseWrapper
 from django_mongodb_engine.serializer import LazyModelInstance
@@ -113,7 +117,6 @@ class RegressionTests(TestCase):
     @skip("Needs changes in ListField/db_type")
     def test_issue_47(self):
         """ ForeignKeys in subobjects should be ObjectIds, not unicode """
-        from bson.objectid import ObjectId
         from query.models import Blog, Post
         post = Post.objects.create(blog=Blog.objects.create())
         m = Issue47Model.objects.create(foo=[post])
