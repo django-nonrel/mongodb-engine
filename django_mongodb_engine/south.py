@@ -1,6 +1,5 @@
 import warnings
 
-
 warnings.warn(
     '`django_mongodb_engine.south.DatabaseOperations` south database backend '
     'is actually a dummy backend that does nothing at all. It will be '
