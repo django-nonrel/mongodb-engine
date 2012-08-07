@@ -3,7 +3,7 @@ from cStringIO import StringIO
 
 from django.core.management import call_command
 from django.contrib.sites.models import Site
-from django.db import connection, connections
+from django.db import connection
 from django.db.utils import DatabaseError, IntegrityError
 from django.db.models import Q
 
@@ -238,13 +238,17 @@ class DatabaseOptionTests(TestCase):
                     'TZ_AWARE': True,
                     'DOCUMENT_CLASS': foodict,
                 }}) as connection:
-            for name, value in connection.settings_dict[
-                    'OPTIONS'].iteritems():
-                name = '_Connection__%s' % name.lower()
-                if name not in connection.connection.__dict__:
-                    # slave_okay was moved into BaseObject in PyMongo 2.0.
-                    name = name.replace('Connection', 'BaseObject')
-                self.assertEqual(connection.connection.__dict__[name], value)
+            connection_options = connection.settings_dict['OPTIONS']
+            for name, value in connection_options.iteritems():
+                attr_name = '_Connection__%s' % name.lower()
+                if attr_name not in connection.connection.__dict__:
+                    # slave_okak was moved into BaseObject in PyMongo 2.0.
+                    if name == 'SLAVE_OKAY':
+                        attr_name = attr_name.replace('Connection', 'BaseObject')
+                    # network_timeout was renamed net_timeout in PyMongo 2.2
+                    elif name == 'NETWORK_TIMEOUT':
+                        attr_name = attr_name.replace('network_timeout', 'net_timeout')
+                self.assertEqual(connection.connection.__dict__[attr_name], value)
 
     def test_operation_flags(self):
         def test_setup(flags, **method_kwargs):
