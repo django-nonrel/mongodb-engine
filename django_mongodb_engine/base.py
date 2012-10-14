@@ -237,10 +237,6 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
             if not self.database.authenticate(user, password):
                 raise ImproperlyConfigured("Invalid username or password.")
 
-        if settings.get('MONGODB_AUTOMATIC_REFERENCING'):
-            from .serializer import TransformDjango
-            self.database.add_son_manipulator(TransformDjango())
-
         self.connected = True
         connection_created.send(sender=self.__class__, connection=self)
 

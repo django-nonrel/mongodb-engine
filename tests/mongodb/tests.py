@@ -33,35 +33,6 @@ class MongoDBEngineTests(TestCase):
         self.assertEqual(RawModel.objects.get(raw=A('b', 2)), obj1)
         self.assertEqual(RawModel.objects.get(raw=A('b', 3)), obj2)
 
-    def test_lazy_model_instance(self):
-        l1 = LazyModelInstance(RawModel, 'some-pk')
-        l2 = LazyModelInstance(RawModel, 'some-pk')
-        self.assertEqual(l1, l2)
-
-        obj = RawModel.objects.create(raw='foobar')
-        l3 = LazyModelInstance(RawModel, obj.id)
-        self.assertEqual(l3._wrapped, None)
-        self.assertEqual(obj, l3)
-        self.assertNotEqual(l3._wrapped, None)
-
-    def test_lazy_model_instance_in_list(self):
-        from bson.errors import InvalidDocument
-
-        obj = RawModel(raw=[])
-        related = RawModel(raw='foo')
-        obj.raw.append(related)
-        self.assertRaises(InvalidDocument, obj.save)
-
-        connection.settings_dict['MONGODB_AUTOMATIC_REFERENCING'] = True
-        connection._reconnect()
-        obj.save()
-        self.assertNotEqual(related.id, None)
-        obj = RawModel.objects.get(id=obj.id)
-        self.assertEqual(obj.raw[0]._wrapped, None)
-        # Query will be done NOW:
-        self.assertEqual(obj.raw[0].raw, 'foo')
-        self.assertNotEqual(obj.raw[0]._wrapped, None)
-
     def test_nice_monthday_query_exception(self):
         with self.assertRaisesRegexp(DatabaseError, "not support month/day"):
             DateModel.objects.get(date__month=1)
