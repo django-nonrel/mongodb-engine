@@ -1,10 +1,8 @@
-import datetime
 from functools import wraps
 import re
 import sys
 
-from django.db.models import F
-from django.db.models.fields import AutoField
+from django.db.models import F, NOT_PROVIDED
 from django.db.models.sql import aggregates as sqlaggregates
 from django.db.models.sql.constants import MULTI
 from django.db.models.sql.where import OR
@@ -24,7 +22,7 @@ from djangotoolbox.db.basecompiler import (
 
 from .aggregations import get_aggregation_class_by_name
 from .query import A
-from .utils import safe_regex, first
+from .utils import safe_regex
 
 
 OPERATORS_MAP = {
@@ -64,7 +62,6 @@ NEGATED_OPERATORS_MAP = {
 
 
 def safe_call(func):
-
     @wraps(func)
     def wrapper(*args, **kwargs):
         try:
@@ -73,7 +70,6 @@ def safe_call(func):
             raise IntegrityError, IntegrityError(smart_str(e)), sys.exc_info()[2]
         except PyMongoError, e:
             raise DatabaseError, DatabaseError(smart_str(e)), sys.exc_info()[2]
-
     return wrapper
 
 
@@ -347,7 +343,7 @@ class SQLCompiler(NonrelCompiler):
 class SQLInsertCompiler(NonrelInsertCompiler, SQLCompiler):
 
     @safe_call
-    def insert(self, data, return_id=False):
+    def insert(self, docs, return_id=False):
         """
         Stores a document using field columns as element names, except
         for the primary key field for which "_id" is used.
@@ -356,23 +352,25 @@ class SQLInsertCompiler(NonrelInsertCompiler, SQLCompiler):
         document is created, otherwise value for a primary key may not
         be None.
         """
-        document = {}
-        for field, value in data.iteritems():
-            if field.primary_key:
-                if value is None:
-                    if len(data) != 1:
-                        raise DatabaseError("Can't save entity with _id "
-                                            "set to None.")
+        for doc in docs:
+            try:
+                doc['_id'] = doc.pop(self.query.get_meta().pk.column)
+            except KeyError:
+                pass
+            if doc.get('_id', NOT_PROVIDED) is None:
+                if len(doc) == 1:
+                    # insert with empty model
+                    doc.clear()
                 else:
-                    document['_id'] = value
-            else:
-                document[field.column] = value
+                    raise DatabaseError("Can't save entity with _id set to None")
 
         collection = self.get_collection()
         options = self.connection.operation_flags.get('save', {})
-        key = collection.save(document, **options)
+
         if return_id:
-            return key
+            return collection.save(doc, **options)
+        else:
+            collection.save(doc, **options)
 
 
 # TODO: Define a common nonrel API for updates and add it to the nonrel

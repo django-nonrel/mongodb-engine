@@ -17,14 +17,15 @@ try:
     from bson.errors import InvalidId
 except ImportError:
     from pymongo.objectid import ObjectId, InvalidId
-    
+
 from djangotoolbox.db.base import (
     NonrelDatabaseClient,
     NonrelDatabaseFeatures,
     NonrelDatabaseIntrospection,
     NonrelDatabaseOperations,
     NonrelDatabaseValidation,
-    NonrelDatabaseWrapper)
+    NonrelDatabaseWrapper
+)
 from djangotoolbox.db.utils import decimal_to_string
 
 from .creation import DatabaseCreation
@@ -63,7 +64,7 @@ class DatabaseOperations(NonrelDatabaseOperations):
             self.connection.database[table].remove()
         return []
 
-    def value_to_db_auto(self, value):
+    def validate_autopk_value(self, value):
         """
         Mongo uses ObjectId-based AutoFields.
         """

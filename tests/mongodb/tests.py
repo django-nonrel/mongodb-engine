@@ -188,14 +188,14 @@ class DatabaseOptionTests(TestCase):
                 **kwargs)
 
         def __enter__(self):
-            self._old_connection = connections._connections['default']
-            connections._connections['default'] = self.new_wrapper
+            self._old_connection = getattr(connections._connections, 'default')
+            connections._connections.default = self.new_wrapper
             self.new_wrapper._connect()
             return self.new_wrapper
 
         def __exit__(self, *exc_info):
             self.new_wrapper.connection.disconnect()
-            connections._connections['default'] = self._old_connection
+            connections._connections.default = self._old_connection
 
     def test_pymongo_connection_args(self):
 
@@ -205,7 +205,6 @@ class DatabaseOptionTests(TestCase):
         with self.custom_database_wrapper({
                 'OPTIONS': {
                     'SLAVE_OKAY': True,
-                    'NETWORK_TIMEOUT': 42,
                     'TZ_AWARE': True,
                     'DOCUMENT_CLASS': foodict,
                 }}) as connection:
