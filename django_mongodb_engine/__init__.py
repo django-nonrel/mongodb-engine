@@ -10,7 +10,6 @@ __docformat__ = "restructuredtext"
 
 try:
     from django.conf import settings
-    settings.INSTALLED_APPS.insert(0, 'django_mongodb_engine')
     # It might be irritating that django-mongodb-engine registers itself as an app,
     # and I think this is worth an explanation - so here you go:
     # django-mongodb-engine provides a way to set MongoDB-specific options for a
@@ -28,5 +27,10 @@ try:
     # all apps defined in the project's 'settings.py' in the order implied by
     # iterating over the INSTALLED_APPS list. As we have to make sure that
     # django-mongodb-engine is loaded very first, we prepend it to the list.
+    if isinstance(settings.INSTALLED_APPS, tuple):
+        settings.INSTALLED_APPS = ('django_mongodb_engine',) + settings.INSTALLED_APPS
+    else:
+        settings.INSTALLED_APPS.insert(0, 'django_mongodb_engine')
+    
 except ImportError:
     pass
