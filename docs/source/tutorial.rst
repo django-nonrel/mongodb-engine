@@ -139,7 +139,7 @@ To embed instances of models into other models, we can use
 :doc:`EmbeddedModelField <topics/embedded-models>`:
 
 .. literalinclude:: code/tutorial/v2/nonrelblog/models.py
-   :lines: 10-21
+   :lines: 14-22
    :prepend: from djangotoolbox.fields import EmbeddedModelField
 
 Let's hop into the Django shell and test this:
