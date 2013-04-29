@@ -7,13 +7,18 @@ from django.db.models import F
 from django.db.models.fields import AutoField
 from django.db.models.sql import aggregates as sqlaggregates
 from django.db.models.sql.constants import MULTI
-from django.db.models.sql.where import OR
+from django.db.models.sql.where import AND, OR
 from django.db.utils import DatabaseError, IntegrityError
 from django.utils.encoding import smart_str
 from django.utils.tree import Node
 
 from pymongo import ASCENDING, DESCENDING
 from pymongo.errors import PyMongoError, DuplicateKeyError
+try:
+    # ObjectId has been moved to bson.objectid in newer versions of PyMongo
+    from bson.objectid import ObjectId, InvalidId
+except ImportError:
+    from pymongo.objectid import ObjectId, InvalidId
 
 from djangotoolbox.db.basecompiler import (
     NonrelQuery,
@@ -77,6 +82,18 @@ def safe_call(func):
     return wrapper
 
 
+def get_pk_column(duck):
+    return duck.query.get_meta().pk.column
+
+
+def _split_db_type(db_type):
+    try:
+        db_type, db_subtype = db_type.split(':', 1)
+    except ValueError:
+        db_subtype = None
+    return db_type, db_subtype
+
+
 class MongoQuery(NonrelQuery):
 
     def __init__(self, compiler, fields):
@@ -135,143 +152,122 @@ class MongoQuery(NonrelQuery):
             cursor.limit(int(self.query.high_mark - self.query.low_mark))
         return cursor
 
-    def add_filters(self, filters, query=None):
-        children = self._get_children(filters.children)
+    # TODO get rid of global negated state
+    def add_filters(self, filters):
+        self.mongo_query = self._build_mongo_query(filters, self.mongo_query)
+        print self.mongo_query
 
-        if query is None:
-            query = self.mongo_query
+    def _build_mongo_query(self, filters, mongo_query=None):
+        if filters.negated:
+            self._negated = not self._negated
 
-        if filters.connector == OR:
-            assert '$or' not in query, "Multiple ORs are not supported."
-            or_conditions = query['$or'] = []
+        if self._negated:
+            connector = [AND, OR][filters.connector == AND]
+        else:
+            connector = filters.connector
+
+        mongo_conditions = list(
+            self._convert_filters(self._get_children(filters.children)))
 
         if filters.negated:
             self._negated = not self._negated
 
-        for child in children:
-            if filters.connector == OR:
-                subquery = {}
-            else:
-                subquery = query
+        if mongo_query:
+            mongo_conditions.append(mongo_query)
 
+        if not mongo_conditions:
+            return {}
+
+        if len(mongo_conditions) == 1:
+            # {'$and|$or': [x]} <=> x
+            return mongo_conditions[0]
+
+        return {('$or' if connector == OR else '$and'): mongo_conditions}
+
+    def _convert_filters(self, filters):
+        for child in filters:
             if isinstance(child, Node):
-                if filters.connector == OR and child.connector == OR:
-                    if len(child.children) > 1:
-                        raise DatabaseError("Nested ORs are not supported.")
-
-                if filters.connector == OR and filters.negated:
-                    raise NotImplementedError("Negated ORs are not supported.")
-
-                self.add_filters(child, query=subquery)
-
-                if filters.connector == OR and subquery:
-                    or_conditions.extend(subquery.pop('$or', []))
-                    or_conditions.append(subquery)
-
+                subquery = self._build_mongo_query(child)
+                if subquery:
+                    yield subquery
                 continue
 
+            constraint, lookup_type, annotation, value = child
+            packed, value = constraint.process(lookup_type, value,
+                                               self.connection)
+            alias, column, db_type = packed
             field, lookup_type, value = self._decode_child(child)
 
             if lookup_type in ('month', 'day'):
-                raise DatabaseError("MongoDB does not support month/day "
-                                    "queries.")
+                raise DatabaseError(
+                    "MongoDB does not support month/day queries")
             if self._negated and lookup_type == 'range':
-                raise DatabaseError("Negated range lookups are not "
-                                    "supported.")
+                raise DatabaseError(
+                    "Negated range lookups are not supported")
 
-            if field.primary_key:
+            if column == get_pk_column(self):
                 column = '_id'
-            else:
-                column = field.column
-
-            existing = subquery.get(column)
 
             if isinstance(value, A):
+                field = first(lambda field: field.column == column,
+                              self.fields)
                 column, value = value.as_q(field)
 
-            if self._negated and lookup_type in NEGATED_OPERATORS_MAP:
-                op_func = NEGATED_OPERATORS_MAP[lookup_type]
-                already_negated = True
+            if self._negated:
+                if lookup_type in NEGATED_OPERATORS_MAP:
+                    op_func = NEGATED_OPERATORS_MAP[lookup_type]
+                else:
+                    op_func = lambda val: {
+                        '$not': OPERATORS_MAP[lookup_type](val)}
             else:
                 op_func = OPERATORS_MAP[lookup_type]
-                if self._negated:
-                    already_negated = False
 
-            lookup = op_func(value)
-
-            if existing is None:
-                if self._negated and not already_negated:
-                    lookup = {'$not': lookup}
-                subquery[column] = lookup
-                query.update(subquery)
-                continue
-
-            if not isinstance(existing, dict):
-                if not self._negated:
-                    # {'a': o1} + {'a': o2} --> {'a': {'$all': [o1, o2]}}
-                    assert not isinstance(lookup, dict)
-                    subquery[column] = {'$all': [existing, lookup]}
-                else:
-                    # {'a': o1} + {'a': {'$not': o2}} -->
-                    #     {'a': {'$all': [o1], '$nin': [o2]}}
-                    if already_negated:
-                        assert lookup.keys() == ['$ne']
-                        lookup = lookup['$ne']
-                    assert not isinstance(lookup, dict)
-                    subquery[column] = {'$all': [existing], '$nin': [lookup]}
+            if lookup_type == 'isnull':
+                lookup = op_func(value)
             else:
-                not_ = existing.pop('$not', None)
-                if not_:
-                    assert not existing
-                    if isinstance(lookup, dict):
-                        assert lookup.keys() == ['$ne']
-                        lookup = lookup.values()[0]
-                    assert not isinstance(lookup, dict), (not_, lookup)
-                    if self._negated:
-                        # {'not': {'a': o1}} + {'a': {'not': o2}} -->
-                        #     {'a': {'nin': [o1, o2]}}
-                        subquery[column] = {'$nin': [not_, lookup]}
-                    else:
-                        # {'not': {'a': o1}} + {'a': o2} -->
-                        #     {'a': {'nin': [o1], 'all': [o2]}}
-                        subquery[column] = {'$nin': [not_], '$all': [lookup]}
-                else:
-                    if isinstance(lookup, dict):
-                        if '$ne' in lookup:
-                            if '$nin' in existing:
-                                # {'$nin': [o1, o2]} + {'$ne': o3} -->
-                                #     {'$nin': [o1, o2, o3]}
-                                assert '$ne' not in existing
-                                existing['$nin'].append(lookup['$ne'])
-                            elif '$ne' in existing:
-                                # {'$ne': o1} + {'$ne': o2} -->
-                                #    {'$nin': [o1, o2]}
-                                existing['$nin'] = [existing.pop('$ne'),
-                                                    lookup['$ne']]
-                            else:
-                                existing.update(lookup)
-                        else:
-                            if '$in' in lookup and '$in' in existing:
-                                # {'$in': o1} + {'$in': o2}
-                                #    --> {'$in': o1 union o2}
-                                existing['$in'] = list(
-                                    set(lookup['$in'] + existing['$in']))
-                            else:
-                                # {'$gt': o1} + {'$lt': o2}
-                                #    --> {'$gt': o1, '$lt': o2}
-                                assert all(key not in existing
-                                           for key in lookup.keys()), \
-                                       [lookup, existing]
-                                existing.update(lookup)
-                    else:
-                        key = '$nin' if self._negated else '$all'
-                        existing.setdefault(key, []).append(lookup)
+                lookup = op_func(self.convert_value_for_db(db_type, value))
 
-                query.update(subquery)
+            yield {column: lookup}
 
-        if filters.negated:
-            self._negated = not self._negated
+    @safe_call # see #7
+    def convert_value_for_db(self, db_type, value):
+        if db_type is None or value is None:
+            return value
 
+        db_type, db_subtype = _split_db_type(db_type)
+        if db_subtype is not None:
+            if isinstance(value, (set, list, tuple)):
+                # Sets are converted to lists here because MongoDB has no sets.
+                return [self.convert_value_for_db(db_subtype, subvalue)
+                        for subvalue in value]
+            elif isinstance(value, dict):
+                return dict(
+                    (key, self.convert_value_for_db(db_subtype, subvalue))
+                    for key, subvalue in value.iteritems())
+
+        if isinstance(value, (set, list, tuple)):
+            # most likely a list of ObjectIds when doing a .delete() query
+            return [self.convert_value_for_db(db_type, val) for val in value]
+
+        if db_type == 'objectid':
+            try:
+                return ObjectId(value)
+            except InvalidId:
+                # Provide a better message for invalid IDs
+                assert isinstance(value, unicode)
+                if len(value) > 13:
+                    value = value[:10] + '...'
+                msg = "AutoField (default primary key) values must be strings " \
+                      "representing an ObjectId on MongoDB (got %r instead)" % value
+                if self.query.model._meta.db_table == 'django_site':
+                    # Also provide some useful tips for (very common) issues
+                    # with settings.SITE_ID.
+                    msg += ". Please make sure your SITE_ID contains a valid ObjectId string."
+                raise InvalidId(msg)
+
+        # Pass values of any type not covered above as they are.
+        # PyMongo will complain if they can't be encoded.
+        return value
 
 class SQLCompiler(NonrelCompiler):
     """
