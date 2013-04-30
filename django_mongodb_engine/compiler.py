@@ -155,7 +155,6 @@ class MongoQuery(NonrelQuery):
     # TODO get rid of global negated state
     def add_filters(self, filters):
         self.mongo_query = self._build_mongo_query(filters, self.mongo_query)
-        print self.mongo_query
 
     def _build_mongo_query(self, filters, mongo_query=None):
         if filters.negated:
