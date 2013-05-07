@@ -211,6 +211,14 @@ class MongoQuery(NonrelQuery):
                 field = first(lambda field: field.column == column,
                               self.fields)
                 column, value = value.as_q(field)
+                # Check for an operator in the A
+                split_column = column.split("__")
+                if len(split_column) > 1:
+                    possible_op = split_column[-1]
+                    if possible_op in OPERATORS_MAP:
+                        # Reassemble without the operator
+                        column = "__".join(split_column[0:-1])
+                        lookup_type = possible_op
 
             if self._negated:
                 if lookup_type in NEGATED_OPERATORS_MAP:
