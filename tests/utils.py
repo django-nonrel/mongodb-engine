@@ -15,6 +15,9 @@ class TestCase(TestCase):
     def assertEqualLists(self, a, b):
         self.assertEqual(list(a), list(b))
 
+    def assertEqualSets(self, a, b):
+        self.assertEqual(set(a), set(b))
+
 
 def skip_all_except(*tests):
 

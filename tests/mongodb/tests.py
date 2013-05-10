@@ -137,7 +137,7 @@ class RegressionTests(TestCase):
         try:
             from bson.objectid import ObjectId
         except ImportError:
-            from pymongo.objectid import ObjectId 
+            from pymongo.objectid import ObjectId
         from query.models import Blog, Post
         post = Post.objects.create(blog=Blog.objects.create())
         Issue47Model.objects.create(foo=[post])
@@ -240,11 +240,11 @@ class DatabaseOptionTests(TestCase):
                 }}) as connection:
             connection_options = connection.settings_dict['OPTIONS']
             for name, value in connection_options.iteritems():
-                attr_name = '_Connection__%s' % name.lower()
+                attr_name = '_MongoClient__%s' % name.lower()
                 if attr_name not in connection.connection.__dict__:
                     # slave_okak was moved into BaseObject in PyMongo 2.0.
                     if name == 'SLAVE_OKAY':
-                        attr_name = attr_name.replace('Connection', 'BaseObject')
+                        attr_name = attr_name.replace('MongoClient', 'BaseObject')
                     # network_timeout was renamed net_timeout in PyMongo 2.2
                     elif name == 'NETWORK_TIMEOUT':
                         attr_name = attr_name.replace('network_timeout', 'net_timeout')
