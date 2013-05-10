@@ -7,7 +7,7 @@ Installation
 ------------
 Django MongoDB Engine depends on
 
-* Django-nonrel_, a fork of Django 1.3 that adds support for non-relational databases
+* Django-nonrel_, a fork of Django 1.4 that adds support for non-relational databases
 * djangotoolbox_, a bunch of utilities for non-relational Django applications and backends
 
 It's highly recommended (although not required) to use a virtualenv_ for your
@@ -31,19 +31,19 @@ Django-nonrel
 .............
 ::
 
-   pip install git+https://github.com/django-nonrel/django@nonrel-1.3
+   pip install git+https://github.com/django-nonrel/django@nonrel-1.4
 
 djangotoolbox
 .............
 ::
 
-   pip install git+https://github.com/django-nonrel/djangotoolbox@toolbox-1.3
+   pip install git+https://github.com/django-nonrel/djangotoolbox@toolbox-1.4
 
 Django MongoDB Engine
 .....................
 You should use the latest Git revision. ::
 
-   pip install git+https://github.com/django-nonrel/mongodb-engine@mongodb-engine-1.3
+   pip install git+https://github.com/django-nonrel/mongodb-engine@mongodb-engine-1.4-beta
 
 Configuration
 -------------
