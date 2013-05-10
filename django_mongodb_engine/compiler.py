@@ -2,7 +2,7 @@ from functools import wraps
 import re
 import sys
 
-from django.db.models import F, ForeignKey, Field
+from django.db.models import F, ForeignKey, Field, FieldDoesNotExist
 from django.db.models.sql import aggregates as sqlaggregates
 from django.db.models.sql.constants import MULTI
 from django.db.models.sql.where import AND, OR
@@ -247,17 +247,33 @@ class MongoQuery(NonrelQuery):
                 column = "__".join(split_column[0:-1])
                 lookup_type = possible_op
 
-
+        # Recursive worker function
+        # TODO: This algorithm is a little convoluted. Simplify
         def recurse_for_field_type(field_class, column_list):
             if not column_list:
                 return field_class
 
             if isinstance(field_class, EmbeddedModelField):
-                field_tuple = field_class.embedded_model._meta\
-                                         .get_field_by_name(column_list[0])
-                field_class = field_tuple[0]
+                field_name = column_list[0]
+                try:
+                    field_class = field_class.embedded_model._meta\
+                                         .get_field_by_name(field_name)[0]
+                except FieldDoesNotExist:
+                    # If this field is a ForeignKey, they may have appended
+                    # '_id' to the end. Look for that and try again
+                    if field_name.endswith("_id"):
+                        field_name = field_name[:-3]
+                        field_class = field_class.embedded_model._meta \
+                                        .get_field_by_name(field_name)[0]
+
+                        # We got a field, now let's make sure it is a ForeignKey
+                        if not isinstance(field_class, ForeignKey):
+                            raise
                 return recurse_for_field_type(field_class, column_list[1:])
+
             elif isinstance(field_class, ForeignKey):
+                # If we got here, it means this is not the last item in the
+                # query, and it is a ForeignKey. That means they want a join.
                 raise DatabaseError(
                     "ForeignKey joins are not supported. The query: '%s' will "
                     "fail." % ".".join([field_class.column] + column_list))
@@ -274,6 +290,15 @@ class MongoQuery(NonrelQuery):
         field = recurse_for_field_type(field, column.split(".")[1:])
         value = self._normalize_lookup_value(lookup_type, value,
                                              field, annotation)
+
+        # If the field type is ForeignKey, we need to replace the last field
+        # of the column with the correct column name
+        if isinstance(field, ForeignKey):
+            if not column.endswith(field.column):
+                items = column.split(".")
+                items.pop()
+                column = ".".join(items + [field.column])
+
         return column, value, lookup_type
 
     @safe_call # see #7
