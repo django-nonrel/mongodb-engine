@@ -3,6 +3,7 @@ from functools import wraps
 import re
 import sys
 
+from django.db.models.fields import NOT_PROVIDED
 from django.db.models import F
 from django.db.models.fields import AutoField
 from django.db.models.sql import aggregates as sqlaggregates
@@ -343,37 +344,25 @@ class SQLCompiler(NonrelCompiler):
             ret.append(result)
         return ret
 
-
 class SQLInsertCompiler(NonrelInsertCompiler, SQLCompiler):
-
     @safe_call
-    def insert(self, data, return_id=False):
-        """
-        Stores a document using field columns as element names, except
-        for the primary key field for which "_id" is used.
-
-        If just a {pk_field: None} mapping is given a new empty
-        document is created, otherwise value for a primary key may not
-        be None.
-        """
-        document = {}
-        for field, value in data.iteritems():
-            if field.primary_key:
-                if value is None:
-                    if len(data) != 1:
-                        raise DatabaseError("Can't save entity with _id "
-                                            "set to None.")
+    def insert(self, docs, return_id=False):
+        for doc in docs:
+            try:
+                doc['_id'] = doc.pop(self.query.get_meta().pk.column)
+            except KeyError:
+                pass
+            if doc.get('_id', NOT_PROVIDED) is None:
+                if len(doc) == 1:
+                    # insert with empty model
+                    doc.clear()
                 else:
-                    document['_id'] = value
-            else:
-                document[field.column] = value
-
+                    raise DatabaseError("Can't save entity with _id set to None")
         collection = self.get_collection()
         options = self.connection.operation_flags.get('save', {})
-        key = collection.save(document, **options)
+        pks = collection.save(doc, **options)
         if return_id:
-            return key
-
+            return unicode(pks)
 
 # TODO: Define a common nonrel API for updates and add it to the nonrel
 #       backend base classes and port this code to that API.
