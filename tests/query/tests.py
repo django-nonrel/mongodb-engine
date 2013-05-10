@@ -8,7 +8,7 @@ try:
     from bson.objectid import ObjectId
 except ImportError:
     from pymongo.objectid import ObjectId
-        
+
 from models import *
 from utils import *
 
@@ -310,17 +310,17 @@ class BasicQueryTests(TestCase):
         obj3 = Blog.objects.create(title='2')
         obj4 = Blog.objects.create(title='3')
 
-        self.assertEqualLists(
+        self.assertEqualSets(
             Blog.objects.filter(title='1'),
             [obj1, obj2])
-        self.assertEqualLists(
+        self.assertEqualSets(
             Blog.objects.filter(title='1') | Blog.objects.filter(title='2'),
             [obj1, obj2, obj3])
-        self.assertEqualLists(
+        self.assertEqualSets(
             Blog.objects.filter(Q(title='2') | Q(title='3')),
             [obj3, obj4])
 
-        self.assertEqualLists(
+        self.assertEqualSets(
             Blog.objects.filter(Q(Q(title__lt='4') & Q(title__gt='2')) |
                                   Q(title='1')).order_by('id'),
             [obj1, obj2, obj4])
