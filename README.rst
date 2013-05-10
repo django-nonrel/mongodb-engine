@@ -1,7 +1,7 @@
 Django MongoDB Engine, the MongoDB backend for Django
 =====================================================
 
-Documentation on http://django-mongodb.org
+Documentation on http://django-mongodb-engine.readthedocs.org/
 
 *Use Django's ORM (including Aggregations, Atomic Updates, Embedded Objects,
 Map/Reduce and GridFS), admin site, authentication, site, session and caching
