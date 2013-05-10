@@ -1,10 +1,8 @@
-import datetime
 from functools import wraps
 import re
 import sys
 
-from django.db.models import F
-from django.db.models.fields import AutoField
+from django.db.models import F, ForeignKey, Field
 from django.db.models.sql import aggregates as sqlaggregates
 from django.db.models.sql.constants import MULTI
 from django.db.models.sql.where import AND, OR
@@ -26,6 +24,7 @@ from djangotoolbox.db.basecompiler import (
     NonrelInsertCompiler,
     NonrelUpdateCompiler,
     NonrelDeleteCompiler)
+from djangotoolbox.fields import EmbeddedModelField
 
 from .aggregations import get_aggregation_class_by_name
 from .query import A
@@ -191,10 +190,13 @@ class MongoQuery(NonrelQuery):
                     yield subquery
                 continue
 
+            # This block is all needed just to get db_type.
+            # TODO: Investigate a better way
             constraint, lookup_type, annotation, value = child
             packed, value = constraint.process(lookup_type, value,
                                                self.connection)
             alias, column, db_type = packed
+
             field, lookup_type, value = self._decode_child(child)
 
             if lookup_type in ('month', 'day'):
@@ -210,15 +212,8 @@ class MongoQuery(NonrelQuery):
             if isinstance(value, A):
                 field = first(lambda field: field.column == column,
                               self.fields)
-                column, value = value.as_q(field)
-                # Check for an operator in the A
-                split_column = column.split("__")
-                if len(split_column) > 1:
-                    possible_op = split_column[-1]
-                    if possible_op in OPERATORS_MAP:
-                        # Reassemble without the operator
-                        column = "__".join(split_column[0:-1])
-                        lookup_type = possible_op
+                column, value, lookup_type = self._process_A_object(
+                                        field, value, lookup_type, annotation)
 
             if self._negated:
                 if lookup_type in NEGATED_OPERATORS_MAP:
@@ -235,6 +230,51 @@ class MongoQuery(NonrelQuery):
                 lookup = op_func(self.convert_value_for_db(db_type, value))
 
             yield {column: lookup}
+
+    def _process_A_object(self, field, value, lookup_type, annotation):
+        """Process down into the A object Query to extract the correct types
+
+        An A object can contain a deep query. This method attempts to parse
+        that query a well as possible
+        """
+        column, value = value.as_q(field)
+        # Check for an operator in the A. E.g. __contains
+        split_column = column.split("__")
+        if len(split_column) > 1:
+            possible_op = split_column[-1]
+            if possible_op in OPERATORS_MAP:
+                # Reassemble without the operator
+                column = "__".join(split_column[0:-1])
+                lookup_type = possible_op
+
+
+        def recurse_for_field_type(field_class, column_list):
+            if not column_list:
+                return field_class
+
+            if isinstance(field_class, EmbeddedModelField):
+                field_tuple = field_class.embedded_model._meta\
+                                         .get_field_by_name(column_list[0])
+                field_class = field_tuple[0]
+                return recurse_for_field_type(field_class, column_list[1:])
+            elif isinstance(field_class, ForeignKey):
+                raise DatabaseError(
+                    "ForeignKey joins are not supported. The query: '%s' will "
+                    "fail." % ".".join([field_class.column] + column_list))
+            else:
+                # If we get here, that means the query continues beyond a known
+                # field. E.g. Items in a DictField. We have to default to a
+                # type, so we will use Field. If that behavior isn't
+                # desired, stop your query at the known field.
+                return Field()
+
+        # In order for the query to be constructed correctly, some field-types
+        # require value conversion. E.g. Decimal. This traverses the query
+        # fields to get the correct type.
+        field = recurse_for_field_type(field, column.split(".")[1:])
+        value = self._normalize_lookup_value(lookup_type, value,
+                                             field, annotation)
+        return column, value, lookup_type
 
     @safe_call # see #7
     def convert_value_for_db(self, db_type, value):
