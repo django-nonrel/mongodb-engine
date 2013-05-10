@@ -18,7 +18,7 @@ GitHub's fork/pull request system.
 If you don't like GitHub (for some reason) you're welcome
 to send regular patches to the mailing list.
 
-:Web site: http://django-mongodb.org/
+:Web site: http://www.django-nonrel.org/
 :Mailing list: http://groups.google.com/group/django-non-relational
 :Bug tracker: https://github.com/django-mongodb-engine/mongodb-engine/issues/
 :PyPI: http://pypi.python.org/pypi/django-mongodb-engine/
