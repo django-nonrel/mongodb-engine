@@ -3,7 +3,7 @@ from cStringIO import StringIO
 
 from django.core.management import call_command
 from django.contrib.sites.models import Site
-from django.db import connection
+from django.db import connection, DEFAULT_DB_ALIAS
 from django.db.utils import DatabaseError, IntegrityError
 from django.db.models import Q
 
@@ -217,14 +217,14 @@ class DatabaseOptionTests(TestCase):
                 **kwargs)
 
         def __enter__(self):
-            self._old_connection = connections._connections['default']
-            connections._connections['default'] = self.new_wrapper
+            self._old_connection = connections[DEFAULT_DB_ALIAS]
+            connections[DEFAULT_DB_ALIAS] = self.new_wrapper
             self.new_wrapper._connect()
             return self.new_wrapper
 
         def __exit__(self, *exc_info):
             self.new_wrapper.connection.disconnect()
-            connections._connections['default'] = self._old_connection
+            connections[DEFAULT_DB_ALIAS] = self._old_connection
 
     def test_pymongo_connection_args(self):
 
