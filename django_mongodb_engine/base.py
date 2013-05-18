@@ -227,7 +227,8 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
             options[key.lower()] = options.pop(key)
 
         try:
-            self.connection = Connection(host=host, port=port, **options)
+            # Add WriteConcern level 1 by default
+            self.connection = Connection(host=host, port=port, w=1, **options)
             self.database = self.connection[db_name]
         except TypeError:
             exc_info = sys.exc_info()
