@@ -36,7 +36,10 @@ try:
     else:
         settings.INSTALLED_APPS.insert(0, 'django_mongodb_engine')
 
-except ImportError:
+except Exception as exc:
     # setup.py imports this file in order to read version/author/... metadata
     # but does not necessarily have a Django context.
-    pass
+    import logging
+
+    logging.error('Error while trying to get django'
+                  ' settings.py module.'.format(unicode(exc)))
