@@ -42,4 +42,4 @@ except Exception as exc:
     import logging
 
     logging.error('Error while trying to get django'
-                  ' settings.py module.'.format(unicode(exc)))
+                  ' settings.py module.\nError was: {0}'.format(unicode(exc)))
