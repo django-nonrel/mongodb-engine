@@ -141,8 +141,8 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
             if read_preference:
                 warnings.warn("slave_okay has been deprecated. Please use read_preference")
         try:
-           if read_preference:
-                Connection = RelicaSetConnection
+            if read_preference:
+                Connection = ReplicaSetConnection
             self.connection = Connection(host=host, port=port, **options)
             self.database = self.connection[db_name]
         except TypeError:
