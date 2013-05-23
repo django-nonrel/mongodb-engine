@@ -1,10 +1,14 @@
 import copy
 import sys
+
 from django.core.exceptions import ImproperlyConfigured
 from django.db.backends.signals import connection_created
 from django.conf import settings
 
 from pymongo.connection import Connection
+from pymongo.mongo_client import MongoClient as Connection
+from pymongo.mongo_replica_set_client import MongoReplicaSetClient as ReplicaSetConnection
+
 from pymongo.collection import Collection
 
 from .creation import DatabaseCreation
@@ -128,7 +132,17 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
         for key in options.iterkeys():
             options[key.lower()] = options.pop(key)
 
+
+        read_preference = options.get('read_preference')
+        if not read_preference:
+            read_preference = options.get('slave_okay')
+            if not read_preference:
+                read_preference = options.get('slaveok')
+            if read_preference:
+                warnings.warn("slave_okay has been deprecated. Please use read_preference")
         try:
+           if read_preference:
+                Connection = RelicaSetConnection
             self.connection = Connection(host=host, port=port, **options)
             self.database = self.connection[db_name]
         except TypeError:
