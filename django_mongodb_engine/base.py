@@ -238,7 +238,7 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
 
         try:
             if read_preference:
-                Connection = RelicaSetConnection
+               Connection = ReplicaSetConnection
 
             self.connection = Connection(host=host, port=port, **options)
             self.database = self.connection[db_name]
