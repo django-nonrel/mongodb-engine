@@ -10,8 +10,8 @@ from django.db.backends.signals import connection_created
 from django.db.utils import DatabaseError
 
 from pymongo.collection import Collection
-from pymongo.mongo_client import MongoClient as Connection
-from pymongo.mongo_replica_set_client import MongoReplicaSetClient as ReplicaSetConnection
+from pymongo.mongo_client import MongoClient
+from pymongo.mongo_replica_set_client import MongoReplicaSetClient
 
 # handle pymongo backward compatibility
 try:
@@ -238,7 +238,9 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
 
         try:
             if read_preference:
-               Connection = ReplicaSetConnection
+                Connection = ReplicaSetMongoClient
+            else:
+                Connection = MongoClient
 
             self.connection = Connection(host=host, port=port, **options)
             self.database = self.connection[db_name]
