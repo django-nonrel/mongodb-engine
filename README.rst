@@ -7,8 +7,15 @@ Documentation on http://django-mongodb-engine.readthedocs.org/
 Map/Reduce and GridFS), admin site, authentication, site, session and caching
 frameworks with MongoDB.*
 
-:1.3 branch: .. image:: https://secure.travis-ci.org/django-nonrel/mongodb-engine.png?branch=mongodb-engine-1.3
-:1.4 branch: .. image:: https://secure.travis-ci.org/django-nonrel/mongodb-engine.png?branch=mongodb-engine-1.4-beta
+:1.3 branch:
+    .. image:: https://secure.travis-ci.org/django-nonrel/mongodb-engine.png?branch=mongodb-engine-1.3
+        :target: https://travis-ci.org/django-nonrel/mongodb-engine
+:1.4 branch:
+    .. image:: https://secure.travis-ci.org/django-nonrel/mongodb-engine.png?branch=mongodb-engine-1.4-beta
+        :target: https://travis-ci.org/django-nonrel/mongodb-engine
+:1.5 branch:
+    .. image:: https://secure.travis-ci.org/django-nonrel/mongodb-engine.png?branch=mongodb-engine-1.5-beta
+        :target: https://travis-ci.org/django-nonrel/mongodb-engine
 
 
 Contributing
@@ -20,7 +27,7 @@ to send regular patches to the mailing list.
 
 :Web site: http://www.django-nonrel.org/
 :Mailing list: http://groups.google.com/group/django-non-relational
-:Bug tracker: https://github.com/django-mongodb-engine/mongodb-engine/issues/
+:Bug tracker: https://github.com/django-nonrel/mongodb-engine/issues/
 :PyPI: http://pypi.python.org/pypi/django-mongodb-engine/
 :License: 2-clause BSD
 :Keywords: django, mongodb, orm, nosql, database, python
