@@ -2,6 +2,7 @@ branches:
   only:
     - mongodb-engine-1.3
     - mongodb-engine-1.4-beta
+    - mongodb-engine-1.5-beta
 
 language: python
 
