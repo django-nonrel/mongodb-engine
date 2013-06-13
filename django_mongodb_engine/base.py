@@ -2,6 +2,7 @@ import copy
 import datetime
 import decimal
 import sys
+import warnings
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
@@ -9,7 +10,8 @@ from django.db.backends.signals import connection_created
 from django.db.utils import DatabaseError
 
 from pymongo.collection import Collection
-from pymongo.connection import Connection
+from pymongo.mongo_client import MongoClient
+from pymongo.mongo_replica_set_client import MongoReplicaSetClient
 
 # handle pymongo backward compatibility
 try:
@@ -214,6 +216,7 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
         password = pop('PASSWORD')
         options = pop('OPTIONS', {})
 
+
         self.operation_flags = options.pop('OPERATIONS', {})
         if not any(k in ['save', 'delete', 'update']
                    for k in self.operation_flags):
@@ -221,12 +224,24 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
             flags = self.operation_flags
             self.operation_flags = {'save': flags, 'delete': flags,
                                     'update': flags}
-
         # Lower-case all OPTIONS keys.
         for key in options.iterkeys():
             options[key.lower()] = options.pop(key)
 
+        read_preference = options.get('read_preference')
+        if not read_preference:
+            read_preference = options.get('slave_okay')
+            if not read_preference:
+                read_preference = options.get('slaveok')
+            if read_preference:
+                warnings.warn("slave_okay has been deprecated. Please use read_preference")
+
         try:
+            if read_preference:
+                Connection = ReplicaSetMongoClient
+            else:
+                Connection = MongoClient
+
             self.connection = Connection(host=host, port=port, **options)
             self.database = self.connection[db_name]
         except TypeError:
