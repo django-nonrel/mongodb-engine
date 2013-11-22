@@ -2,7 +2,7 @@ from functools import wraps
 import re
 import sys
 
-from django.db.models import F, ForeignKey, Field, FieldDoesNotExist
+from django.db.models import F, ForeignKey, Field, FieldDoesNotExist, AutoField
 from django.db.models.sql import aggregates as sqlaggregates
 from django.db.models.sql.constants import MULTI
 from django.db.models.sql.where import AND, OR
@@ -24,7 +24,7 @@ from djangotoolbox.db.basecompiler import (
     NonrelInsertCompiler,
     NonrelUpdateCompiler,
     NonrelDeleteCompiler)
-from djangotoolbox.fields import EmbeddedModelField
+from djangotoolbox.fields import EmbeddedModelField, AbstractIterableField
 
 from .aggregations import get_aggregation_class_by_name
 from .query import A
@@ -270,6 +270,14 @@ class MongoQuery(NonrelQuery):
                         if not isinstance(field_class, ForeignKey):
                             raise
                 return recurse_for_field_type(field_class, column_list[1:])
+
+            # When searching for an Embedded model in a list, this will cast
+            # the field to the appropriate type.
+            elif isinstance(field_class, AbstractIterableField) and \
+                    isinstance(field.item_field, EmbeddedModelField) and \
+                    column_list[-1] == field.item_field.embedded_model\
+                                                       ._meta.pk.attname:
+                return AutoField(primary_key=True)
 
             elif isinstance(field_class, ForeignKey):
                 # If we got here, it means this is not the last item in the
