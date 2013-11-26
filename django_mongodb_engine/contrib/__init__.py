@@ -1,11 +1,18 @@
 import sys
+import re
 
 from django.db import models, connections
 from django.db.models.query import QuerySet
 from django.db.models.sql.query import Query as SQLQuery
+from django.db.models.query_utils import Q
+from django.db.models.constants import LOOKUP_SEP
+from django_mongodb_engine.compiler import OPERATORS_MAP, NEGATED_OPERATORS_MAP
+from djangotoolbox.fields import AbstractIterableField
 
 
 ON_PYPY = hasattr(sys, 'pypy_version_info')
+ALL_OPERATORS = dict(list(OPERATORS_MAP.items() + NEGATED_OPERATORS_MAP.items())).keys()
+MONGO_DOT_FIELDS = ('DictField',)
 
 
 def _compiler_for_queryset(qs, which='SQLCompiler'):
@@ -84,6 +91,40 @@ class MapReduceResult(object):
 
 
 class MongoDBQuerySet(QuerySet):
+    def _filter_or_exclude(self, negate, *args, **kwargs):
+        if args or kwargs:
+            assert self.query.can_filter(), \
+                    "Cannot filter a query once a slice has been taken."
+
+        clone = self._clone()
+
+        all_field_names = self.model._meta.get_all_field_names()
+        base_field_names = []
+
+        for f in all_field_names:
+             field = self.model._meta.get_field_by_name(f)[0]
+             if '.' not in f and field.get_internal_type() in MONGO_DOT_FIELDS:
+                 base_field_names.append(f)
+
+        for k, v in kwargs.items():
+            if LOOKUP_SEP in k and k.split(LOOKUP_SEP)[0] in base_field_names:
+                del kwargs[k]
+                for s in ALL_OPERATORS:
+                    if k.endswith(s):
+                        k = re.sub(LOOKUP_SEP + s + '$', '#' + s, k)
+                        break
+                k = k.replace(LOOKUP_SEP, '.').replace('#', LOOKUP_SEP)
+                kwargs[k] = v
+            f = k.split(LOOKUP_SEP)[0]
+            if '.' in f and f not in all_field_names:
+                field = AbstractIterableField(blank=True, null=True, editable=False)
+                field.contribute_to_class(self.model, f)
+
+        if negate:
+            clone.query.add_q(~Q(*args, **kwargs))
+        else:
+            clone.query.add_q(Q(*args, **kwargs))
+        return clone
 
     def map_reduce(self, *args, **kwargs):
         """
