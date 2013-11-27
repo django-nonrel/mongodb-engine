@@ -101,24 +101,33 @@ class MongoDBQuerySet(QuerySet):
         all_field_names = self.model._meta.get_all_field_names()
         base_field_names = []
 
-        for f in all_field_names:
-             field = self.model._meta.get_field_by_name(f)[0]
-             if '.' not in f and field.get_internal_type() in MONGO_DOT_FIELDS:
-                 base_field_names.append(f)
+        for name in all_field_names:
+            field = self.model._meta.get_field_by_name(name)[0]
+            if '.' not in name and field.get_internal_type() in MONGO_DOT_FIELDS:
+                base_field_names.append(name)
 
-        for k, v in kwargs.items():
-            if LOOKUP_SEP in k and k.split(LOOKUP_SEP)[0] in base_field_names:
-                del kwargs[k]
-                for s in ALL_OPERATORS:
-                    if k.endswith(s):
-                        k = re.sub(LOOKUP_SEP + s + '$', '#' + s, k)
+        for key, val in kwargs.items():
+            if LOOKUP_SEP in key and key.split(LOOKUP_SEP)[0] in base_field_names:
+                del kwargs[key]
+                for op in ALL_OPERATORS:
+                    if key.endswith(op):
+                        key = re.sub(LOOKUP_SEP + op + '$', '#' + op, key)
                         break
-                k = k.replace(LOOKUP_SEP, '.').replace('#', LOOKUP_SEP)
-                kwargs[k] = v
-            f = k.split(LOOKUP_SEP)[0]
-            if '.' in f and f not in all_field_names:
-                field = AbstractIterableField(blank=True, null=True, editable=False)
-                field.contribute_to_class(self.model, f)
+                key = key.replace(LOOKUP_SEP, '.').replace('#', LOOKUP_SEP)
+                kwargs[key] = val
+            name = key.split(LOOKUP_SEP)[0]
+            if '.' in name and name not in all_field_names:
+                parts = name.split('.')
+                column = self.model._meta.get_field_by_name(parts[0])[0].db_column
+                if column:
+                    parts[0] = column
+                field = AbstractIterableField(
+                    db_column = '.'.join(parts),
+                    blank=True,
+                    null=True,
+                    editable=False,
+                )
+                field.contribute_to_class(self.model, name)
 
         if negate:
             clone.query.add_q(~Q(*args, **kwargs))
