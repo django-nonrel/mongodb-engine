@@ -363,6 +363,9 @@ class SQLInsertCompiler(NonrelInsertCompiler, SQLCompiler):
                     doc.clear()
                 else:
                     raise DatabaseError("Can't save entity with _id set to None")
+            for d in doc.keys():
+                if '.' in d:
+                    del doc[d]
 
         collection = self.get_collection()
         options = self.connection.operation_flags.get('save', {})

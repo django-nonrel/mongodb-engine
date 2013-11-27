@@ -17,4 +17,5 @@ INSTALLED_APPS = [
     'aggregations',
     'contrib',
     'storage',
+    'dotquery',
 ]

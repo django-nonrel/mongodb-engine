@@ -1,11 +1,18 @@
 import sys
+import re
 
 from django.db import models, connections
 from django.db.models.query import QuerySet
 from django.db.models.sql.query import Query as SQLQuery
+from django.db.models.query_utils import Q
+from django.db.models.constants import LOOKUP_SEP
+from django_mongodb_engine.compiler import OPERATORS_MAP, NEGATED_OPERATORS_MAP
+from djangotoolbox.fields import AbstractIterableField
 
 
 ON_PYPY = hasattr(sys, 'pypy_version_info')
+ALL_OPERATORS = dict(list(OPERATORS_MAP.items() + NEGATED_OPERATORS_MAP.items())).keys()
+MONGO_DOT_FIELDS = ('DictField', 'ListField', 'SetField', 'EmbeddedModelField')
 
 
 def _compiler_for_queryset(qs, which='SQLCompiler'):
@@ -84,6 +91,49 @@ class MapReduceResult(object):
 
 
 class MongoDBQuerySet(QuerySet):
+    def _filter_or_exclude(self, negate, *args, **kwargs):
+        if args or kwargs:
+            assert self.query.can_filter(), \
+                    "Cannot filter a query once a slice has been taken."
+
+        clone = self._clone()
+
+        all_field_names = self.model._meta.get_all_field_names()
+        base_field_names = []
+
+        for name in all_field_names:
+            field = self.model._meta.get_field_by_name(name)[0]
+            if '.' not in name and field.get_internal_type() in MONGO_DOT_FIELDS:
+                base_field_names.append(name)
+
+        for key, val in kwargs.items():
+            if LOOKUP_SEP in key and key.split(LOOKUP_SEP)[0] in base_field_names:
+                del kwargs[key]
+                for op in ALL_OPERATORS:
+                    if key.endswith(op):
+                        key = re.sub(LOOKUP_SEP + op + '$', '#' + op, key)
+                        break
+                key = key.replace(LOOKUP_SEP, '.').replace('#', LOOKUP_SEP)
+                kwargs[key] = val
+            name = key.split(LOOKUP_SEP)[0]
+            if '.' in name and name not in all_field_names:
+                parts = name.split('.')
+                column = self.model._meta.get_field_by_name(parts[0])[0].db_column
+                if column:
+                    parts[0] = column
+                field = AbstractIterableField(
+                    db_column = '.'.join(parts),
+                    blank=True,
+                    null=True,
+                    editable=False,
+                )
+                field.contribute_to_class(self.model, name)
+
+        if negate:
+            clone.query.add_q(~Q(*args, **kwargs))
+        else:
+            clone.query.add_q(Q(*args, **kwargs))
+        return clone
 
     def map_reduce(self, *args, **kwargs):
         """
