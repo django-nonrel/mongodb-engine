@@ -21,6 +21,7 @@ Contributions by
 * Sabin Iacob (https://github.com/m0n5t3r)
 * kryton (https://github.com/kryton)
 * Brandon Pedersen (https://github.com/bpedman)
+* Brian Gontowski (https://github.com/Molanda)
 
 (For an up-to-date list of contributors, see
 https://github.com/django-mongodb-engine/mongodb-engine/contributors.)
