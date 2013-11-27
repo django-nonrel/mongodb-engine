@@ -12,7 +12,7 @@ from djangotoolbox.fields import AbstractIterableField
 
 ON_PYPY = hasattr(sys, 'pypy_version_info')
 ALL_OPERATORS = dict(list(OPERATORS_MAP.items() + NEGATED_OPERATORS_MAP.items())).keys()
-MONGO_DOT_FIELDS = ('DictField',)
+MONGO_DOT_FIELDS = ('DictField', 'ListField', 'SetField', 'EmbeddedModelField')
 
 
 def _compiler_for_queryset(qs, which='SQLCompiler'):
