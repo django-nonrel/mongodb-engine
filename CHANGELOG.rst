@@ -4,10 +4,11 @@ Changelog
 .. currentmodule:: djangotoolbox.fields
 
 
-Version 0.5 (TBD)
+Version 0.5 (Nov 2013)
 -----------------
 Major changes
 ~~~~~~~~~~~~~
+* Added support for Django 1.4-1.6, requires djangotoolbox >= 1.6.0
 * PyPy support
 * MongoDB 2.0 support
 * We're now on Travis_
@@ -67,6 +68,6 @@ Version 0.2 (Oct 2010)
 
 .. * Support for queries and updates on embedded models (see :ref:`embedded-object-queries`)
 
-.. _merged into djangotoolbox: https://bitbucket.org/wkornewald/djangotoolbox/src/tip/djangotoolbox/fields.py
+.. _merged into djangotoolbox: https://github.com/django-nonrel/djangotoolbox/blob/master/djangotoolbox/fields.py
 .. _F: http://docs.djangoproject.com/en/dev/topics/db/queries/#query-expressions
 .. _Travis: http://travis-ci.org/django-nonrel/mongodb-engine
