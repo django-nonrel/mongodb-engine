@@ -4,6 +4,9 @@ branches:
 
 language: python
 
+services:
+  - mongodb
+
 python:
   - 2.6
   - 2.7
