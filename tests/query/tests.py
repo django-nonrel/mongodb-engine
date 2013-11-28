@@ -8,7 +8,7 @@ try:
     from bson.objectid import ObjectId
 except ImportError:
     from pymongo.objectid import ObjectId
-        
+
 from models import *
 from utils import *
 
@@ -443,25 +443,25 @@ class OrLookupsTests(TestCase):
             Article.objects.filter(headline__startswith='Hello') |
                 Article.objects.filter(headline__startswith='Goodbye'),
             ['Hello', 'Goodbye', 'Hello and goodbye'],
-            attrgetter('headline'))
+            attrgetter('headline'), ordered=False)
 
         self.assertQuerysetEqual(
             Article.objects.filter(headline__contains='Hello') |
                 Article.objects.filter(headline__contains='bye'),
             ['Hello', 'Goodbye', 'Hello and goodbye'],
-            attrgetter('headline'))
+            attrgetter('headline'), ordered=False)
 
         self.assertQuerysetEqual(
             Article.objects.filter(headline__iexact='Hello') |
                 Article.objects.filter(headline__contains='ood'),
             ['Hello', 'Goodbye', 'Hello and goodbye'],
-            attrgetter('headline'))
+            attrgetter('headline'), ordered=False)
 
         self.assertQuerysetEqual(
             Article.objects.filter(Q(headline__startswith='Hello') |
                                    Q(headline__startswith='Goodbye')),
             ['Hello', 'Goodbye', 'Hello and goodbye'],
-            attrgetter('headline'))
+            attrgetter('headline'), ordered=False)
 
     def test_stages(self):
         # You can shorten this syntax with code like the following,
@@ -481,41 +481,41 @@ class OrLookupsTests(TestCase):
         self.assertQuerysetEqual(
             Article.objects.filter(Q(pk=self.a1) | Q(pk=self.a2)),
             ['Hello', 'Goodbye'],
-            attrgetter('headline'))
+            attrgetter('headline'), ordered=False)
 
         self.assertQuerysetEqual(
             Article.objects.filter(Q(pk=self.a1) | Q(pk=self.a2) |
                                    Q(pk=self.a3)),
             ['Hello', 'Goodbye', 'Hello and goodbye'],
-            attrgetter('headline'))
+            attrgetter('headline'), ordered=False)
 
     def test_pk_in(self):
         self.assertQuerysetEqual(
             Article.objects.filter(pk__in=[self.a1, self.a2, self.a3]),
             ['Hello', 'Goodbye', 'Hello and goodbye'],
-            attrgetter('headline'))
+            attrgetter('headline'), ordered=False)
 
         self.assertQuerysetEqual(
             Article.objects.filter(pk__in=(self.a1, self.a2, self.a3)),
             ['Hello', 'Goodbye', 'Hello and goodbye'],
-            attrgetter('headline'))
+            attrgetter('headline'), ordered=False)
 
         self.assertQuerysetEqual(
             Article.objects.filter(pk__in=[self.a1, self.a2, self.a3]),
             ['Hello', 'Goodbye', 'Hello and goodbye'],
-            attrgetter('headline'))
+            attrgetter('headline'), ordered=False)
 
     def test_q_negated(self):
         # Q objects can be negated.
         self.assertQuerysetEqual(
             Article.objects.filter(Q(pk=self.a1) | ~Q(pk=self.a2)),
             ['Hello', 'Hello and goodbye'],
-            attrgetter('headline'))
+            attrgetter('headline'), ordered=False)
 
         self.assertQuerysetEqual(
             Article.objects.filter(~Q(pk=self.a1) & ~Q(pk=self.a2)),
             ['Hello and goodbye'],
-            attrgetter('headline'))
+            attrgetter('headline'), ordered=False)
 
         # This allows for more complex queries than filter() and
         # exclude() alone would allow.
@@ -523,7 +523,7 @@ class OrLookupsTests(TestCase):
             Article.objects.filter(Q(pk=self.a1) & (~Q(pk=self.a2) |
                                    Q(pk=self.a3))),
             ['Hello'],
-            attrgetter('headline'))
+            attrgetter('headline'), ordered=False)
 
     def test_complex_filter(self):
         # The 'complex_filter' method supports framework features such
@@ -533,24 +533,24 @@ class OrLookupsTests(TestCase):
         self.assertQuerysetEqual(
             Article.objects.complex_filter({'pk': self.a1}),
             ['Hello'],
-            attrgetter('headline'))
+            attrgetter('headline'), ordered=False)
 
         self.assertQuerysetEqual(
             Article.objects.complex_filter(Q(pk=self.a1) | Q(pk=self.a2)),
             ['Hello', 'Goodbye'],
-            attrgetter('headline'))
+            attrgetter('headline'), ordered=False)
 
     def test_empty_in(self):
         # Passing "in" an empty list returns no results ...
         self.assertQuerysetEqual(
             Article.objects.filter(pk__in=[]),
-            [])
+            [], ordered=False)
         # ... but can return results if we OR it with another query.
         self.assertQuerysetEqual(
             Article.objects.filter(Q(pk__in=[]) |
                                    Q(headline__icontains='goodbye')),
             ['Goodbye', 'Hello and goodbye'],
-            attrgetter('headline'))
+            attrgetter('headline'), ordered=False)
 
     def test_q_and(self):
         # Q arg objects are ANDed.

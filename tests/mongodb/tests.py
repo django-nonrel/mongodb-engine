@@ -11,7 +11,6 @@ from gridfs import GridOut
 from pymongo import ASCENDING, DESCENDING
 
 from django_mongodb_engine.base import DatabaseWrapper
-from django_mongodb_engine.serializer import LazyModelInstance
 
 from models import *
 from utils import *
@@ -41,13 +40,13 @@ class MongoDBEngineTests(TestCase):
 
     def test_nice_int_objectid_exception(self):
         msg = "AutoField \(default primary key\) values must be strings " \
-              "representing an ObjectId on MongoDB \(got %r instead\)."
+              "representing an ObjectId on MongoDB \(got u?'%s' instead\)."
         self.assertRaisesRegexp(
                 DatabaseError, msg % u'helloworld...',
                 RawModel.objects.create, id='helloworldwhatsup')
         self.assertRaisesRegexp(
-            DatabaseError, (msg % u'5') +
-                " Please make sure your SITE_ID contains a valid ObjectId.",
+            DatabaseError, (msg % '5') +
+                " Please make sure your SITE_ID contains a valid ObjectId string.",
             Site.objects.get, id='5')
 
     def test_generic_field(self):
@@ -108,7 +107,7 @@ class RegressionTests(TestCase):
         try:
             from bson.objectid import ObjectId
         except ImportError:
-            from pymongo.objectid import ObjectId 
+            from pymongo.objectid import ObjectId
         from query.models import Blog, Post
         post = Post.objects.create(blog=Blog.objects.create())
         Issue47Model.objects.create(foo=[post])
@@ -214,6 +213,9 @@ class DatabaseOptionTests(TestCase):
                 if name not in connection.connection.__dict__:
                     # slave_okay was moved into BaseObject in PyMongo 2.0.
                     name = name.replace('Connection', 'BaseObject')
+                if name not in connection.connection.__dict__:
+                    # document_class was moved into MongoClient in PyMongo 2.4.
+                    name = name.replace('BaseObject', 'MongoClient')
                 self.assertEqual(connection.connection.__dict__[name], value)
 
     def test_operation_flags(self):

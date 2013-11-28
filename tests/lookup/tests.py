@@ -3,13 +3,14 @@ from operator import attrgetter
 
 from django.core.exceptions import FieldError
 from django.db import connection
+from django.db.utils import DatabaseError
 from django.test import TestCase, skipUnlessDBFeature
 
 # handle pymongo backward compatibility
 try:
     from bson.objectid import ObjectId
 except ImportError:
-    from pymongo.objectid import ObjectId 
+    from pymongo.objectid import ObjectId
 
 from models import Author, Article, Tag
 
@@ -140,7 +141,7 @@ class LookupTests(TestCase):
             Article.objects.in_bulk((self.a3.id,)), {self.a3.id: self.a3})
         self.assertEqual(Article.objects.in_bulk([ObjectId()]), {})
         self.assertEqual(Article.objects.in_bulk([]), {})
-        self.assertRaises(AssertionError, Article.objects.in_bulk, 'foo')
+        self.assertRaises(DatabaseError, Article.objects.in_bulk, 'foo')
         self.assertRaises(TypeError, Article.objects.in_bulk)
         self.assertRaises(TypeError, Article.objects.in_bulk,
                           headline__startswith='Blah')

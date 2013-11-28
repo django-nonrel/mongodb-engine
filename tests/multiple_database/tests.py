@@ -8,7 +8,7 @@ from django.contrib.auth.models import User
 from django.core import management
 from django.db import connections, router, DEFAULT_DB_ALIAS
 from django.db.models import signals
-from django.db.utils import ConnectionRouter
+from django.db.utils import ConnectionRouter, DatabaseError
 
 from models import Book, Person, Pet, Review, UserProfile
 
@@ -380,8 +380,8 @@ class QueryTestCase(TestCase):
         try:
             for obj in qs:
                 pass
-            self.fail('Iterating over query should raise ValueError')
-        except ValueError:
+            self.fail('Iterating over query should raise DatabaseError')
+        except DatabaseError:
             pass
 
     def test_related_manager(self):

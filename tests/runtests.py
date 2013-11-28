@@ -13,7 +13,6 @@ def runtests(foo, settings='settings', extra=[], test_builtin=False):
     if not test_builtin:
         apps = filter(lambda name: not name.startswith('django.contrib.'),
                       apps)
-    apps = [app.replace('django.contrib.', '') for app in apps]
     execute(['./manage.py', 'test', '--settings', settings] + extra + apps)
 
 

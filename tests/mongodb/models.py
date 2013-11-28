@@ -5,6 +5,9 @@ from djangotoolbox.fields import RawField, ListField, DictField, \
 
 from django_mongodb_engine.fields import GridFSField, GridFSString
 
+# ensures class_prepared signal handler is installed
+from django_mongodb_engine import models as mongo_models
+
 from query.models import Post
 
 
@@ -33,7 +36,7 @@ class IndexTestModel(models.Model):
     descending_index = models.IntegerField(db_index=True)
     descending_index_custom_column = models.IntegerField(db_column='bar',
                                                          db_index=True)
-    foreignkey_index = models.ForeignKey(RawModel, db_index=True)
+    foreignkey_index = models.ForeignKey(RawModel, db_index=True, on_delete=models.DO_NOTHING)
     foreignkey_custom_column = models.ForeignKey('DateModel',
                                                  db_column='spam')
     sparse_index = models.IntegerField(db_index=True)
