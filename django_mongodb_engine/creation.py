@@ -130,7 +130,7 @@ class DatabaseCreation(NonrelDatabaseCreation):
             create_compound_indexes(indexes, unique=True)
 
         # MongoDB compound indexes.
-        index_together = getattr(meta, 'index_together', [])
+        index_together = getattr(meta, 'mongo_index_together', [])
         if index_together:
             if isinstance(index_together[0], dict):
                 # Assume index_together = [{'fields' : [...], ...}].

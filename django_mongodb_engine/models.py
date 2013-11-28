@@ -8,6 +8,10 @@ def class_prepared_mongodb_signal(sender, *args, **kwargs):
     if mongo_meta is not None:
         for attr in dir(mongo_meta):
             if not attr.startswith('_'):
-                setattr(sender._meta, attr, getattr(mongo_meta, attr))
+                if attr == 'index_together':
+                    attr_name = 'mongo_index_together'
+                else:
+                    attr_name = attr
+                setattr(sender._meta, attr_name, getattr(mongo_meta, attr))
 
 signals.class_prepared.connect(class_prepared_mongodb_signal)

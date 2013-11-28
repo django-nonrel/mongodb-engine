@@ -2,6 +2,7 @@ from functools import wraps
 import re
 import sys
 
+import django
 from django.db.models import F, NOT_PROVIDED
 from django.db.models.sql import aggregates as sqlaggregates
 from django.db.models.sql.constants import MULTI
@@ -18,11 +19,26 @@ from djangotoolbox.db.basecompiler import (
     NonrelCompiler,
     NonrelInsertCompiler,
     NonrelUpdateCompiler,
-    NonrelDeleteCompiler)
+    NonrelDeleteCompiler,
+    EmptyResultSet)
 
 from .aggregations import get_aggregation_class_by_name
 from .query import A
 from .utils import safe_regex
+
+
+if django.VERSION >= (1, 6):
+    def get_selected_fields(query):
+        fields = None
+        if query.select and not query.aggregates:
+            fields = [info.field.column for info in query.select]
+        return fields
+else:
+    def get_selected_fields(query):
+        fields = None
+        if query.select_fields and not query.aggregates:
+            fields = [field.column for field in query.select_fields]
+        return fields
 
 
 OPERATORS_MAP = {
@@ -119,9 +135,7 @@ class MongoQuery(NonrelQuery):
         if self.query.low_mark == self.query.high_mark:
             return []
 
-        fields = None
-        if self.query.select_fields and not self.query.aggregates:
-            fields = [field.column for field in self.query.select_fields]
+        fields = get_selected_fields(self.query)
         cursor = self.collection.find(self.mongo_query, fields=fields)
         if self.ordering:
             cursor.sort(self.ordering)
@@ -162,7 +176,8 @@ class MongoQuery(NonrelQuery):
 
                 if filters.connector == OR and subquery:
                     or_conditions.extend(subquery.pop('$or', []))
-                    or_conditions.append(subquery)
+                    if subquery:
+                        or_conditions.append(subquery)
 
                 continue
 
@@ -199,7 +214,8 @@ class MongoQuery(NonrelQuery):
                 if self._negated and not already_negated:
                     lookup = {'$not': lookup}
                 subquery[column] = lookup
-                query.update(subquery)
+                if filters.connector == OR and subquery:
+                    or_conditions.append(subquery)
                 continue
 
             if not isinstance(existing, dict):
@@ -263,7 +279,8 @@ class MongoQuery(NonrelQuery):
                         key = '$nin' if self._negated else '$all'
                         existing.setdefault(key, []).append(lookup)
 
-                query.update(subquery)
+                if filters.connector == OR and subquery:
+                    or_conditions.append(subquery)
 
         if filters.negated:
             self._negated = not self._negated
@@ -295,7 +312,10 @@ class SQLCompiler(NonrelCompiler):
                 return [self.get_count()]
 
         counts, reduce, finalize, order, initial = [], [], [], [], {}
-        query = self.build_query()
+        try:
+            query = self.build_query()
+        except EmptyResultSet:
+            return []
 
         for alias, aggregate in aggregations:
             assert isinstance(aggregate, sqlaggregates.Aggregate)
@@ -391,7 +411,7 @@ class SQLUpdateCompiler(NonrelUpdateCompiler, SQLCompiler):
                 # .update(foo=F('foo') + 42) --> {'$inc': {'foo': 42}}
                 lhs, rhs = value.children
                 assert (value.connector in (value.ADD, value.SUB) and
-                        not value.negated and not value.subtree_parents and
+                        not value.negated and
                         isinstance(lhs, F) and not isinstance(rhs, F) and
                         lhs.name == field.name)
                 if value.connector == value.SUB:
@@ -411,7 +431,10 @@ class SQLUpdateCompiler(NonrelUpdateCompiler, SQLCompiler):
     @safe_call
     def execute_update(self, update_spec, multi=True, **kwargs):
         collection = self.get_collection()
-        criteria = self.build_query().mongo_query
+        try:
+            criteria = self.build_query().mongo_query
+        except EmptyResultSet:
+            return 0
         options = self.connection.operation_flags.get('update', {})
         options = dict(options, **kwargs)
         info = collection.update(criteria, update_spec, multi=multi, **options)

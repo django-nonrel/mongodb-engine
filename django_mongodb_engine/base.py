@@ -51,7 +51,7 @@ class DatabaseOperations(NonrelDatabaseOperations):
             raise NotImplementedError("django-mongodb-engine doesn't support "
                                       "%r aggregates." % type(aggregate))
 
-    def sql_flush(self, style, tables, sequence_list):
+    def sql_flush(self, style, tables, sequence_list, allow_cascade=False):
         """
         Returns a list of SQL statements that have to be executed to
         drop all `tables`. No SQL in MongoDB, so just clear all tables
@@ -100,7 +100,7 @@ class DatabaseOperations(NonrelDatabaseOperations):
 
             # Provide a better message for invalid IDs.
             except InvalidId:
-                assert isinstance(value, unicode)
+                assert isinstance(value, (str, unicode))
                 if len(value) > 13:
                     value = value[:10] + '...'
                 msg = "AutoField (default primary key) values must be " \
@@ -162,7 +162,7 @@ class DatabaseValidation(NonrelDatabaseValidation):
 
 class DatabaseIntrospection(NonrelDatabaseIntrospection):
 
-    def table_names(self):
+    def table_names(self, cursor=None):
         return self.connection.database.collection_names()
 
     def sequence_list(self):
