@@ -21,9 +21,7 @@ matrix:
     - env: DJANGO_VERSION=1.6-beta
 
 install:
-  - pip install pymongo
   - pip install git+http://github.com/django-nonrel/django@nonrel-$DJANGO_VERSION
-  - pip install git+http://github.com/django-nonrel/djangotoolbox@master
   - pip install git+http://github.com/django-nonrel/django-dbindexer@master
   - python setup.py install
 
