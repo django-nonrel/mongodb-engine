@@ -1,22 +1,26 @@
 import re
 
+
 class BaseTokenizer(object):
     """
-    Really simple tokenizer
+    Really simple tokenizer.
     """
+
     @staticmethod
     def tokenize(text):
         """
-        Splits text into a list of words removing any symbol and converts it into lowercase
+        Splits text into a list of words removing any symbol and
+        converts it into lowercase.
         """
         tokens = []
         text = text.lower()
         for dot_item in BaseTokenizer.regex_split('\.(?=[a-zA-Z\s])', text):
-            for comman_item in BaseTokenizer.regex_split(',(?=[a-zA-Z\s])', dot_item):
-               for item in comman_item.split(" "):
-                   item = BaseTokenizer.tokenize_item(item)
-                   if item:
-                       tokens.append(item)
+            for comman_item in BaseTokenizer.regex_split(',(?=[a-zA-Z\s])',
+                                                         dot_item):
+                for item in comman_item.split(' '):
+                    item = BaseTokenizer.tokenize_item(item)
+                    if item:
+                        tokens.append(item)
         return tokens
 
     @staticmethod
@@ -27,7 +31,8 @@ class BaseTokenizer(object):
     @staticmethod
     def tokenize_item(item):
         """
-        If it is an int/float it returns the item (there's no need to remove , or .)
+        If it is an int/float it returns the item (there's no need to
+        remove , or .).
         """
         item = item.strip()
         try:
@@ -36,5 +41,5 @@ class BaseTokenizer(object):
         except ValueError:
             pass
 
-        # This will keep underscores
+        # This will keep underscores.
         return re.sub(r'[^\w]', '', item)

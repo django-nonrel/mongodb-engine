@@ -70,7 +70,7 @@ So, adding a new field boils down to... adding a new field. ::
 
    class Post(models.Model):
        created_on = models.DateTimeField(auto_now_add=True, null=True) # <---
-       title = models.CharField()
+       title = models.CharField(max_length=255)
        text = models.TextField()
        tags = ListField()
        comments = ListField()
@@ -107,7 +107,7 @@ Let's first design our model for comments. ::
 
    class Comment(models.Model):
        created_on = models.DateTimeField(auto_now_add=True)
-       author_name = models.CharField()
+       author_name = models.CharField(max_length=255)
        author_email = models.EmailField()
        text = models.TextField()
 
@@ -187,7 +187,7 @@ Neat, isn't it?
 
 Using lists, dictionaries and embedded objects, you can design your database
 schema very similar to the structure of the Python objects used all over your
-code.  No need to sequeeze your objects into primitive non-relational schemas.
+code.  No need to squeeze your objects into primitive non-relational schemas.
 
 Adding Some Templates
 ---------------------
@@ -197,7 +197,7 @@ post overview page could look like:
 .. literalinclude:: code/tutorial/v3/nonrelblog/templates/nonrelblog/post_list.html
    :language: html+django
 
-Pretty straightward. Here's the single post template:
+Pretty straightforward. Here's the single post template:
 
 .. literalinclude:: code/tutorial/v3/nonrelblog/templates/nonrelblog/post_detail.html
    :language: html+django
@@ -216,7 +216,7 @@ To make our blog less boring, we should add some nice pictures.
 As MongoDB disciples, what comes to mind when thinking about storing files?
 Of course! GridFS!
 
-Django MongoDB Engine provides a :class:`Django storage backend for GridFS <GridFSStorage>`
+Django MongoDB Engine provides a :doc:`Django storage backend for GridFS <topics/gridfs>`
 that allows you to use GridFS like any other file storage:
 
 .. literalinclude:: code/tutorial/v4/gridfsuploads/__init__.py

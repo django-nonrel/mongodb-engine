@@ -3,6 +3,7 @@ import os
 import sys
 from types import ModuleType
 
+
 def runtests(foo, settings='settings', extra=[], test_builtin=False):
     if isinstance(foo, ModuleType):
         settings = foo.__name__
@@ -10,19 +11,21 @@ def runtests(foo, settings='settings', extra=[], test_builtin=False):
     else:
         apps = foo
     if not test_builtin:
-        apps = filter(lambda name: not name.startswith('django.contrib.'), apps)
-    apps = [app.replace('django.contrib.', '') for app in apps]
+        apps = filter(lambda name: not name.startswith('django.contrib.'),
+                      apps)
     execute(['./manage.py', 'test', '--settings', settings] + extra + apps)
+
 
 def execute_python(lines):
     from textwrap import dedent
     return execute(
-        [sys.executable, '-c',  dedent(lines)],
-        env=dict(os.environ, DJANGO_SETTINGS_MODULE='settings', PYTHONPATH='..')
-    )
+        [sys.executable, '-c', dedent(lines)],
+        env=dict(os.environ, DJANGO_SETTINGS_MODULE='settings',
+                 PYTHONPATH='..'))
+
 
 def main(short):
-    # Run some basic tests outside Django's test environment
+    # Run some basic tests outside Django's test environment.
     execute_python('''
         from mongodb.models import RawModel
         RawModel.objects.create(raw=41)
@@ -37,7 +40,7 @@ def main(short):
 
     runtests(settings, extra=['--failfast'] if short else [])
 
-    # assert we didn't touch the production database
+    # Assert we didn't touch the production database.
     execute_python('''
         from mongodb.models import RawModel
         assert RawModel.objects.get().raw == 42
@@ -62,12 +65,16 @@ if __name__ == '__main__':
     else:
         from subprocess import check_call as execute
     if 'coverage' in sys.argv:
+
         def _new_check_call_closure(old_check_call):
+
             def _new_check_call(cmd, **kwargs):
                 if not cmd[0].endswith('python'):
                     cmd = ['coverage', 'run', '-a', '--source',
                            '../django_mongodb_engine'] + cmd
                 return old_check_call(cmd, **kwargs)
+
             return _new_check_call
+
         execute = _new_check_call_closure(execute)
     main('short' in sys.argv)

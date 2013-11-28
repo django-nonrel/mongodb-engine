@@ -23,5 +23,5 @@ big data sets.
    (i.e. in your views or business logic) but regard them as a powerful tool for
    one-time operations.
 
-.. _group: http://www.mongodb.org/display/DOCS/Aggregation#Aggregation-Group
-.. __: http://docs.djangoproject.com/en/dev/topics/db/aggregation/
+.. _group: http://docs.mongodb.org/manual/reference/command/group/#dbcmd.group
+.. __: https://docs.djangoproject.com/en/dev/topics/db/aggregation/

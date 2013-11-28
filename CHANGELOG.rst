@@ -3,17 +3,30 @@ Changelog
 
 .. currentmodule:: djangotoolbox.fields
 
+
 Version 0.5 (TBD)
 -----------------
+Major changes
+~~~~~~~~~~~~~
 * PyPy support
 * MongoDB 2.0 support
-* New custom primary key behaviour (to be documented)
-* Deprecated the ``MongoMeta.{index_together,descending_indexes,sparse_indexes}``
-  properties in favor of the new ``MongoMeta.indexes`` setting
+* We're now on Travis_
+* New custom primary key behavior (to be documented)
+* New ``MongoMeta.indexes`` system (see :doc:`/reference/model-options`),
+  deprecation of ``MongoMeta.{index_together,descending_indexes,sparse_indexes}``
+
+Minor changes/fixes
+~~~~~~~~~~~~~~~~~~~
+* Support for MongoDB :meth:`~django_mongodb_engine.contrib.MongoDBManager.distinct` queries
+* Support for reversed-``$natural`` ordering using :meth:`~django.db.query.QuerySet.reverse`
+* Dropped ``LegacyEmbeddedModelField``
+* ``url()`` support for the :doc:`GridFS Storage <topics/gridfs>`
 * Deprecation of ``A()`` queries
 * Deprecation of the ``GridFSField.versioning`` feature
 * Numerous query generator fixes
+* Fixed ``DecimalField`` values sorting
 * Other bug fixes, cleanup, new tests etc.
+
 
 Version 0.4 (May 2011)
 ----------------------
@@ -29,6 +42,7 @@ Version 0.4 (May 2011)
 * Defined a stable :ref:`lower-level database API <lowerlevel/pymongo>`
 * Numerous bug fixes, new tests, code improvements and deprecations
 
+
 Version 0.3 (Jan 2011)
 ----------------------
 * *OR* query support
@@ -39,6 +53,7 @@ Version 0.3 (Jan 2011)
 * Support for :ref:`raw queries and raw updates <lowerlevel/raw-queries-and-updates>`
 
 .. * Added a flag to enable :ref:`model-referencing`
+
 
 Version 0.2 (Oct 2010)
 ----------------------
@@ -54,3 +69,4 @@ Version 0.2 (Oct 2010)
 
 .. _merged into djangotoolbox: https://bitbucket.org/wkornewald/djangotoolbox/src/tip/djangotoolbox/fields.py
 .. _F: http://docs.djangoproject.com/en/dev/topics/db/queries/#query-expressions
+.. _Travis: http://travis-ci.org/django-nonrel/mongodb-engine

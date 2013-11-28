@@ -73,5 +73,5 @@ database. ::
    >>> samedoc.blob
    <GridOut object at 0xfoobar>
 
-.. _GridFS: http://www.mongodb.org/display/DOCS/GridFS
-.. _Django storage: http://docs.djangoproject.com/en/dev/topics/files/#file-storage
+.. _GridFS: http://docs.mongodb.org/manual/core/gridfs/
+.. _Django storage: https://docs.djangoproject.com/en/dev/topics/files/#file-storage

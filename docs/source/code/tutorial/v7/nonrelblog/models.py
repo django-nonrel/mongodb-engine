@@ -1,6 +1,9 @@
 from django.db import models
+
 from djangotoolbox.fields import ListField, EmbeddedModelField
+
 from django_mongodb_engine.contrib import MongoDBManager
+
 
 class Post(models.Model):
     created_on = models.DateTimeField(auto_now_add=True, null=True)
@@ -11,10 +14,12 @@ class Post(models.Model):
 
     objects = MongoDBManager()
 
+
 class Comment(models.Model):
     created_on = models.DateTimeField(auto_now_add=True)
     author = EmbeddedModelField('Author')
     text = models.TextField()
+
 
 class Author(models.Model):
     name = models.CharField(max_length=50)

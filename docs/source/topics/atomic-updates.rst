@@ -21,5 +21,5 @@ is translated to::
 
    .update(..., {'$inc': {'visits': 1}})
 
-.. _updates: https://docs.djangoproject.com/en/1.3/topics/db/queries/#updating-multiple-objects-at-once
+.. _updates: https://docs.djangoproject.com/en/dev/topics/db/queries/#updating-multiple-objects-at-once
 .. _F(): https://docs.djangoproject.com/en/dev/topics/db/queries/#filters-can-reference-fields-on-the-model

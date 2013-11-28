@@ -6,8 +6,23 @@ branches:
 language: python
 
 python:
-  - "2.5"
-  - "2.6"
-  - "2.7"
+  - 2.6
+  - 2.7
 
-script: python setup.py install && cd tests && python runtests.py short
+env:
+  - DJANGO_VERSION=1.4
+  - DJANGO_VERSION=1.5
+  - DJANGO_VERSION=1.6-beta
+
+matrix:
+  allow_failures:
+    - env: DJANGO_VERSION=1.6-beta
+
+install:
+  - pip install pymongo
+  - pip install git+http://github.com/django-nonrel/django@nonrel-$DJANGO_VERSION
+  - pip install git+http://github.com/django-nonrel/djangotoolbox@master
+  - pip install git+http://github.com/django-nonrel/django-dbindexer@master
+  - python setup.py install
+
+script: cd tests && python runtests.py

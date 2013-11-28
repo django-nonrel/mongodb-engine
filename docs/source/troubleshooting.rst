@@ -43,3 +43,7 @@ groups/permissions in the user edit form.
 
 To workaround this problem, add ``'djangotoolbox'`` to your ``INSTALLED_APPS``
 which makes the Django admin skip the groups and permissions widgets.
+
+No form field implemented for <class 'djangotoolbox.fields.ListField'>
+----------------------------------------------------------------------
+See https://gist.github.com/1200165

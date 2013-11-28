@@ -1,8 +1,8 @@
 DATABASES = {
-    'default' : {
+    'default': {
         'ENGINE': 'django_mongodb_engine',
-        'NAME': 'tutorial'
-    }
+        'NAME': 'tutorial',
+    },
 }
 
 INSTALLED_APPS = [
@@ -12,6 +12,7 @@ INSTALLED_APPS = [
 
     'nonrelblog',
 ]
+
 ROOT_URLCONF = 'urls'
 
 DEBUG = TEMPLATE_DEBUG = True
