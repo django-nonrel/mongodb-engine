@@ -143,4 +143,4 @@ use Django MongoDB Engine's Map/Reduce API.
    :end-before: """
 
 
-.. _MongoDB's Map/Reduce functionality: http://www.mongodb.org/display/DOCS/MapReduce
+.. _MongoDB's Map/Reduce functionality: http://docs.mongodb.org/manual/core/map-reduce/

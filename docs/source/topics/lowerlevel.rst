@@ -127,6 +127,6 @@ command, you could use code similar to this::
    eggs_collection = database_wrapper.get_collection('eggs')
    eggs_collection.find_and_modify(...)
 
-.. _PyMongo: http://api.mongodb.org/python/current
-.. _Geo querying: http://www.mongodb.org/display/DOCS/Geospatial+Indexing
-.. _F: http://docs.djangoproject.com/en/dev/topics/db/queries/#query-expressions
+.. _PyMongo: http://api.mongodb.org/python/current/
+.. _Geo querying: http://docs.mongodb.org/manual/core/geospatial-indexes/
+.. _F: https://docs.djangoproject.com/en/dev/topics/db/queries/#query-expressions

@@ -7,14 +7,8 @@ Documentation on http://django-mongodb-engine.readthedocs.org/
 Map/Reduce and GridFS), admin site, authentication, site, session and caching
 frameworks with MongoDB.*
 
-:1.3 branch:
-    .. image:: https://secure.travis-ci.org/django-nonrel/mongodb-engine.png?branch=mongodb-engine-1.3
-        :target: https://travis-ci.org/django-nonrel/mongodb-engine
-:1.4 branch:
-    .. image:: https://secure.travis-ci.org/django-nonrel/mongodb-engine.png?branch=mongodb-engine-1.4-beta
-        :target: https://travis-ci.org/django-nonrel/mongodb-engine
-:1.5 branch:
-    .. image:: https://secure.travis-ci.org/django-nonrel/mongodb-engine.png?branch=mongodb-engine-1.5-beta
+:master branch:
+    .. image:: https://secure.travis-ci.org/django-nonrel/mongodb-engine.png?branch=master
         :target: https://travis-ci.org/django-nonrel/mongodb-engine
 
 

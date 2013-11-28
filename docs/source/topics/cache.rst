@@ -49,6 +49,6 @@ cache backend name, use ``"django_mongodb_cache.MongoDBCache"`` as ``BACKEND``::
 Django MongoDB Cache will also honor all optional settings the default database
 cache backend takes care of (``TIMEOUT``, ``OPTIONS``, etc).
 
-.. _Django's caching framework: http://docs.djangoproject.com/en/dev/topics/cache/
+.. _Django's caching framework: https://docs.djangoproject.com/en/dev/topics/cache/
 .. _Django MongoDB Cache: https://github.com/django-nonrel/mongodb-cache
-.. _Django db cache setup docs: http://docs.djangoproject.com/en/dev/topics/cache/#database-caching
+.. _Django db cache setup docs: https://docs.djangoproject.com/en/dev/topics/cache/#database-caching
