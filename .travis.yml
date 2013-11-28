@@ -1,8 +1,6 @@
 branches:
   only:
-    - mongodb-engine-1.3
-    - mongodb-engine-1.4-beta
-    - mongodb-engine-1.5-beta
+    - master
 
 language: python
 
@@ -11,16 +9,19 @@ python:
   - 2.7
 
 env:
-  - MONGODB_VERSION=
-  - MONGODB_VERSION=18
+  - DJANGO_VERSION=1.4
+  - DJANGO_VERSION=1.5
+  - DJANGO_VERSION=1.6-beta
 
-before_script:
-  - if [ -z "$MONGODB_VERSION" ]; then
-      sudo apt-key adv --keyserver keyserver.ubuntu.com --recv 7F0CEB10 &&
-      sudo sh -c 'echo deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen >> /etc/apt/sources.list' &&
-      sudo apt-get update &&
-      sudo apt-get remove --purge mongodb-10gen &&
-      sudo apt-get install --yes mongodb$MONGODB_VERSION-10gen;
-    fi
+matrix:
+  allow_failures:
+    - env: DJANGO_VERSION=1.6-beta
 
-script: python setup.py install && cd tests && python runtests.py
+install:
+  - pip install pymongo
+  - pip install git+http://github.com/django-nonrel/django@nonrel-$DJANGO_VERSION
+  - pip install git+http://github.com/django-nonrel/djangotoolbox@master
+  - pip install git+http://github.com/django-nonrel/django-dbindexer@master
+  - python setup.py install
+
+script: cd tests && python runtests.py
