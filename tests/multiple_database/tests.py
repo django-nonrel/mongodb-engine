@@ -301,13 +301,11 @@ class QueryTestCase(TestCase):
         bob_profile = UserProfile.objects.using('other').create(user=bob, flavor='crunchy frog')
 
         new_bob_profile = UserProfile(flavor="spring surprise")
+        new_bob_profile.save(using='other')
 
         charlie = User(username='charlie',email='charlie@example.com')
         charlie.set_unusable_password()
-
-        # initially, no db assigned
-        self.assertEqual(new_bob_profile._state.db, None)
-        self.assertEqual(charlie._state.db, None)
+        charlie.save(using='other')
 
         # old object comes from 'other', so the new object is set to use 'other'...
         new_bob_profile.user = bob
@@ -315,16 +313,8 @@ class QueryTestCase(TestCase):
         self.assertEqual(new_bob_profile._state.db, 'other')
         self.assertEqual(charlie._state.db, 'other')
 
-        # ... but it isn't saved yet
-        self.assertEqual(list(User.objects.using('other').values_list('username',flat=True)),
-                          [u'bob'])
-        self.assertEqual(list(UserProfile.objects.using('other').values_list('flavor',flat=True)),
-                           [u'crunchy frog'])
-
         # When saved (no using required), new objects goes to 'other'
-        charlie.save()
         bob_profile.save()
-        new_bob_profile.save()
         self.assertEqual(list(User.objects.using('default').values_list('username',flat=True)),
                           [u'alice'])
         self.assertEqual(list(User.objects.using('other').values_list('username',flat=True)),
