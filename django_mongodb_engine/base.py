@@ -99,7 +99,7 @@ class DatabaseOperations(NonrelDatabaseOperations):
                 return ObjectId(value)
 
             # Provide a better message for invalid IDs.
-            except InvalidId:
+            except (TypeError, InvalidId):
                 assert isinstance(value, (str, unicode))
                 if len(value) > 13:
                     value = value[:10] + '...'
