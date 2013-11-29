@@ -3,6 +3,10 @@ Changelog
 
 .. currentmodule:: djangotoolbox.fields
 
+Version 0.5.1 (Nov 2013)
+-----------------
+* Fixed packaging issues
+
 
 Version 0.5 (Nov 2013)
 -----------------

@@ -1,12 +1,7 @@
-from distutils.core import setup
-import os
+from setuptools import setup, find_packages
 
 import django_mongodb_engine as distmeta
 
-def get_packages(package):
-    return [dirpath
-            for dirpath, dirnames, filenames in os.walk(package)
-            if os.path.exists(os.path.join(dirpath, '__init__.py'))]
 
 setup(name='django-mongodb-engine',
     version='.'.join(map(str, distmeta.__version__)),
@@ -15,8 +10,9 @@ setup(name='django-mongodb-engine',
     url=distmeta.__homepage__,
     license='2-clause BSD',
     description="MongoDB backend for Django",
-    requires=['pymongo', 'djangotoolbox (>=1.6.0)'],
-    packages=get_packages('django_mongodb_engine'),
+    install_requires=['pymongo', 'djangotoolbox>=1.6.0'],
+    packages=find_packages(exclude=['tests', 'tests.*']),
+    zip_safe=False,
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Environment :: Web Environment',
