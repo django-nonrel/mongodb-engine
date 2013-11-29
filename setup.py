@@ -2,6 +2,12 @@ from setuptools import setup, find_packages
 
 import django_mongodb_engine as distmeta
 
+DESCRIPTION = 'MongoDB backend for Django-nonrel'
+LONG_DESCRIPTION = None
+try:
+    LONG_DESCRIPTION = open('README.rst').read()
+except:
+    pass
 
 setup(name='django-mongodb-engine',
     version='.'.join(map(str, distmeta.__version__)),
@@ -9,7 +15,8 @@ setup(name='django-mongodb-engine',
     author_email=distmeta.__contact__,
     url=distmeta.__homepage__,
     license='2-clause BSD',
-    description="MongoDB backend for Django",
+    description=DESCRIPTION,
+    long_description=LONG_DESCRIPTION,
     install_requires=['pymongo', 'djangotoolbox>=1.6.0'],
     packages=find_packages(exclude=['tests', 'tests.*']),
     zip_safe=False,
