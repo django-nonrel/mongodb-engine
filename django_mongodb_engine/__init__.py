@@ -5,7 +5,7 @@ __version__ = (0, 5, 1)
 __author__ = "Flavio Percoco Premoli, Alberto Paro, " + \
              "Jonas Haag and contributors"
 __contact__ = "django-non-relational@googlegroups.com"
-__homepage__ = "https://django-nonrel.org"
+__homepage__ = "http://django-nonrel.org/"
 __docformat__ = "restructuredtext"
 
 try:
@@ -42,7 +42,7 @@ else:
             settings.INSTALLED_APPS = ('django_mongodb_engine',) + settings.INSTALLED_APPS
         else:
             settings.INSTALLED_APPS.insert(0, 'django_mongodb_engine')
-    except ImproperlyConfigured as exc:
+    except (ImportError, ImproperlyConfigured) as exc:
         # setup.py imports this file in order to read version/author/... metadata
         # but does not necessarily have a Django context.
         import logging
