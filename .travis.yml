@@ -18,7 +18,7 @@ env:
 
 matrix:
   allow_failures:
-    - env: DJANGO_VERSION=1.6-beta
+    - env: DJANGO_VERSION=1.4
 
 install:
   - pip install git+http://github.com/django-nonrel/django@nonrel-$DJANGO_VERSION
