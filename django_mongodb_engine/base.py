@@ -100,8 +100,7 @@ class DatabaseOperations(NonrelDatabaseOperations):
 
             # Provide a better message for invalid IDs.
             except (TypeError, InvalidId):
-                assert isinstance(value, (str, unicode))
-                if len(value) > 13:
+                if isinstance(value, (str, unicode)) and len(value) > 13:
                     value = value[:10] + '...'
                 msg = "AutoField (default primary key) values must be " \
                       "strings representing an ObjectId on MongoDB (got " \
