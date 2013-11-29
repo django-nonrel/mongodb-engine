@@ -15,7 +15,7 @@ def runtests(foo, settings='settings', extra=[], test_builtin=False):
                       apps)
     # pre-1.6 test runners don't understand full module names
     import django
-    if django.VERSION < (1, 6)
+    if django.VERSION < (1, 6):
         apps = [app.replace('django.contrib.', '') for app in apps]
     execute(['./manage.py', 'test', '--settings', settings] + extra + apps)
 
