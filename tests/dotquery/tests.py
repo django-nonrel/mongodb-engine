@@ -1,7 +1,7 @@
 from __future__ import with_statement
+from django.db.models import Q
 from models import *
 from utils import *
-
 
 class DotQueryTests(TestCase):
     """Tests for querying on foo.bar using join syntax."""
@@ -44,8 +44,12 @@ class DotQueryTests(TestCase):
     def test_dict_queries(self):
         q = DotQueryTestModel.objects.filter(f_dict__numbers=2)
         self.assertEqual(q.count(), 2)
+        self.assertEqual(q[0].f_id, 51)
+        self.assertEqual(q[1].f_id, 52)
         q = DotQueryTestModel.objects.filter(f_dict__letters__contains='b')
         self.assertEqual(q.count(), 2)
+        self.assertEqual(q[0].f_id, 51)
+        self.assertEqual(q[1].f_id, 52)
         q = DotQueryTestModel.objects.exclude(f_dict__letters__contains='b')
         self.assertEqual(q.count(), 1)
         self.assertEqual(q[0].f_id, 53)
@@ -65,6 +69,13 @@ class DotQueryTests(TestCase):
     def test_embedded_list_queries(self):
         q = DotQueryTestModel.objects.get(f_embedded_list__f_int=120)
         self.assertEqual(q.f_id, 53)
+
+#   FIXME: Need to implement Q on dot fields
+#   def test_q_queries(self):
+#       q = DotQueryTestModel.objects.filter(Q(f_dict__numbers=1)|Q(f_dict__numbers=4))
+#       self.assertEqual(q.count(), 2)
+#       self.assertEqual(q[0].f_id, 51)
+#       self.assertEqual(q[1].f_id, 53)
 
     def test_save_after_query(self):
         q = DotQueryTestModel.objects.get(f_dict__letters='cd')

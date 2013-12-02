@@ -118,6 +118,7 @@ class MongoDBQuerySet(QuerySet):
             name = key.split(LOOKUP_SEP)[0]
             if '.' in name and name not in all_field_names:
                 parts = name.split('.')
+                # FIXME: Need to recursively follow EmbeddedModelFields for any db_columns
                 column = self.model._meta.get_field_by_name(parts[0])[0].db_column
                 if column:
                     parts[0] = column
