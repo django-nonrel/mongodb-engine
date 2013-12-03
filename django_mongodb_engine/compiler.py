@@ -190,7 +190,7 @@ class MongoQuery(NonrelQuery, UpdateQueryMixin):
                         new=True,
                         fields=self._get_query_fields(),
             )
-            return [result]
+            return [result] if result else []
 
     def get_cursor(self):
         if self.query.low_mark == self.query.high_mark:
