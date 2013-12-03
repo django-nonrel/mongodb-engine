@@ -93,7 +93,38 @@ def _split_db_type(db_type):
     return db_type, db_subtype
 
 
-class MongoQuery(NonrelQuery):
+class UpdateQueryMixin:
+    def _setup_update(self, values):
+        multi = True
+        spec = {}
+        for field, value in values:
+            if field.primary_key:
+                raise DatabaseError("Can not modify _id.")
+            if getattr(field, 'forbids_updates', False):
+                raise DatabaseError("Updates on %ss are not allowed." %
+                                    field.__class__.__name__)
+            if hasattr(value, 'evaluate'):
+                # .update(foo=F('foo') + 42) --> {'$inc': {'foo': 42}}
+                lhs, rhs = value.children
+                assert (value.connector in (value.ADD, value.SUB) and
+                        not value.negated and not value.subtree_parents and
+                        isinstance(lhs, F) and not isinstance(rhs, F) and
+                        lhs.name == field.name)
+                if value.connector == value.SUB:
+                    rhs = -rhs
+                action = '$inc'
+                value = rhs
+            else:
+                # .update(foo=123) --> {'$set': {'foo': 123}}
+                action = '$set'
+            spec.setdefault(action, {})[field.column] = value
+
+            if field.unique:
+                multi = False
+        return spec, multi
+
+
+class MongoQuery(NonrelQuery, UpdateQueryMixin):
 
     def __init__(self, compiler, fields):
         super(MongoQuery, self).__init__(compiler, fields)
@@ -105,7 +136,11 @@ class MongoQuery(NonrelQuery):
         return '<MongoQuery: %r ORDER %r>' % (self.mongo_query, self.ordering)
 
     def fetch(self, low_mark, high_mark):
-        results = self.get_cursor()
+        # If this is a findAndModify query, do it on fetch.
+        if getattr(self.query, "_modify_args", None):
+            results = self.get_find_and_modify()
+        else:
+            results = self.get_cursor()
         pk_column = self.query.get_meta().pk.column
         for entity in results:
             entity[pk_column] = entity.pop('_id')
@@ -135,13 +170,33 @@ class MongoQuery(NonrelQuery):
         options = self.connection.operation_flags.get('delete', {})
         self.collection.remove(self.mongo_query, **options)
 
+    def _get_query_fields(self):
+        fields = None
+        if self.query.select_fields and not self.query.aggregates:
+            fields = [field.column for field in self.query.select_fields]
+        return fields
+
+    def get_find_and_modify(self):
+        modify_args = getattr(self.query, "_modify_args", None)
+        if modify_args:
+            spec, multi = self._setup_update(modify_args)
+            result = self.collection.find_and_modify(
+                        query=self.mongo_query,
+                        update=spec,
+                        upsert=False,
+                        sort=self.ordering or None,
+                        full_response=False,
+                        remove=False,
+                        new=True,
+                        fields=self._get_query_fields(),
+            )
+            return [result]
+
     def get_cursor(self):
         if self.query.low_mark == self.query.high_mark:
             return []
 
-        fields = None
-        if self.query.select_fields and not self.query.aggregates:
-            fields = [field.column for field in self.query.select_fields]
+        fields = self._get_query_fields()
         cursor = self.collection.find(self.mongo_query, fields=fields)
         if self.ordering:
             cursor.sort(self.ordering)
@@ -453,37 +508,11 @@ class SQLInsertCompiler(NonrelInsertCompiler, SQLCompiler):
 
 # TODO: Define a common nonrel API for updates and add it to the nonrel
 #       backend base classes and port this code to that API.
-class SQLUpdateCompiler(NonrelUpdateCompiler, SQLCompiler):
+class SQLUpdateCompiler(NonrelUpdateCompiler, SQLCompiler, UpdateQueryMixin):
     query_class = MongoQuery
 
     def update(self, values):
-        multi = True
-        spec = {}
-        for field, value in values:
-            if field.primary_key:
-                raise DatabaseError("Can not modify _id.")
-            if getattr(field, 'forbids_updates', False):
-                raise DatabaseError("Updates on %ss are not allowed." %
-                                    field.__class__.__name__)
-            if hasattr(value, 'evaluate'):
-                # .update(foo=F('foo') + 42) --> {'$inc': {'foo': 42}}
-                lhs, rhs = value.children
-                assert (value.connector in (value.ADD, value.SUB) and
-                        not value.negated and not value.subtree_parents and
-                        isinstance(lhs, F) and not isinstance(rhs, F) and
-                        lhs.name == field.name)
-                if value.connector == value.SUB:
-                    rhs = -rhs
-                action = '$inc'
-                value = rhs
-            else:
-                # .update(foo=123) --> {'$set': {'foo': 123}}
-                action = '$set'
-            spec.setdefault(action, {})[field.column] = value
-
-            if field.unique:
-                multi = False
-
+        spec, multi = self._setup_update(values)
         return self.execute_update(spec, multi)
 
     @safe_call

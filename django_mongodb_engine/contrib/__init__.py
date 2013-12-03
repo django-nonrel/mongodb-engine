@@ -1,8 +1,8 @@
 import sys
 
-from django.db import models, connections
+from django.db import models, connections, router
 from django.db.models.query import QuerySet
-from django.db.models.sql.query import Query as SQLQuery
+from django.db.models.sql import Query as SQLQuery, UpdateQuery
 
 
 ON_PYPY = hasattr(sys, 'pypy_version_info')
@@ -55,8 +55,54 @@ class RawQueryMixin:
         queryset._for_write = True
         compiler = _compiler_for_queryset(queryset, 'SQLUpdateCompiler')
         compiler.execute_update(update_dict, **kwargs)
-
     raw_update.alters_data = True
+
+
+class FindAndModifyQuery(UpdateQuery, SQLQuery):
+    def __init__(self, model, modify_args, db):
+        super(FindAndModifyQuery, self).__init__(model)
+        self.add_update_values(modify_args)
+        compiler = self.get_compiler(db)
+        self._modify_args = compiler._get_update_values()
+
+    def clone(self, *args, **kwargs):
+        clone = super(FindAndModifyQuery, self).clone(*args, **kwargs)
+        clone._modify_args = self._modify_args
+        return clone
+
+
+class FindAndModifyMixin:
+    def get_find_and_modify_query_set(self, modify_args):
+        query = FindAndModifyQuery(self.model, modify_args,
+                                   self._db or router.db_for_write(self.model))
+        return QuerySet(self.model, query, self._db)
+
+    def find_and_modify(self, **kwargs):
+        """A wrapper around the findAndModify functionality of MongoDB
+
+        Notes:
+        * This will always return either one or zero records.
+        * It's best to only use "get()" beside this to avoid confusion.
+        * This method will probably not error if used with other methods, but
+            the behavior may be confusing or erratic. Use with caution.
+        * When using 'count()' with this method, the modify portion is not
+            performed, and the count is counting all objects that match the
+            filters.
+        * 'delete()' will delete all records matching the filters.
+        * Slicing and skipping is not supported by findAndModify.
+
+        Example:
+        <Model>.objects.find_and_modify(locked=True).get(id=<ID>)
+
+        Resulting query:
+        db.<Model_collection>.findAndModify(
+                        {"find": {'_id': ObjectId(<ID>)},
+                         'update': {'$set': {'locked': true}},
+                         'new': true})})
+        """
+        self._for_write = True
+        return self.get_find_and_modify_query_set(kwargs)
+    find_and_modify.alters_data = True
 
 
 class MapReduceResult(object):
@@ -143,15 +189,15 @@ class MongoDBQuerySet(QuerySet):
         return [MapReduceResult.from_entity(self.model, entity) for entity in
                 query.collection.inline_map_reduce(*args, **kwargs)]
 
-    def _get_query(self):
-        return _compiler_for_queryset(self).build_query()
+    def _get_query(self, which='SQLCompiler'):
+        return _compiler_for_queryset(self, which=which).build_query()
 
     def distinct(self, *args, **kwargs):
         query = self._get_query()
         return query.get_cursor().distinct(*args, **kwargs)
 
 
-class MongoDBManager(models.Manager, RawQueryMixin):
+class MongoDBManager(models.Manager, RawQueryMixin, FindAndModifyMixin):
     """
     Lets you use Map/Reduce and raw query/update with your models::
 
