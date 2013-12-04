@@ -91,6 +91,7 @@ class MapReduceResult(object):
 
 
 class MongoDBQuerySet(QuerySet):
+
     def _filter_or_exclude(self, negate, *args, **kwargs):
         if args or kwargs:
             assert self.query.can_filter(), \
@@ -98,43 +99,74 @@ class MongoDBQuerySet(QuerySet):
 
         clone = self._clone()
 
-        all_field_names = self.model._meta.get_all_field_names()
-        base_field_names = []
-
-        for name in all_field_names:
-            field = self.model._meta.get_field_by_name(name)[0]
-            if '.' not in name and field.get_internal_type() in MONGO_DOT_FIELDS:
-                base_field_names.append(name)
-
-        for key, val in kwargs.items():
-            if LOOKUP_SEP in key and key.split(LOOKUP_SEP)[0] in base_field_names:
-                del kwargs[key]
-                for op in ALL_OPERATORS:
-                    if key.endswith(op):
-                        key = re.sub(LOOKUP_SEP + op + '$', '#' + op, key)
-                        break
-                key = key.replace(LOOKUP_SEP, '.').replace('#', LOOKUP_SEP)
-                kwargs[key] = val
-            name = key.split(LOOKUP_SEP)[0]
-            if '.' in name and name not in all_field_names:
-                parts = name.split('.')
-                # FIXME: Need to recursively follow EmbeddedModelFields for any db_columns
-                column = self.model._meta.get_field_by_name(parts[0])[0].db_column
-                if column:
-                    parts[0] = column
-                field = AbstractIterableField(
-                    db_column = '.'.join(parts),
-                    blank=True,
-                    null=True,
-                    editable=False,
-                )
-                field.contribute_to_class(self.model, name)
+        self._process_arg_filters(args, kwargs)
 
         if negate:
             clone.query.add_q(~Q(*args, **kwargs))
         else:
             clone.query.add_q(Q(*args, **kwargs))
         return clone
+
+    def _get_mongo_field_names(self):
+        if not hasattr(self, '_mongo_field_names'):
+            self._mongo_field_names = []
+            for name in self.model._meta.get_all_field_names():
+                field = self.model._meta.get_field_by_name(name)[0]
+                if '.' not in name and field.get_internal_type() in MONGO_DOT_FIELDS:
+                    self._mongo_field_names.append(name)
+
+        return self._mongo_field_names
+
+    def _process_arg_filters(self, args, kwargs):
+        for key, val in kwargs.items():
+            del kwargs[key]
+            key = self._dotify_field_name(key)
+            kwargs[key] = val
+            self._maybe_add_dot_field(key)
+
+        for a in args:
+            if isinstance(a, Q):
+               self._process_q_filters(a)
+
+    def _process_q_filters(self, q):
+        for c in range(len(q.children)):
+            child = q.children[c]
+            if isinstance(child, Q):
+                self._process_q_filters(child)
+            elif isinstance(child, tuple):
+                key, val = child
+                key = self._dotify_field_name(key)
+                q.children[c] = (key, val)
+                self._maybe_add_dot_field(key)
+
+    def _dotify_field_name(self, name):
+        if LOOKUP_SEP in name and name.split(LOOKUP_SEP)[0] in self._get_mongo_field_names():
+            for op in ALL_OPERATORS:
+                if name.endswith(op):
+                    name = re.sub(LOOKUP_SEP + op + '$', '#' + op, name)
+                    break
+            name = name.replace(LOOKUP_SEP, '.').replace('#', LOOKUP_SEP)
+
+        return name
+
+    def _maybe_add_dot_field(self, name):
+        name = name.split(LOOKUP_SEP)[0]
+
+        if '.' in name and name not in self.model._meta.get_all_field_names():
+            parts = name.split('.')
+
+            # FIXME: Need to recursively follow EmbeddedModelFields for any db_columns
+            column = self.model._meta.get_field_by_name(parts[0])[0].db_column
+            if column:
+                parts[0] = column
+
+            field = AbstractIterableField(
+                db_column = '.'.join(parts),
+                blank=True,
+                null=True,
+                editable=False,
+            )
+            field.contribute_to_class(self.model, name)
 
     def map_reduce(self, *args, **kwargs):
         """
