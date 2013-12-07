@@ -3,12 +3,13 @@ from django.db.models import Q
 from models import *
 from utils import *
 
+
 class DotQueryTests(TestCase):
     """Tests for querying on foo.bar using join syntax."""
 
     def setUp(self):
         fm = DotQueryForeignModel.objects.create(
-            f_char = 'hello',
+            f_char='hello',
         )
         DotQueryTestModel.objects.create(
             f_id=51,
@@ -74,18 +75,12 @@ class DotQueryTests(TestCase):
         qs = DotQueryTestModel.objects.get(f_embedded_list__f_int=120)
         self.assertEqual(qs.f_id, 53)
 
-    def skip_foreign_queries(self):
-        # FIXME: I suspect this does not work because the fields are
-        # searched using AbstractIterableField instead of ForeignKey.
+    def test_foreign_queries(self):
         fm = DotQueryForeignModel.objects.get(f_char='hello')
         qs = DotQueryTestModel.objects.get(f_embedded__f_foreign=fm)
         self.assertEqual(qs.f_id, 51)
         qs = DotQueryTestModel.objects.get(f_embedded_list__f_foreign=fm)
-        self.assertEqual(qs.f_id, 53)
-        qs = DotQueryTestModel.objects.get(f_embedded__f_foreign__f_char='hello')
-        self.assertEqual(qs.f_id, 51)
-        qs = DotQueryTestModel.objects.get(f_embedded_list__f_foreign__f_char='hello')
-        self.assertEqual(qs.f_id, 53)
+        self.assertEqual(qs.f_id, 52)
 
     def test_q_queries(self):
         q = Q(f_dict__numbers=1) | Q(f_dict__numbers=4)

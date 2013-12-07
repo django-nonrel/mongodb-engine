@@ -95,7 +95,7 @@ class MongoDBQuerySet(QuerySet):
     def _filter_or_exclude(self, negate, *args, **kwargs):
         if args or kwargs:
             assert self.query.can_filter(), \
-                    "Cannot filter a query once a slice has been taken."
+                'Cannot filter a query once a slice has been taken.'
 
         clone = self._clone()
 
@@ -126,7 +126,7 @@ class MongoDBQuerySet(QuerySet):
 
         for a in args:
             if isinstance(a, Q):
-               self._process_q_filters(a)
+                self._process_q_filters(a)
 
     def _process_q_filters(self, q):
         for c in range(len(q.children)):
@@ -162,11 +162,6 @@ class MongoDBQuerySet(QuerySet):
                 part = parts1.pop(0)
                 field = model._meta.get_field_by_name(part)[0]
                 field_type = field.get_internal_type()
-                if field_type not in MONGO_DOT_FIELDS:
-                    # FIXME: In this case, we are handling embedded fields
-                    # and should probably use the actual field class
-                    # instead of AbstractIterableField for the lookup.
-                    pass
                 column = field.db_column
                 if column:
                     part = column
@@ -187,12 +182,20 @@ class MongoDBQuerySet(QuerySet):
                             parts3.append(part)
             db_column = LOOKUP_SEP.join(['.'.join(parts2)] + parts3)
 
-            field = AbstractIterableField(
-                db_column = db_column,
-                blank=True,
-                null=True,
-                editable=False,
-            )
+            if field_type in MONGO_DOT_FIELDS:
+                field = AbstractIterableField(
+                    db_column=db_column,
+                    blank=True,
+                    null=True,
+                    editable=False,
+                )
+            else:
+                field = field.__deepcopy__(field.__dict__)
+                field.name = None
+                field.db_column = db_column
+                field.blank = True
+                field.null = True
+                field.editable = False
             field.contribute_to_class(self.model, name)
 
     def map_reduce(self, *args, **kwargs):
