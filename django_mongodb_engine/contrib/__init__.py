@@ -153,15 +153,42 @@ class MongoDBQuerySet(QuerySet):
         name = name.split(LOOKUP_SEP)[0]
 
         if '.' in name and name not in self.model._meta.get_all_field_names():
-            parts = name.split('.')
+            parts1 = name.split('.')
+            parts2 = []
+            parts3 = []
+            model = self.model
 
-            # FIXME: Need to recursively follow EmbeddedModelFields for any db_columns
-            column = self.model._meta.get_field_by_name(parts[0])[0].db_column
-            if column:
-                parts[0] = column
+            while len(parts1) > 0:
+                part = parts1.pop(0)
+                field = model._meta.get_field_by_name(part)[0]
+                field_type = field.get_internal_type()
+                if field_type not in MONGO_DOT_FIELDS:
+                    # FIXME: In this case, we are handling embedded fields
+                    # and should probably use the actual field class
+                    # instead of AbstractIterableField for the lookup.
+                    pass
+                column = field.db_column
+                if column:
+                    part = column
+                parts2.append(part)
+                if field_type == 'ListField':
+                    list_type = field.item_field.get_internal_type()
+                    if list_type == 'EmbeddedModelField':
+                        field = field.item_field
+                        field_type = list_type
+                if field_type == 'EmbeddedModelField':
+                    model = field.embedded_model()
+                else:
+                    while len(parts1) > 0:
+                        part = parts1.pop(0)
+                        if field_type in MONGO_DOT_FIELDS:
+                            parts2.append(part)
+                        else:
+                            parts3.append(part)
+            db_column = LOOKUP_SEP.join(['.'.join(parts2)] + parts3)
 
             field = AbstractIterableField(
-                db_column = '.'.join(parts),
+                db_column = db_column,
                 blank=True,
                 null=True,
                 editable=False,

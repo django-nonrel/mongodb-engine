@@ -7,11 +7,14 @@ class DotQueryTests(TestCase):
     """Tests for querying on foo.bar using join syntax."""
 
     def setUp(self):
+        fm = DotQueryForeignModel.objects.create(
+            f_char = 'hello',
+        )
         DotQueryTestModel.objects.create(
             f_id=51,
             f_dict={'numbers': [1, 2, 3], 'letters': 'abc'},
             f_list=[{'color': 'red'}, {'color': 'blue'}],
-            f_embedded=DotQueryEmbeddedModel(f_int=10),
+            f_embedded=DotQueryEmbeddedModel(f_int=10, f_foreign=fm),
             f_embedded_list=[
                 DotQueryEmbeddedModel(f_int=100),
                 DotQueryEmbeddedModel(f_int=101),
@@ -23,8 +26,8 @@ class DotQueryTests(TestCase):
             f_list=[{'color': 'red'}, {'color': 'green'}],
             f_embedded=DotQueryEmbeddedModel(f_int=11),
             f_embedded_list=[
-                DotQueryEmbeddedModel(f_int=110),
-                DotQueryEmbeddedModel(f_int=111),
+                DotQueryEmbeddedModel(f_int=110, f_foreign=fm),
+                DotQueryEmbeddedModel(f_int=111, f_foreign=fm),
             ],
         )
         DotQueryTestModel.objects.create(
@@ -40,6 +43,7 @@ class DotQueryTests(TestCase):
 
     def tearDown(self):
         DotQueryTestModel.objects.all().delete()
+        DotQueryForeignModel.objects.all().delete()
 
     def test_dict_queries(self):
         qs = DotQueryTestModel.objects.filter(f_dict__numbers=2)
@@ -68,6 +72,19 @@ class DotQueryTests(TestCase):
 
     def test_embedded_list_queries(self):
         qs = DotQueryTestModel.objects.get(f_embedded_list__f_int=120)
+        self.assertEqual(qs.f_id, 53)
+
+    def skip_foreign_queries(self):
+        # FIXME: I suspect this does not work because the fields are
+        # searched using AbstractIterableField instead of ForeignKey.
+        fm = DotQueryForeignModel.objects.get(f_char='hello')
+        qs = DotQueryTestModel.objects.get(f_embedded__f_foreign=fm)
+        self.assertEqual(qs.f_id, 51)
+        qs = DotQueryTestModel.objects.get(f_embedded_list__f_foreign=fm)
+        self.assertEqual(qs.f_id, 53)
+        qs = DotQueryTestModel.objects.get(f_embedded__f_foreign__f_char='hello')
+        self.assertEqual(qs.f_id, 51)
+        qs = DotQueryTestModel.objects.get(f_embedded_list__f_foreign__f_char='hello')
         self.assertEqual(qs.f_id, 53)
 
     def test_q_queries(self):
