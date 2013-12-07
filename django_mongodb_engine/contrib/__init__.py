@@ -120,9 +120,8 @@ class MongoDBQuerySet(QuerySet):
     def _process_arg_filters(self, args, kwargs):
         for key, val in kwargs.items():
             del kwargs[key]
-            key = self._dotify_field_name(key)
+            key = self._maybe_add_dot_field(key)
             kwargs[key] = val
-            self._maybe_add_dot_field(key)
 
         for a in args:
             if isinstance(a, Q):
@@ -135,11 +134,10 @@ class MongoDBQuerySet(QuerySet):
                 self._process_q_filters(child)
             elif isinstance(child, tuple):
                 key, val = child
-                key = self._dotify_field_name(key)
+                key = self._maybe_add_dot_field(key)
                 q.children[c] = (key, val)
-                self._maybe_add_dot_field(key)
 
-    def _dotify_field_name(self, name):
+    def _maybe_add_dot_field(self, name):
         if LOOKUP_SEP in name and name.split(LOOKUP_SEP)[0] in self._get_mongo_field_names():
             for op in ALL_OPERATORS:
                 if name.endswith(op):
@@ -147,25 +145,21 @@ class MongoDBQuerySet(QuerySet):
                     break
             name = name.replace(LOOKUP_SEP, '.').replace('#', LOOKUP_SEP)
 
-        return name
-
-    def _maybe_add_dot_field(self, name):
-        name = name.split(LOOKUP_SEP)[0]
-
-        if '.' in name and name not in self.model._meta.get_all_field_names():
-            parts1 = name.split('.')
-            parts2 = []
+        parts1 = name.split(LOOKUP_SEP)
+        if '.' in parts1[0] and parts1[0] not in self.model._meta.get_all_field_names():
+            parts2 = parts1[0].split('.')
             parts3 = []
+            parts4 = []
             model = self.model
 
-            while len(parts1) > 0:
-                part = parts1.pop(0)
+            while len(parts2) > 0:
+                part = parts2.pop(0)
                 field = model._meta.get_field_by_name(part)[0]
                 field_type = field.get_internal_type()
                 column = field.db_column
                 if column:
                     part = column
-                parts2.append(part)
+                parts3.append(part)
                 if field_type == 'ListField':
                     list_type = field.item_field.get_internal_type()
                     if list_type == 'EmbeddedModelField':
@@ -174,13 +168,14 @@ class MongoDBQuerySet(QuerySet):
                 if field_type == 'EmbeddedModelField':
                     model = field.embedded_model()
                 else:
-                    while len(parts1) > 0:
-                        part = parts1.pop(0)
+                    while len(parts2) > 0:
+                        part = parts2.pop(0)
                         if field_type in MONGO_DOT_FIELDS:
-                            parts2.append(part)
-                        else:
                             parts3.append(part)
-            db_column = LOOKUP_SEP.join(['.'.join(parts2)] + parts3)
+                        else:
+                            parts4.append(part)
+
+            db_column = '.'.join(parts3)
 
             if field_type in MONGO_DOT_FIELDS:
                 field = AbstractIterableField(
@@ -196,7 +191,13 @@ class MongoDBQuerySet(QuerySet):
                 field.blank = True
                 field.null = True
                 field.editable = False
+
+            parts5 = parts1[0].split('.')[0:len(parts3)]
+            name = '.'.join(parts5)
             field.contribute_to_class(self.model, name)
+            name = LOOKUP_SEP.join([name] + parts4 + parts1[1:])
+
+        return name
 
     def map_reduce(self, *args, **kwargs):
         """
