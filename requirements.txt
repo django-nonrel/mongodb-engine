@@ -1,4 +1,4 @@
 pymongo
-https://github.com/django-nonrel/djangotoolbox/tarball/toolbox-1.3
+https://github.com/MerchantAtlas/djangotoolbox/tarball/toolbox-1.3/
 https://github.com/django-nonrel/django/tarball/nonrel-1.3
 https://github.com/django-nonrel/django-dbindexer/tarball/dbindexer-1.3
