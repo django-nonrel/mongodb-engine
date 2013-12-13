@@ -1,8 +1,9 @@
 from __future__ import with_statement
 from django.db.models import Q
-from django import VERSION
 from models import *
 from utils import *
+
+import django
 
 
 class DotQueryTests(TestCase):
@@ -79,7 +80,7 @@ class DotQueryTests(TestCase):
     def test_foreign_queries(self):
         fm = DotQueryForeignModel.objects.get(f_char='hello')
         # FIXME: Figure out why 1.6 does not find any results
-        if VERSION[0] == 1 and VERSION[1] < 6:
+        if django.VERSION < (1, 6):
             qs = DotQueryTestModel.objects.get(f_embedded__f_foreign=fm)
             self.assertEqual(qs.f_id, 51)
             qs = DotQueryTestModel.objects.get(f_embedded_list__f_foreign=fm)

@@ -1,13 +1,18 @@
 import sys
 import re
+import django
 
 from django.db import models, connections
 from django.db.models.query import QuerySet
 from django.db.models.sql.query import Query as SQLQuery
 from django.db.models.query_utils import Q
-from django.db.models.constants import LOOKUP_SEP
 from django_mongodb_engine.compiler import OPERATORS_MAP, NEGATED_OPERATORS_MAP
 from djangotoolbox.fields import AbstractIterableField
+
+if django.VERSION >= (1, 5):
+    from django.db.models.constants import LOOKUP_SEP
+else:
+    from django.db.models.sql.constants import LOOKUP_SEP
 
 
 ON_PYPY = hasattr(sys, 'pypy_version_info')
@@ -99,7 +104,7 @@ class MongoDBQuerySet(QuerySet):
 
         clone = self._clone()
 
-        self._process_arg_filters(args, kwargs)
+        clone._process_arg_filters(args, kwargs)
 
         if negate:
             clone.query.add_q(~Q(*args, **kwargs))
