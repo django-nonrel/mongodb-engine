@@ -196,6 +196,8 @@ class MongoDBQuerySet(QuerySet):
                 field.blank = True
                 field.null = True
                 field.editable = False
+                if hasattr(field, '_related_fields'):
+                    delattr(field, '_related_fields')
 
             parts5 = parts1[0].split('.')[0:len(parts3)]
             name = '.'.join(parts5)

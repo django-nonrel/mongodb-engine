@@ -4,10 +4,14 @@ from django_mongodb_engine.contrib import MongoDBManager
 
 
 class DotQueryForeignModel(models.Model):
+    objects = MongoDBManager()
+
     f_char = models.CharField(max_length=200, db_column='dbc_char')
 
 
 class DotQueryEmbeddedModel(models.Model):
+    objects = MongoDBManager()
+
     f_int = models.IntegerField(db_column='dbc_int')
     f_foreign = models.ForeignKey(
         DotQueryForeignModel,
