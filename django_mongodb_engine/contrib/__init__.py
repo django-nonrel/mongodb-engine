@@ -1,5 +1,6 @@
 import sys
 import re
+import copy
 import django
 
 from django.db import models, connections
@@ -103,9 +104,7 @@ class MongoDBQuerySet(QuerySet):
                 'Cannot filter a query once a slice has been taken.'
 
         clone = self._clone()
-
         clone._process_arg_filters(args, kwargs)
-
         if negate:
             clone.query.add_q(~Q(*args, **kwargs))
         else:
@@ -190,7 +189,7 @@ class MongoDBQuerySet(QuerySet):
                     editable=False,
                 )
             else:
-                field = field.__deepcopy__(field.__dict__)
+                field = copy.deepcopy(field)
                 field.name = None
                 field.db_column = db_column
                 field.blank = True
@@ -201,7 +200,7 @@ class MongoDBQuerySet(QuerySet):
 
             parts5 = parts1[0].split('.')[0:len(parts3)]
             name = '.'.join(parts5)
-            field.contribute_to_class(self.model, name)
+            self.model.add_to_class(name, field)
             name = LOOKUP_SEP.join([name] + parts4 + parts1[1:])
 
         return name
