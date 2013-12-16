@@ -15,8 +15,8 @@ except ImportError as exc:
     # setup.py imports this file in order to read version/author/... metadata
     # but does not necessarily have a Django context.
     import logging
-    logging.error('Error while trying to get django'
-                  ' settings module.\nError was: {0}'.format(str(exc)))
+    #logging.error('Error while trying to get django'
+    #              ' settings module.\nError was: {0}'.format(str(exc)))
 else:
     try:
         # It might be irritating that django-mongodb-engine registers itself as
@@ -46,5 +46,5 @@ else:
         # setup.py imports this file in order to read version/author/... metadata
         # but does not necessarily have a Django context.
         import logging
-        logging.error('Error while trying to get django'
-                      ' settings module.\nError was: {0}'.format(str(exc)))
+        #logging.error('Error while trying to get django'
+        #              ' settings module.\nError was: {0}'.format(str(exc)))
