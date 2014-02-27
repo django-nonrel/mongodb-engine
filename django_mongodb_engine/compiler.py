@@ -310,6 +310,15 @@ class MongoQuery(NonrelQuery, UpdateQueryMixin):
 
             if isinstance(field_class, EmbeddedModelField):
                 field_name = column_list[0]
+
+                # If the embedded model is None, then this is a generic
+                # EmbeddedModelField. We can only guess at the type.
+                if field_class.embedded_model is None:
+                    if field_name == "id":
+                        return AutoField(primary_key=True)
+                    else:
+                        return Field()
+
                 try:
                     field_class = field_class.embedded_model._meta\
                                          .get_field_by_name(field_name)[0]
