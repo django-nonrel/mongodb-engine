@@ -1,7 +1,3 @@
-from warnings import warn
-warn("A() queries are deprecated as of 0.5 and will be removed in 0.6.",
-     DeprecationWarning)
-
 
 from djangotoolbox.fields import RawField, AbstractIterableField, \
     EmbeddedModelField

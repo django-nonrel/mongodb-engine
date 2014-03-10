@@ -25,7 +25,7 @@ setup(
     url=distmeta.__homepage__,
     license='2-clause BSD',
     description="MongoDB backend for Django",
-    install_requires=['pymongo', 'djangotoolbox'],
+    install_requires=['pymongo'],
     packages=find_packages(exclude=['ez_setup', 'tests', 'tests.*']),
     include_package_data=True,
     classifiers=CLASSIFIERS,
