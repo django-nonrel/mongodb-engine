@@ -2,7 +2,7 @@ from functools import wraps
 import re
 import sys
 
-from django.db.models import F, NOT_PROVIDED
+from django.db.models import F, NOT_PROVIDED, AutoField, Field, FieldDoesNotExist, ForeignKey
 from django.db.models.sql import aggregates as sqlaggregates
 from django.db.models.sql.constants import MULTI
 from django.db.models.sql.where import AND, OR
@@ -28,7 +28,7 @@ from djangotoolbox.fields import EmbeddedModelField, AbstractIterableField
 
 from .aggregations import get_aggregation_class_by_name
 from .query import A
-from .utils import safe_regex
+from .utils import safe_regex, first
 
 
 OPERATORS_MAP = {

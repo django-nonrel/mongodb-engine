@@ -11,7 +11,7 @@ __docformat__ = "restructuredtext"
 
 try:
     from django.conf import settings
-    from django.core.exceptions import ImproperlyConfigured
+    #from django.core.exceptions import ImproperlyConfigured
 
     # It might be irritating that django-mongodb-engine registers itself as
     # an app, and I think this is worth an explanation - so here you go:
@@ -37,7 +37,7 @@ try:
     else:
         settings.INSTALLED_APPS.insert(0, 'django_mongodb_engine')
 
-except ImproperlyConfigured as exc:
+except ImportError as exc:
     # setup.py imports this file in order to read version/author/... metadata
     # but does not necessarily have a Django context.
     import logging
