@@ -1,14 +1,14 @@
-##!/usr/bin/python
-## -*- coding: utf-8 -*-
-#
-#__version__ = (0, 4, 5)
-#__author__ = "Flavio Percoco Premoli, Alberto Paro, " + \
-#             "Jonas Haag and contributors"
-#__contact__ = "django-non-relational@googlegroups.com"
-#__homepage__ = "https://django-mongodb.org"
-#__docformat__ = "restructuredtext"
-#
-#
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+__version__ = (0, 4, 5)
+__author__ = "Flavio Percoco Premoli, Alberto Paro, " + \
+             "Jonas Haag and contributors"
+__contact__ = "django-non-relational@googlegroups.com"
+__homepage__ = "https://django-mongodb.org"
+__docformat__ = "restructuredtext"
+
+
 #try:
 #    from django.conf import settings
 #    #from django.core.exceptions import ImproperlyConfigured
@@ -41,6 +41,6 @@
 #    # setup.py imports this file in order to read version/author/... metadata
 #    # but does not necessarily have a Django context.
 #    import logging
-#
-#    logging.error('Error while trying to get django'
-#                  ' settings.py module.\nError was: {0}'.format(str(exc)))
+
+    logging.error('Error while trying to get django'
+                  ' settings.py module.\nError was: {0}'.format(str(exc)))
