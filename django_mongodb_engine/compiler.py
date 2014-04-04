@@ -2,16 +2,21 @@ from functools import wraps
 import re
 import sys
 
-from django.db.models import F, NOT_PROVIDED
+from django.db.models import F, NOT_PROVIDED, AutoField, Field, FieldDoesNotExist, ForeignKey
 from django.db.models.sql import aggregates as sqlaggregates
 from django.db.models.sql.constants import MULTI
-from django.db.models.sql.where import OR
+from django.db.models.sql.where import AND, OR
 from django.db.utils import DatabaseError, IntegrityError
 from django.utils.encoding import smart_str
 from django.utils.tree import Node
 
 from pymongo import ASCENDING, DESCENDING
 from pymongo.errors import PyMongoError, DuplicateKeyError
+try:
+    # ObjectId has been moved to bson.objectid in newer versions of PyMongo
+    from bson.objectid import ObjectId, InvalidId
+except ImportError:
+    from pymongo.objectid import ObjectId, InvalidId
 
 from djangotoolbox.db.basecompiler import (
     NonrelQuery,
@@ -19,10 +24,11 @@ from djangotoolbox.db.basecompiler import (
     NonrelInsertCompiler,
     NonrelUpdateCompiler,
     NonrelDeleteCompiler)
+from djangotoolbox.fields import EmbeddedModelField, AbstractIterableField
 
 from .aggregations import get_aggregation_class_by_name
 from .query import A
-from .utils import safe_regex
+from .utils import safe_regex, first
 
 
 OPERATORS_MAP = {
@@ -73,7 +79,50 @@ def safe_call(func):
     return wrapper
 
 
-class MongoQuery(NonrelQuery):
+def get_pk_column(duck):
+    return duck.query.get_meta().pk.column
+
+
+def _split_db_type(db_type):
+    try:
+        db_type, db_subtype = db_type.split(':', 1)
+    except ValueError:
+        db_subtype = None
+    return db_type, db_subtype
+
+
+class UpdateQueryMixin:
+    def _setup_update(self, values):
+        multi = True
+        spec = {}
+        for field, value in values:
+            if field.primary_key:
+                raise DatabaseError("Can not modify _id.")
+            if getattr(field, 'forbids_updates', False):
+                raise DatabaseError("Updates on %ss are not allowed." %
+                                    field.__class__.__name__)
+            if hasattr(value, 'evaluate'):
+                # .update(foo=F('foo') + 42) --> {'$inc': {'foo': 42}}
+                lhs, rhs = value.children
+                assert (value.connector in (value.ADD, value.SUB) and
+                        not value.negated and not value.subtree_parents and
+                        isinstance(lhs, F) and not isinstance(rhs, F) and
+                        lhs.name == field.name)
+                if value.connector == value.SUB:
+                    rhs = -rhs
+                action = '$inc'
+                value = rhs
+            else:
+                # .update(foo=123) --> {'$set': {'foo': 123}}
+                action = '$set'
+            spec.setdefault(action, {})[field.column] = value
+
+            if field.unique:
+                multi = False
+        return spec, multi
+
+
+class MongoQuery(NonrelQuery, UpdateQueryMixin):
 
     def __init__(self, compiler, fields):
         super(MongoQuery, self).__init__(compiler, fields)
@@ -85,7 +134,11 @@ class MongoQuery(NonrelQuery):
         return '<MongoQuery: %r ORDER %r>' % (self.mongo_query, self.ordering)
 
     def fetch(self, low_mark, high_mark):
-        results = self.get_cursor()
+        # If this is a findAndModify query, do it on fetch.
+        if getattr(self.query, "_modify_args", None):
+            results = self.get_find_and_modify()
+        else:
+            results = self.get_cursor()
         pk_column = self.query.get_meta().pk.column
         for entity in results:
             entity[pk_column] = entity.pop('_id')
@@ -115,13 +168,33 @@ class MongoQuery(NonrelQuery):
         options = self.connection.operation_flags.get('delete', {})
         self.collection.remove(self.mongo_query, **options)
 
+    def _get_query_fields(self):
+        fields = None
+        if self.query.select_fields and not self.query.aggregates:
+            fields = [field.column for field in self.query.select_fields]
+        return fields
+
+    def get_find_and_modify(self):
+        modify_args = getattr(self.query, "_modify_args", None)
+        if modify_args:
+            spec, multi = self._setup_update(modify_args)
+            result = self.collection.find_and_modify(
+                        query=self.mongo_query,
+                        update=spec,
+                        upsert=False,
+                        sort=self.ordering or None,
+                        full_response=False,
+                        remove=False,
+                        new=True,
+                        fields=self._get_query_fields(),
+            )
+            return [result] if result else []
+
     def get_cursor(self):
         if self.query.low_mark == self.query.high_mark:
             return []
 
-        fields = None
-        if self.query.select_fields and not self.query.aggregates:
-            fields = [field.column for field in self.query.select_fields]
+        fields = self._get_query_fields()
         cursor = self.collection.find(self.mongo_query, fields=fields)
         if self.ordering:
             cursor.sort(self.ordering)
@@ -131,143 +204,212 @@ class MongoQuery(NonrelQuery):
             cursor.limit(int(self.query.high_mark - self.query.low_mark))
         return cursor
 
-    def add_filters(self, filters, query=None):
-        children = self._get_children(filters.children)
+    # TODO get rid of global negated state
+    def add_filters(self, filters):
+        self.mongo_query = self._build_mongo_query(filters, self.mongo_query)
 
-        if query is None:
-            query = self.mongo_query
+    def _build_mongo_query(self, filters, mongo_query=None):
+        if filters.negated:
+            self._negated = not self._negated
 
-        if filters.connector == OR:
-            assert '$or' not in query, "Multiple ORs are not supported."
-            or_conditions = query['$or'] = []
+        if self._negated:
+            connector = [AND, OR][filters.connector == AND]
+        else:
+            connector = filters.connector
+
+        mongo_conditions = list(
+            self._convert_filters(self._get_children(filters.children)))
 
         if filters.negated:
             self._negated = not self._negated
 
-        for child in children:
-            if filters.connector == OR:
-                subquery = {}
-            else:
-                subquery = query
+        if mongo_query:
+            mongo_conditions.append(mongo_query)
 
+        if not mongo_conditions:
+            return {}
+
+        if len(mongo_conditions) == 1:
+            # {'$and|$or': [x]} <=> x
+            return mongo_conditions[0]
+
+        return {('$or' if connector == OR else '$and'): mongo_conditions}
+
+    def _convert_filters(self, filters):
+        for child in filters:
             if isinstance(child, Node):
-                if filters.connector == OR and child.connector == OR:
-                    if len(child.children) > 1:
-                        raise DatabaseError("Nested ORs are not supported.")
-
-                if filters.connector == OR and filters.negated:
-                    raise NotImplementedError("Negated ORs are not supported.")
-
-                self.add_filters(child, query=subquery)
-
-                if filters.connector == OR and subquery:
-                    or_conditions.extend(subquery.pop('$or', []))
-                    or_conditions.append(subquery)
-
+                subquery = self._build_mongo_query(child)
+                if subquery:
+                    yield subquery
                 continue
+
+            # This block is all needed just to get db_type.
+            # TODO: Investigate a better way
+            constraint, lookup_type, annotation, value = child
+            packed, value = constraint.process(lookup_type, value,
+                                               self.connection)
+            alias, column, db_type = packed
 
             field, lookup_type, value = self._decode_child(child)
 
             if lookup_type in ('month', 'day'):
-                raise DatabaseError("MongoDB does not support month/day "
-                                    "queries.")
+                raise DatabaseError(
+                    "MongoDB does not support month/day queries")
             if self._negated and lookup_type == 'range':
-                raise DatabaseError("Negated range lookups are not "
-                                    "supported.")
+                raise DatabaseError(
+                    "Negated range lookups are not supported")
 
-            if field.primary_key:
+            if column == get_pk_column(self):
                 column = '_id'
-            else:
-                column = field.column
-
-            existing = subquery.get(column)
 
             if isinstance(value, A):
-                column, value = value.as_q(field)
+                field = first(lambda field: field.column == column,
+                              self.fields)
+                column, value, lookup_type = self._process_A_object(
+                                        field, value, lookup_type, annotation)
 
-            if self._negated and lookup_type in NEGATED_OPERATORS_MAP:
-                op_func = NEGATED_OPERATORS_MAP[lookup_type]
-                already_negated = True
+            if self._negated:
+                if lookup_type in NEGATED_OPERATORS_MAP:
+                    op_func = NEGATED_OPERATORS_MAP[lookup_type]
+                else:
+                    op_func = lambda val: {
+                        '$not': OPERATORS_MAP[lookup_type](val)}
             else:
                 op_func = OPERATORS_MAP[lookup_type]
-                if self._negated:
-                    already_negated = False
 
-            lookup = op_func(value)
-
-            if existing is None:
-                if self._negated and not already_negated:
-                    lookup = {'$not': lookup}
-                subquery[column] = lookup
-                query.update(subquery)
-                continue
-
-            if not isinstance(existing, dict):
-                if not self._negated:
-                    # {'a': o1} + {'a': o2} --> {'a': {'$all': [o1, o2]}}
-                    assert not isinstance(lookup, dict)
-                    subquery[column] = {'$all': [existing, lookup]}
-                else:
-                    # {'a': o1} + {'a': {'$not': o2}} -->
-                    #     {'a': {'$all': [o1], '$nin': [o2]}}
-                    if already_negated:
-                        assert lookup.keys() == ['$ne']
-                        lookup = lookup['$ne']
-                    assert not isinstance(lookup, dict)
-                    subquery[column] = {'$all': [existing], '$nin': [lookup]}
+            if lookup_type == 'isnull':
+                lookup = op_func(value)
             else:
-                not_ = existing.pop('$not', None)
-                if not_:
-                    assert not existing
-                    if isinstance(lookup, dict):
-                        assert lookup.keys() == ['$ne']
-                        lookup = lookup.values()[0]
-                    assert not isinstance(lookup, dict), (not_, lookup)
-                    if self._negated:
-                        # {'not': {'a': o1}} + {'a': {'not': o2}} -->
-                        #     {'a': {'nin': [o1, o2]}}
-                        subquery[column] = {'$nin': [not_, lookup]}
+                lookup = op_func(self.convert_value_for_db(db_type, value))
+
+            yield {column: lookup}
+
+    def _process_A_object(self, field, value, lookup_type, annotation):
+        """Process down into the A object Query to extract the correct types
+
+        An A object can contain a deep query. This method attempts to parse
+        that query a well as possible
+        """
+        column, value = value.as_q(field)
+        # Check for an operator in the A. E.g. __contains
+        split_column = column.split("__")
+        if len(split_column) > 1:
+            possible_op = split_column[-1]
+            if possible_op in OPERATORS_MAP:
+                # Reassemble without the operator
+                column = "__".join(split_column[0:-1])
+                lookup_type = possible_op
+
+        # Recursive worker function
+        # TODO: This algorithm is a little convoluted. Simplify
+        def recurse_for_field_type(field_class, column_list):
+            if not column_list:
+                return field_class
+
+            if isinstance(field_class, EmbeddedModelField):
+                field_name = column_list[0]
+
+                # If the embedded model is None, then this is a generic
+                # EmbeddedModelField. We can only guess at the type.
+                if field_class.embedded_model is None:
+                    if field_name == "id":
+                        return AutoField(primary_key=True)
                     else:
-                        # {'not': {'a': o1}} + {'a': o2} -->
-                        #     {'a': {'nin': [o1], 'all': [o2]}}
-                        subquery[column] = {'$nin': [not_], '$all': [lookup]}
-                else:
-                    if isinstance(lookup, dict):
-                        if '$ne' in lookup:
-                            if '$nin' in existing:
-                                # {'$nin': [o1, o2]} + {'$ne': o3} -->
-                                #     {'$nin': [o1, o2, o3]}
-                                assert '$ne' not in existing
-                                existing['$nin'].append(lookup['$ne'])
-                            elif '$ne' in existing:
-                                # {'$ne': o1} + {'$ne': o2} -->
-                                #    {'$nin': [o1, o2]}
-                                existing['$nin'] = [existing.pop('$ne'),
-                                                    lookup['$ne']]
-                            else:
-                                existing.update(lookup)
-                        else:
-                            if '$in' in lookup and '$in' in existing:
-                                # {'$in': o1} + {'$in': o2}
-                                #    --> {'$in': o1 union o2}
-                                existing['$in'] = list(
-                                    set(lookup['$in'] + existing['$in']))
-                            else:
-                                # {'$gt': o1} + {'$lt': o2}
-                                #    --> {'$gt': o1, '$lt': o2}
-                                assert all(key not in existing
-                                           for key in lookup.keys()), \
-                                       [lookup, existing]
-                                existing.update(lookup)
-                    else:
-                        key = '$nin' if self._negated else '$all'
-                        existing.setdefault(key, []).append(lookup)
+                        return Field()
 
-                query.update(subquery)
+                try:
+                    field_class = field_class.embedded_model._meta\
+                                         .get_field_by_name(field_name)[0]
+                except FieldDoesNotExist:
+                    # If this field is a ForeignKey, they may have appended
+                    # '_id' to the end. Look for that and try again
+                    if field_name.endswith("_id"):
+                        field_name = field_name[:-3]
+                        field_class = field_class.embedded_model._meta \
+                                        .get_field_by_name(field_name)[0]
 
-        if filters.negated:
-            self._negated = not self._negated
+                        # We got a field, now let's make sure it is a ForeignKey
+                        if not isinstance(field_class, ForeignKey):
+                            raise
+                return recurse_for_field_type(field_class, column_list[1:])
 
+            # When searching for an Embedded model in a list, this will cast
+            # the field to the appropriate type.
+            elif isinstance(field_class, AbstractIterableField) and \
+                    isinstance(field.item_field, EmbeddedModelField) and \
+                    column_list[-1] == field.item_field.embedded_model\
+                                                       ._meta.pk.attname:
+                return AutoField(primary_key=True)
+
+            elif isinstance(field_class, ForeignKey):
+                # If we got here, it means this is not the last item in the
+                # query, and it is a ForeignKey. That means they want a join.
+                raise DatabaseError(
+                    "ForeignKey joins are not supported. The query: '%s' will "
+                    "fail." % ".".join([field_class.column] + column_list))
+            else:
+                # If we get here, that means the query continues beyond a known
+                # field. E.g. Items in a DictField. We have to default to a
+                # type, so we will use Field. If that behavior isn't
+                # desired, stop your query at the known field.
+                return Field()
+
+        # In order for the query to be constructed correctly, some field-types
+        # require value conversion. E.g. Decimal. This traverses the query
+        # fields to get the correct type.
+        field = recurse_for_field_type(field, column.split(".")[1:])
+        value = self._normalize_lookup_value(lookup_type, value,
+                                             field, annotation)
+
+        # If the field type is ForeignKey, we need to replace the last field
+        # of the column with the correct column name
+        if isinstance(field, ForeignKey):
+            if not column.endswith(field.column):
+                items = column.split(".")
+                items.pop()
+                column = ".".join(items + [field.column])
+
+        return column, value, lookup_type
+
+    @safe_call # see #7
+    def convert_value_for_db(self, db_type, value):
+        if db_type is None or value is None:
+            return value
+
+        db_type, db_subtype = _split_db_type(db_type)
+        if db_subtype is not None:
+            if isinstance(value, (set, list, tuple)):
+                # Sets are converted to lists here because MongoDB has no sets.
+                return [self.convert_value_for_db(db_subtype, subvalue)
+                        for subvalue in value]
+            elif isinstance(value, dict):
+                return dict(
+                    (key, self.convert_value_for_db(db_subtype, subvalue))
+                    for key, subvalue in value.iteritems())
+
+        if isinstance(value, (set, list, tuple)):
+            # most likely a list of ObjectIds when doing a .delete() query
+            return [self.convert_value_for_db(db_type, val) for val in value]
+
+        if db_type == 'objectid':
+            try:
+                return ObjectId(value)
+            except InvalidId:
+                # Provide a better message for invalid IDs
+                assert isinstance(value, unicode)
+                if len(value) > 13:
+                    value = value[:10] + '...'
+                msg = "AutoField (default primary key) values must be strings " \
+                      "representing an ObjectId on MongoDB (got %r instead)" % value
+                if self.query.model._meta.db_table == 'django_site':
+                    # Also provide some useful tips for (very common) issues
+                    # with settings.SITE_ID.
+                    msg += ". Please make sure your SITE_ID contains a valid ObjectId string."
+                raise InvalidId(msg)
+
+        # Pass values of any type not covered above as they are.
+        # PyMongo will complain if they can't be encoded.
+        return value
 
 class SQLCompiler(NonrelCompiler):
     """
@@ -375,37 +517,11 @@ class SQLInsertCompiler(NonrelInsertCompiler, SQLCompiler):
 
 # TODO: Define a common nonrel API for updates and add it to the nonrel
 #       backend base classes and port this code to that API.
-class SQLUpdateCompiler(NonrelUpdateCompiler, SQLCompiler):
+class SQLUpdateCompiler(NonrelUpdateCompiler, SQLCompiler, UpdateQueryMixin):
     query_class = MongoQuery
 
     def update(self, values):
-        multi = True
-        spec = {}
-        for field, value in values:
-            if field.primary_key:
-                raise DatabaseError("Can not modify _id.")
-            if getattr(field, 'forbids_updates', False):
-                raise DatabaseError("Updates on %ss are not allowed." %
-                                    field.__class__.__name__)
-            if hasattr(value, 'evaluate'):
-                # .update(foo=F('foo') + 42) --> {'$inc': {'foo': 42}}
-                lhs, rhs = value.children
-                assert (value.connector in (value.ADD, value.SUB) and
-                        not value.negated and not value.subtree_parents and
-                        isinstance(lhs, F) and not isinstance(rhs, F) and
-                        lhs.name == field.name)
-                if value.connector == value.SUB:
-                    rhs = -rhs
-                action = '$inc'
-                value = rhs
-            else:
-                # .update(foo=123) --> {'$set': {'foo': 123}}
-                action = '$set'
-            spec.setdefault(action, {})[field.column] = value
-
-            if field.unique:
-                multi = False
-
+        spec, multi = self._setup_update(values)
         return self.execute_update(spec, multi)
 
     @safe_call
