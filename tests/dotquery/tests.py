@@ -58,6 +58,9 @@ class DotQueryTests(TestCase):
         qs = DotQueryTestModel.objects.exclude(f_dict__letters__contains='b')
         self.assertEqual(qs.count(), 1)
         self.assertEqual(qs[0].f_id, 53)
+        qs = DotQueryTestModel.objects.exclude(f_dict__letters__icontains='B')
+        self.assertEqual(qs.count(), 1)
+        self.assertEqual(qs[0].f_id, 53)
 
     def test_list_queries(self):
         qs = DotQueryTestModel.objects.filter(f_list__color='red')

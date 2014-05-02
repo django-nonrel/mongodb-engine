@@ -144,7 +144,7 @@ class MongoDBQuerySet(QuerySet):
     def _maybe_add_dot_field(self, name):
         if LOOKUP_SEP in name and name.split(LOOKUP_SEP)[0] in self._get_mongo_field_names():
             for op in ALL_OPERATORS:
-                if name.endswith(op):
+                if name.endswith(LOOKUP_SEP + op):
                     name = re.sub(LOOKUP_SEP + op + '$', '#' + op, name)
                     break
             name = name.replace(LOOKUP_SEP, '.').replace('#', LOOKUP_SEP)
