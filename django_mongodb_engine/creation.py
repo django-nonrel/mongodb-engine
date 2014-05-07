@@ -2,6 +2,10 @@ from django.db.utils import DatabaseError
 
 from pymongo import DESCENDING
 
+from pymongo.errors import OperationFailure
+
+from random import randint
+
 from djangotoolbox.db.creation import NonrelDatabaseCreation
 
 from .utils import make_index_list
@@ -39,7 +43,15 @@ class DatabaseCreation(NonrelDatabaseCreation):
                 print "Installing indices for %s.%s model." % \
                       (meta.app_label, meta.object_name)
                 ensure_index.first_index = False
-            return collection.ensure_index(*args, **kwargs)
+            try:
+                return collection.ensure_index(*args, **kwargs)
+            except OperationFailure, e:
+                # Try with a short name for the index in case the
+                # auto-generated index name is too long
+                index_name = meta.object_name + "_index_" + str(randint(1,100000))
+                print "Error installing index on %s: %s, trying shorter index name: %s" % (meta.object_name, str(e), index_name)
+                return collection.ensure_index(*args, name=index_name, **kwargs)
+                
         ensure_index.first_index = True
 
         newstyle_indexes = getattr(meta, 'indexes', None)
