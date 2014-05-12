@@ -240,7 +240,7 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
         else:
             Connection = MongoClient
 
-       try:
+        try:
             self.connection = Connection(host=host, port=port, **options)
             self.database = self.connection[db_name]
         except TypeError:
