@@ -209,9 +209,10 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
 
         def pop(name, default=None):
             return settings.pop(name) or default
+
         db_name = pop('NAME')
         host = pop('HOST')
-        port = pop('PORT')
+        port = int(pop('PORT', 27017))
         user = pop('USER')
         password = pop('PASSWORD')
         options = pop('OPTIONS', {})
@@ -236,12 +237,12 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
                         "Please use read_preference instead.")
 
         if read_preference:
-            Connection = MongoReplicaSetClient
+            connection = MongoReplicaSetClient
         else:
-            Connection = MongoClient
+            connection = MongoClient
 
         try:
-            self.connection = Connection(host=host, port=port, **options)
+            self.connection = connection(host=host, port=port, **options)
             self.database = self.connection[db_name]
         except TypeError:
             exc_info = sys.exc_info()
