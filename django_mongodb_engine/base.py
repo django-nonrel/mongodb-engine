@@ -8,6 +8,7 @@ from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.db.backends.signals import connection_created
 from django.db.utils import DatabaseError
+from pymongo import ReadPreference
 
 from pymongo.collection import Collection
 from pymongo.mongo_client import MongoClient
@@ -230,13 +231,16 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
             options[key.lower()] = options.pop(key)
 
         read_preference = options.get('read_preference')
+        replicaset = options.get('replicaset')
+
         if not read_preference:
             read_preference = options.get('slave_okay', options.get('slaveok'))
             if read_preference:
+                options['read_preference'] = ReadPreference.SECONDARY
                 warnings.warn("slave_okay has been deprecated. "
                         "Please use read_preference instead.")
 
-        if read_preference:
+        if replicaset:
             connection = MongoReplicaSetClient
         else:
             connection = MongoClient
