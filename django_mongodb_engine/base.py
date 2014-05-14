@@ -213,7 +213,7 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
 
         db_name = pop('NAME')
         host = pop('HOST')
-        port = int(pop('PORT', 27017))
+        port = pop('PORT', 27017)
         user = pop('USER')
         password = pop('PASSWORD')
         options = pop('OPTIONS', {})
@@ -238,15 +238,27 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
             if read_preference:
                 options['read_preference'] = ReadPreference.SECONDARY
                 warnings.warn("slave_okay has been deprecated. "
-                        "Please use read_preference instead.")
+                              "Please use read_preference instead.")
 
         if replicaset:
-            connection = MongoReplicaSetClient
+            connection_class = MongoReplicaSetClient
         else:
-            connection = MongoClient
+            connection_class = MongoClient
+
+        conn_options = dict(
+            host=host,
+            port=int(port),
+            max_pool_size=None,
+            document_class=dict,
+            tz_aware=False,
+            _connect=True,
+            auto_start_request=True,
+            safe=False
+        )
+        conn_options.update(options)
 
         try:
-            self.connection = connection(host=host, port=port, **options)
+            self.connection = connection_class(**conn_options)
             self.database = self.connection[db_name]
         except TypeError:
             exc_info = sys.exc_info()
