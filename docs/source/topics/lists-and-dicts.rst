@@ -26,7 +26,7 @@ Stores Python lists (or any other iterable), represented in BSON as arrays. ::
 ::
 
    >>> Post(tags=['django', 'mongodb'], ...).save()
-   >>> Post.objecs.get(...).tags
+   >>> Post.objects.get(...).tags
    ['django', 'mongodb']
 
 The typed variant automatically does type conversions according to the given type::
