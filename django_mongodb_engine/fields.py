@@ -180,6 +180,13 @@ except ImportError:
     pass
 
 
+class MongoGeometryProxy(GeometryProxy):
+    def __set__(self, obj, value):
+        if isinstance(value, dict):
+            value = json.dumps(value)
+        super(MongoGeometryProxy, self).__set__(obj, value)
+
+
 class GeometryField(models.Field):
     """
     The base GIS field -- maps to the OpenGIS Specification Geometry type.
@@ -195,7 +202,7 @@ class GeometryField(models.Field):
         'within':     '$geoWithin',
         'intersects': '$geoIntersects',
         'near':       '$near',
-        'nearsphere': '$nearSphere',
+        'nears':      '$nearSphere',
     }
 
     description = _("The base GIS field -- maps to the OpenGIS Specification Geometry type.")
@@ -232,7 +239,7 @@ class GeometryField(models.Field):
 
     def get_prep_value(self, value):
         if isinstance(value, Geometry):
-            return json.loads(value.json())
+            return json.loads(value.json)
         elif isinstance(value, six.string_types):
             return json.loads(value)
         raise ValueError('Could not prep geometry from value type "%s".' % type(value))
@@ -254,7 +261,7 @@ class GeometryField(models.Field):
         super(GeometryField, self).contribute_to_class(cls, name, virtual_only)
 
         # Setup for lazy-instantiated Geometry object.
-        setattr(cls, self.attname, GeometryProxy(Geometry, self))
+        setattr(cls, self.attname, MongoGeometryProxy(Geometry, self))
 
     def db_type(self, connection):
         return self.geom_type
@@ -276,7 +283,7 @@ class GeometryField(models.Field):
         if not isinstance(value, Geometry):
             raise ValueError('Geometry value is of unsupported type "%s".' % type(value))
         # TODO: extra params???
-        return {self.lookup_types[lookup_type]: {'$geometry': json.loads(value.json())}}
+        return {self.lookup_types[lookup_type]: {'$geometry': json.loads(value.json)}}
 
 
 # The OpenGIS Geometry Type Fields
