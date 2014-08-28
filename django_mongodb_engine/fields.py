@@ -2,6 +2,7 @@ import json
 from django.contrib.gis import forms
 from django.contrib.gis.db.models.proxy import GeometryProxy
 from django.contrib.gis.geometry.backend import Geometry
+from django.contrib.gis.geos import Polygon, LineString, Point
 from django.db import connections, models
 from django.utils import six
 from django.utils.translation import ugettext_lazy as _
@@ -199,10 +200,9 @@ class GeometryField(models.Field):
     form_class = forms.GeometryField
 
     lookup_types = {
-        'within':     '$geoWithin',
-        'intersects': '$geoIntersects',
-        'near':       '$near',
-        'nears':      '$nearSphere',
+        'within':     {'operator': '$geoWithin', 'types': [Polygon]},
+        'intersects': {'operator': '$geoIntersects', 'types': [Point, LineString, Polygon]},
+        'near':       {'operator': '$near', 'types': [Point]},
     }
 
     description = _("The base GIS field -- maps to the OpenGIS Specification Geometry type.")
@@ -280,10 +280,18 @@ class GeometryField(models.Field):
     def get_db_prep_lookup(self, lookup_type, value, connection, prepared=False):
         if lookup_type not in self.lookup_types:
             raise ValueError('Unknown lookup type "%s".' % lookup_type)
+        lookup_data = self.lookup_types[lookup_type]
         if not isinstance(value, Geometry):
             raise ValueError('Geometry value is of unsupported type "%s".' % type(value))
-        # TODO: extra params???
-        return {self.lookup_types[lookup_type]: {'$geometry': json.loads(value.json)}}
+        if type(value) not in lookup_data['types']:
+            raise ValueError('"%s" lookup requires a value of geometry type(s) %s.' %
+                             (lookup_type, ','.join([str(ltype) for ltype in lookup_data['types']])))
+        geom_query = {'$geometry': json.loads(value.json)}
+        # some queries may have additional query params; e.g.:
+        # $near optionally takes $minDistance and $maxDistance
+        if hasattr(value, 'extra_params'):
+            geom_query.update(value.extra_params)
+        return {lookup_data['operator']: geom_query}
 
 
 # The OpenGIS Geometry Type Fields
