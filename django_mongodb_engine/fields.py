@@ -277,21 +277,25 @@ class GeometryField(models.Field):
             defaults['widget'] = forms.Textarea
         return super(GeometryField, self).formfield(**defaults)
 
-    def get_db_prep_lookup(self, lookup_type, value, connection, prepared=False):
+    def get_prep_lookup(self, lookup_type, value):
         if lookup_type not in self.lookup_types:
             raise ValueError('Unknown lookup type "%s".' % lookup_type)
-        lookup_data = self.lookup_types[lookup_type]
+        lookup_info = self.lookup_types[lookup_type]
         if not isinstance(value, Geometry):
             raise ValueError('Geometry value is of unsupported type "%s".' % type(value))
-        if type(value) not in lookup_data['types']:
+        if type(value) not in lookup_info['types']:
             raise ValueError('"%s" lookup requires a value of geometry type(s) %s.' %
-                             (lookup_type, ','.join([str(ltype) for ltype in lookup_data['types']])))
+                             (lookup_type, ','.join([str(ltype) for ltype in lookup_info['types']])))
         geom_query = {'$geometry': json.loads(value.json)}
         # some queries may have additional query params; e.g.:
         # $near optionally takes $minDistance and $maxDistance
         if hasattr(value, 'extra_params'):
             geom_query.update(value.extra_params)
-        return {lookup_data['operator']: geom_query}
+        return {lookup_info['operator']: geom_query}
+
+    def get_db_prep_lookup(self, lookup_type, value, connection, prepared=False):
+        # this was already handled by get_prep_lookup...
+        return value
 
 
 # The OpenGIS Geometry Type Fields

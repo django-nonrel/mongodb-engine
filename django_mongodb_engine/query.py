@@ -1,4 +1,6 @@
 from warnings import warn
+from django.contrib.gis.db.models.query import GeoQuerySet
+from django.contrib.gis.db.models.sql import GeoQuery, GeoWhereNode
 
 from djangotoolbox.fields import RawField, AbstractIterableField, \
     EmbeddedModelField
@@ -24,3 +26,15 @@ class A(object):
         else:
             raise TypeError("Can not use A() queries on %s." %
                             field.__class__.__name__)
+
+
+class MongoGeoQuery(GeoQuery):
+    def __init__(self, model, where=GeoWhereNode):
+        super(MongoGeoQuery, self).__init__(model, where)
+        self.query_terms |= set(['near'])
+
+
+class MongoGeoQuerySet(GeoQuerySet):
+    def __init__(self, model=None, query=None, using=None):
+        super(MongoGeoQuerySet, self).__init__(model=model, query=query, using=using)
+        self.query = query or MongoGeoQuery(self.model)
