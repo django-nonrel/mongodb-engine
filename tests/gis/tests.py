@@ -108,5 +108,23 @@ class GeometryTest(TestCase):
             GeometryModel.objects.filter(geom__intersects='a string').first()
 
     def test_query_near(self):
-        geoms = [obj.geom for obj in GeometryModel.objects.filter(geom__near=Point((-9, -9)))]
+        # make sure all are returned
+        point = Point((0, 0))
+        geoms = [obj.geom for obj in GeometryModel.objects.filter(geom__near=point)]
         self.assertEqual(7, len(geoms))
+
+        # restrict the distance
+        point = Point((0, 0))
+        point.extra_params = {'$maxDistance': 1}
+        geoms = [obj.geom for obj in GeometryModel.objects.filter(geom__near=point)]
+        self.assertEqual(2, len(geoms))
+
+        point = Point((1, 1))
+        point.extra_params = {'$maxDistance': 1}
+        geoms = [obj.geom for obj in GeometryModel.objects.filter(geom__near=point)]
+        self.assertEqual(4, len(geoms))
+
+        point = Point((0, 0))
+        point.extra_params = {'$maxDistance': 1000000, '$minDistance': 100000}
+        geoms = [obj.geom for obj in GeometryModel.objects.filter(geom__near=point)]
+        self.assertEqual(2, len(geoms))
