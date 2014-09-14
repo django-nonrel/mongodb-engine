@@ -154,6 +154,12 @@ class DatabaseOperations(NonrelDatabaseOperations, BaseSpatialOperations):
         return super(DatabaseOperations, self)._value_from_db(
             value, field, field_kind, db_type)
 
+    def geometry_columns(self):
+        return None
+
+    def spatial_ref_sys(self):
+        return None
+
 
 class DatabaseClient(NonrelDatabaseClient):
     pass
