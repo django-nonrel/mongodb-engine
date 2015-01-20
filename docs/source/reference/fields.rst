@@ -30,4 +30,4 @@ in :mod:`django_mongodb_engine`
 .. autoclass:: GridFSString(delete=True, versioning=False, ...)
 
 
-.. _djangotoolbox: http://allbuttonspressed.com/projects/djangotoolbox
+.. _djangotoolbox: http://github.com/django-nonrel/djangotoolbox

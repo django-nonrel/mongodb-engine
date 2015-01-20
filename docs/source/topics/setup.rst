@@ -31,20 +31,19 @@ Django-nonrel
 .............
 ::
 
-   pip install hg+https://bitbucket.org/wkornewald/django-nonrel
+   pip install git+https://github.com/django-nonrel/django@nonrel-1.3
 
 djangotoolbox
 .............
 ::
 
-   pip install hg+https://bitbucket.org/wkornewald/djangotoolbox
+   pip install git+https://github.com/django-nonrel/djangotoolbox@toolbox-1.3
 
 Django MongoDB Engine
 .....................
 You should use the latest Git revision. ::
 
-   pip install git+https://github.com/django-nonrel/mongodb-engine
-
+   pip install git+https://github.com/django-nonrel/mongodb-engine@mongodb-engine-1.3
 
 Configuration
 -------------
@@ -69,7 +68,7 @@ That's it! You can now go straight ahead developing your Django application as
 you would do with any other database.
 
 
-.. _virtualenv: http://virtualenv.org
+.. _virtualenv: http://virtualenv.org/
 .. _Django database setup docs: http://docs.djangoproject.com/en/dev/ref/settings/#databases
-.. _djangotoolbox: http://www.allbuttonspressed.com/projects/djangotoolbox
-.. _Django-nonrel: http://www.allbuttonspressed.com/projects/django-nonrel
+.. _djangotoolbox: http://www.github.com/django-nonrel/djangotoolbox
+.. _Django-nonrel: http://www.django-nonrel.org/
