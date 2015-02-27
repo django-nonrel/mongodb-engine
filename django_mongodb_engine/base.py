@@ -254,4 +254,9 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
         pass
 
     def close(self):
+        if self.connected:
+            self.connection.close()
+            del self.connection
+            del self.database
+            self.connected = False
         pass
