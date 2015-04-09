@@ -2,6 +2,8 @@ import copy
 import datetime
 import decimal
 import sys
+import traceback
+import time
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
@@ -184,6 +186,12 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
         self.introspection = DatabaseIntrospection(self)
         self.validation = DatabaseValidation(self)
         self.connected = False
+        ''' this dictates if we want to close connection at the end of each request or cache it (old behavior) '''
+        self.close_connection = kwargs.pop('close_connection', True)
+        ''' number of times to retry the connection on failure '''
+        self.conn_retries = kwargs.pop('conn_retries', 10)
+        ''' time to sleep between retries '''
+        self.conn_sleep_interval = kwargs.pop('conn_sleep_interval', 2)
         del self.connection
 
     def get_collection(self, name, **kwargs):
@@ -226,19 +234,44 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
         for key in options.iterkeys():
             options[key.lower()] = options.pop(key)
 
-        try:
-            self.connection = Connection(host=host, port=port, **options)
-            self.database = self.connection[db_name]
-        except TypeError:
-            exc_info = sys.exc_info()
-            raise ImproperlyConfigured, exc_info[1], exc_info[2]
+        attempts = 0
+        while True:
+            try:
+                try:
+                    self.connection = Connection(host=host, port=port, **options)
+                    self.database = self.connection[db_name]
+                except TypeError:
+                    exc_info = sys.exc_info()
+                    raise ImproperlyConfigured, exc_info[1], exc_info[2]
 
-        if user and password:
-            if not self.database.authenticate(user, password):
-                raise ImproperlyConfigured("Invalid username or password.")
+                if user and password:
+                    if not self.database.authenticate(user, password):
+                        raise ImproperlyConfigured("Invalid username or password.")
+                          
+                self.connected = True
+                connection_created.send(sender=self.__class__, connection=self)
+                break
+            except Exception as e:
+                print 'MongoConnectionFailure ', str(e)
+                print traceback.format_exc()
 
-        self.connected = True
-        connection_created.send(sender=self.__class__, connection=self)
+                ''' Make sure we set connected to False just in case we failed on the send '''
+                self.connected = False
+                
+                ''' initialize these instance variables, so that we can delete them '''
+                ''' this will ensure that the __get_attr__ class method properly reconnects '''
+                self.database = None
+                self.connection = None
+                del self.database
+                del self.connection
+
+                attempts += 1
+                if attempts < self.conn_retries:
+                    time.sleep(self.conn_sleep_interval)
+                    print 'MongoConnectionRetry attempt=%d' % attempts
+                    continue
+                raise e
+            
 
     def _reconnect(self):
         if self.connected:
@@ -254,9 +287,9 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
         pass
 
     def close(self):
-        if self.connected:
+        if self.close_connection and self.connected:
             self.connection.close()
-            del self.connection
             del self.database
+            del self.connection
             self.connected = False
         pass
