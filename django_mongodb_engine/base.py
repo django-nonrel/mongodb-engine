@@ -250,6 +250,9 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
                           
                 self.connected = True
                 connection_created.send(sender=self.__class__, connection=self)
+                ''' execute a quick sample query so that the failure will happen noticed on EoE 
+                    that auth succeeds on switchover but command fails '''
+                self.database['system.users'].find_one()
                 break
             except Exception as e:
                 print 'MongoConnectionFailure ', str(e)
