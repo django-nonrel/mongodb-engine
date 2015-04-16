@@ -29,12 +29,13 @@ MongoDB Engine does is lower-casing the names before passing the flags to
 
 .. _operations-setting:
 
-Safe Operations (``getLastError``)
-----------------------------------
+Acknowledged Operations
+-----------------------
 Use the ``OPERATIONS`` dict to specify extra flags passed to
 :meth:`Collection.save <pymongo.collection.Collection.save>`,
 :meth:`~pymongo.collection.Collection.update` or
-:meth:`~pymongo.collection.Collection.remove` (and thus to ``getLastError``):
+:meth:`~pymongo.collection.Collection.remove` (and thus included in the
+write concern):
 
 .. code-block:: python
 
@@ -43,19 +44,13 @@ Use the ``OPERATIONS`` dict to specify extra flags passed to
        ...
    }
 
-Since any options to ``getLastError`` imply ``safe=True``,
-this configuration passes ``safe=True, w=3`` as keyword arguments to each of
-:meth:`~pymongo.collection.Collection.save`,
-:meth:`~pymongo.collection.Collection.update` and
-:meth:`~pymongo.collection.Collection.remove`.
-
 Get a more fine-grained setup by introducing another layer to this dict:
 
 .. code-block:: python
 
    'OPTIONS' : {
        'OPERATIONS' : {
-           'save' : {'safe' : True},
+           'save' : {'w': 3},
            'update' : {},
            'delete' : {'fsync' : True}
        },

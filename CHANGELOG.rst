@@ -6,6 +6,7 @@ Changelog
 Version 0.5.2 (TBD)
 -----------------
 * Add support for Replica Sets (Thanks @r4fek)
+* PyMongo 3 support
 
 
 Version 0.5.1 (Nov 2013)

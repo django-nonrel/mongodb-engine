@@ -248,12 +248,8 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
         conn_options = dict(
             host=host,
             port=int(port),
-            max_pool_size=None,
             document_class=dict,
             tz_aware=False,
-            _connect=True,
-            auto_start_request=True,
-            safe=False
         )
         conn_options.update(options)
 
