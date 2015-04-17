@@ -217,7 +217,8 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
         user = pop('USER')
         password = pop('PASSWORD')
         options = pop('OPTIONS', {})
-
+        options_removed = pop('OPTIONS_REMOVED', [])
+        
         self.operation_flags = options.pop('OPERATIONS', {})
         if not any(k in ['save', 'delete', 'update']
                    for k in self.operation_flags):
@@ -256,6 +257,8 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
             safe=False
         )
         conn_options.update(options)
+        for k in options_removed:
+            conn_options.pop(k, None)
 
         try:
             self.connection = connection_class(**conn_options)
