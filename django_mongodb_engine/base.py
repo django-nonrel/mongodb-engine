@@ -2,14 +2,17 @@ import copy
 import datetime
 import decimal
 import sys
+import warnings
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.db.backends.signals import connection_created
 from django.db.utils import DatabaseError
+from pymongo import ReadPreference
 
 from pymongo.collection import Collection
-from pymongo.connection import Connection
+from pymongo.mongo_client import MongoClient
+from pymongo.mongo_replica_set_client import MongoReplicaSetClient
 
 # handle pymongo backward compatibility
 try:
@@ -188,7 +191,7 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
 
     def get_collection(self, name, **kwargs):
         if (kwargs.pop('existing', False) and
-                name not in self.connection.database.collection_names()):
+                name not in self.database.collection_names()):
             return None
         collection = self.collection_class(self.database, name, **kwargs)
         if settings.DEBUG:
@@ -207,9 +210,10 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
 
         def pop(name, default=None):
             return settings.pop(name) or default
+
         db_name = pop('NAME')
         host = pop('HOST')
-        port = pop('PORT')
+        port = pop('PORT', 27017)
         user = pop('USER')
         password = pop('PASSWORD')
         options = pop('OPTIONS', {})
@@ -226,8 +230,35 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
         for key in options.iterkeys():
             options[key.lower()] = options.pop(key)
 
+        read_preference = options.get('read_preference')
+        replicaset = options.get('replicaset')
+
+        if not read_preference:
+            read_preference = options.get('slave_okay', options.get('slaveok'))
+            if read_preference:
+                options['read_preference'] = ReadPreference.SECONDARY
+                warnings.warn("slave_okay has been deprecated. "
+                              "Please use read_preference instead.")
+
+        if replicaset:
+            connection_class = MongoReplicaSetClient
+        else:
+            connection_class = MongoClient
+
+        conn_options = dict(
+            host=host,
+            port=int(port),
+            max_pool_size=None,
+            document_class=dict,
+            tz_aware=False,
+            _connect=True,
+            auto_start_request=True,
+            safe=False
+        )
+        conn_options.update(options)
+
         try:
-            self.connection = Connection(host=host, port=port, **options)
+            self.connection = connection_class(**conn_options)
             self.database = self.connection[db_name]
         except TypeError:
             exc_info = sys.exc_info()

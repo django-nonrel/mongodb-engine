@@ -55,7 +55,7 @@ class MongoDBEngineTests(TestCase):
             self.assertEqual(RawModel.objects.get(id=id).raw, obj)
 
     def test_databasewrapper_api(self):
-        from pymongo.connection import Connection
+        from pymongo.mongo_client import MongoClient
         from pymongo.database import Database
         from pymongo.collection import Collection
         from random import shuffle
@@ -70,7 +70,7 @@ class MongoDBEngineTests(TestCase):
                 lambda: self.assertIsInstance(wrapper.get_collection('foo'),
                                               Collection),
                 lambda: self.assertIsInstance(wrapper.database, Database),
-                lambda: self.assertIsInstance(wrapper.connection, Connection),
+                lambda: self.assertIsInstance(wrapper.connection, MongoClient),
             ]
             shuffle(calls)
             for call in calls:
