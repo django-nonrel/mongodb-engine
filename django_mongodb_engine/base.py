@@ -234,7 +234,9 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
         replicaset = options.get('replicaset')
 
         if not read_preference:
-            read_preference = options.get('slave_okay', options.get('slaveok'))
+            read_preference = options.pop('slave_okay',
+                                          options.pop('slaveok', None))
+
             if read_preference:
                 options['read_preference'] = ReadPreference.SECONDARY
                 warnings.warn("slave_okay has been deprecated. "
@@ -248,12 +250,8 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
         conn_options = dict(
             host=host,
             port=int(port),
-            max_pool_size=None,
             document_class=dict,
             tz_aware=False,
-            _connect=True,
-            auto_start_request=True,
-            safe=False
         )
         conn_options.update(options)
 

@@ -92,7 +92,7 @@ class NewStyleIndexesTestModel(models.Model):
             {'fields': [('custom_column', -1), 'f3']},
             [('geo', '2d')],
             {'fields': [('geo_custom_column', '2d'), 'f2'],
-             'min': 42, 'max': 21},
+             'min': 21, 'max': 42},
             {'fields': [('dict1.foo', 1)]},
             {'fields': [('dict_custom_column.foo', 1)]},
             {'fields': [('embedded.a', 1)]},
