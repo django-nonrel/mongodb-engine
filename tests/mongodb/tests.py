@@ -8,7 +8,10 @@ from django.db.utils import DatabaseError, IntegrityError
 from django.db.models import Q
 
 from gridfs import GridOut
-from pymongo import ASCENDING, DESCENDING
+from pymongo import (ASCENDING,
+                     DESCENDING,
+                     ReadPreference,
+                     version_tuple as pymongo_version)
 
 from django_mongodb_engine.base import DatabaseWrapper
 
@@ -193,7 +196,7 @@ class DatabaseOptionTests(TestCase):
             return self.new_wrapper
 
         def __exit__(self, *exc_info):
-            self.new_wrapper.connection.disconnect()
+            self.new_wrapper.connection.close()
             connections._connections.default = self._old_connection
 
     def test_pymongo_connection_args(self):
@@ -203,20 +206,23 @@ class DatabaseOptionTests(TestCase):
 
         with self.custom_database_wrapper({
                 'OPTIONS': {
-                    'SLAVE_OKAY': True,
+                    'READ_PREFERENCE': ReadPreference.SECONDARY,
                     'TZ_AWARE': True,
                     'DOCUMENT_CLASS': foodict,
-                }}) as connection:
-            for name, value in connection.settings_dict[
-                    'OPTIONS'].iteritems():
-                name = '_Connection__%s' % name.lower()
-                if name not in connection.connection.__dict__:
-                    # slave_okay was moved into BaseObject in PyMongo 2.0.
-                    name = name.replace('Connection', 'BaseObject')
-                if name not in connection.connection.__dict__:
-                    # document_class was moved into MongoClient in PyMongo 2.4.
-                    name = name.replace('BaseObject', 'MongoClient')
-                self.assertEqual(connection.connection.__dict__[name], value)
+                }}) as db:
+            connection = db.connection
+            if pymongo_version[0] >= 3:
+                tz_aware = connection.codec_options.tz_aware
+                document_class = connection.codec_options.document_class
+            else:
+                tz_aware = connection.tz_aware
+                document_class = connection.document_class
+
+            self.assertEqual(ReadPreference.SECONDARY,
+                             connection.read_preference)
+
+            self.assertEqual(True, tz_aware)
+            self.assertEqual(foodict, document_class)
 
     def test_operation_flags(self):
         def test_setup(flags, **method_kwargs):
