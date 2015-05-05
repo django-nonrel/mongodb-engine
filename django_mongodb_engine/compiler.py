@@ -136,7 +136,7 @@ class MongoQuery(NonrelQuery):
             return []
 
         fields = get_selected_fields(self.query)
-        cursor = self.collection.find(self.mongo_query, fields=fields)
+        cursor = self.collection.find(self.mongo_query, fields)
         if self.ordering:
             cursor.sort(self.ordering)
         if self.query.low_mark > 0:
