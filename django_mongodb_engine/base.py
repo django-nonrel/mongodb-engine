@@ -240,24 +240,19 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
                 warnings.warn("slave_okay has been deprecated. "
                               "Please use read_preference instead.")
 
-        if replicaset:
-            connection_class = MongoReplicaSetClient
-        else:
-            connection_class = MongoClient
+
+
 
         conn_options = dict(
             host=host,
             port=int(port),
-            max_pool_size=None,
             document_class=dict,
-            tz_aware=False,
-            _connect=True,
-            auto_start_request=True
+            tz_aware=False
         )
         conn_options.update(options)
 
         try:
-            self.connection = connection_class(**conn_options)
+            self.connection = MongoClient(**conn_options)
             self.database = self.connection[db_name]
         except TypeError:
             exc_info = sys.exc_info()
