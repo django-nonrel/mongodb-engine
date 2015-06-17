@@ -3,13 +3,14 @@ from cStringIO import StringIO
 
 from django.core.management import call_command
 from django.contrib.sites.models import Site
-from django.db import connection
 from django.db.utils import DatabaseError, IntegrityError
 from django.db.models import Q
 from gridfs import GridOut
 from pymongo import ASCENDING, DESCENDING
 from django_mongodb_engine.base import DatabaseWrapper
 from models import *
+from pymongo.collection import Collection
+
 from utils import *
 
 
@@ -199,7 +200,6 @@ class DatabaseOptionTests(TestCase):
 
         with self.custom_database_wrapper({
                 'OPTIONS': {
-                    'SLAVE_OKAY': True,
                     'TZ_AWARE': True,
                     'DOCUMENT_CLASS': foodict,
                 }}) as connection:
