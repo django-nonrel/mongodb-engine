@@ -267,12 +267,6 @@ class DatabaseOptionTests(TestCase):
             update={'multi': True},
             remove={'fsync': True})
 
-    def test_unique(self):
-        with self.custom_database_wrapper({'OPTIONS': {}}):
-            Post.objects.create(title='a', content='x')
-            Post.objects.create(title='a', content='y')
-            self.assertEqual(Post.objects.count(), 1)
-            self.assertEqual(Post.objects.get().content, 'x')
 
     def test_unique_safe(self):
         Post.objects.create(title='a')
