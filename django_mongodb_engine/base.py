@@ -64,7 +64,13 @@ class DatabaseOperations(NonrelDatabaseOperations):
             if table.startswith('system.'):
                 # Do not try to drop system collections.
                 continue
-            self.connection.database[table].remove()
+
+            collection = self.connection.database[table]
+            options = collection.options()
+
+            if not options.get('capped', False):
+                collection.remove({})
+
         return []
 
     def validate_autopk_value(self, value):
