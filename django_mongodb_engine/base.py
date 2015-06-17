@@ -60,11 +60,20 @@ class DatabaseOperations(NonrelDatabaseOperations):
         drop all `tables`. No SQL in MongoDB, so just clear all tables
         here and return an empty list.
         """
+
+
+
         for table in tables:
             if table.startswith('system.'):
                 # Do not try to drop system collections.
                 continue
-            self.connection.database[table].remove()
+
+            collection = self.connection.database[table]
+            options = collection.options()
+
+            if not options.get('capped', False):
+                collection.delete_many({})
+
         return []
 
     def validate_autopk_value(self, value):
