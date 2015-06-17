@@ -4,13 +4,25 @@ from django.db.models import Model
 from django.test import TestCase
 from django.utils.unittest import skip
 
-
 class TestCase(TestCase):
 
     def setUp(self):
         super(TestCase, self).setUp()
         if getattr(settings, 'TEST_DEBUG', False):
             settings.DEBUG = True
+
+
+    def _fixture_teardown(self):
+        from django.db import connections
+        for connection_name in connections:
+
+            db_wrapper = connections[connection_name]
+
+            for collection_name in db_wrapper.database.collection_names(include_system_collections=False):
+                db_wrapper.get_collection(collection_name).drop()
+
+
+
 
     def assertEqualLists(self, a, b):
         self.assertEqual(list(a), list(b))
