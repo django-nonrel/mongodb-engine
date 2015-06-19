@@ -1,4 +1,4 @@
-pymongo
+pymongo<3.0
 https://github.com/django-nonrel/djangotoolbox/tarball/master
 https://github.com/django-nonrel/django/tarball/nonrel-1.5
 https://github.com/django-nonrel/django-dbindexer/tarball/master

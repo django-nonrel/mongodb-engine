@@ -64,7 +64,13 @@ class DatabaseOperations(NonrelDatabaseOperations):
             if table.startswith('system.'):
                 # Do not try to drop system collections.
                 continue
-            self.connection.database[table].remove()
+
+            collection = self.connection.database[table]
+            options = collection.options()
+
+            if not options.get('capped', False):
+                collection.remove({})
+
         return []
 
     def validate_autopk_value(self, value):
@@ -248,12 +254,8 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
         conn_options = dict(
             host=host,
             port=int(port),
-            max_pool_size=None,
             document_class=dict,
-            tz_aware=False,
-            _connect=True,
-            auto_start_request=True,
-            safe=False
+            tz_aware=False
         )
         conn_options.update(options)
 
