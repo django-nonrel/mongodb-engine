@@ -10,6 +10,7 @@ from django.db.models.sql.where import OR
 from django.db.utils import DatabaseError, IntegrityError
 from django.utils.encoding import smart_str
 from django.utils.tree import Node
+from django.contrib.gis.db.models.sql.compiler import GeoSQLCompiler as BaseGeoSQLCompiler
 
 from pymongo import ASCENDING, DESCENDING
 from pymongo.errors import PyMongoError, DuplicateKeyError
@@ -64,6 +65,11 @@ OPERATORS_MAP = {
 
     # Date OPs.
     'year': lambda val: {'$gte': val[0], '$lt': val[1]},
+
+    # Spatial
+    'within':     lambda val: val,
+    'intersects': lambda val: val,
+    'near':       lambda val: val,
 }
 
 NEGATED_OPERATORS_MAP = {
@@ -443,4 +449,8 @@ class SQLUpdateCompiler(NonrelUpdateCompiler, SQLCompiler):
 
 
 class SQLDeleteCompiler(NonrelDeleteCompiler, SQLCompiler):
+    pass
+
+
+class GeoSQLCompiler(BaseGeoSQLCompiler, SQLCompiler):
     pass

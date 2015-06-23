@@ -5,6 +5,7 @@ import sys
 import warnings
 
 from django.conf import settings
+from django.contrib.gis.db.backends.base import BaseSpatialOperations
 from django.core.exceptions import ImproperlyConfigured
 from django.db.backends.signals import connection_created
 from django.db.utils import DatabaseError
@@ -40,7 +41,7 @@ class DatabaseFeatures(NonrelDatabaseFeatures):
     supports_long_model_names = False
 
 
-class DatabaseOperations(NonrelDatabaseOperations):
+class DatabaseOperations(NonrelDatabaseOperations, BaseSpatialOperations):
     compiler_module = __name__.rsplit('.', 1)[0] + '.compiler'
 
     def max_name_length(self):
@@ -158,6 +159,12 @@ class DatabaseOperations(NonrelDatabaseOperations):
 
         return super(DatabaseOperations, self)._value_from_db(
             value, field, field_kind, db_type)
+
+    def geometry_columns(self):
+        return None
+
+    def spatial_ref_sys(self):
+        return None
 
 
 class DatabaseClient(NonrelDatabaseClient):

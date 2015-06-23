@@ -1,8 +1,10 @@
 import sys
+from django.contrib.gis.db.models import GeoManager
 
 from django.db import models, connections
 from django.db.models.query import QuerySet
 from django.db.models.sql.query import Query as SQLQuery
+from django_mongodb_engine.query import MongoGeoQuerySet
 
 
 ON_PYPY = hasattr(sys, 'pypy_version_info')
@@ -175,3 +177,8 @@ class MongoDBManager(models.Manager, RawQueryMixin):
         database.
         """
         return self.get_query_set().distinct(*args, **kwargs)
+
+
+class GeoMongoDBManager(MongoDBManager, GeoManager):
+    def get_queryset(self):
+        return MongoGeoQuerySet(self.model, using=self._db)
