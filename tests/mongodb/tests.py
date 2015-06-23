@@ -8,7 +8,7 @@ from django.db.utils import DatabaseError, IntegrityError
 from django.db.models import Q
 from encodings.big5 import codec
 from gridfs import GridOut
-from pymongo import ASCENDING, DESCENDING
+from pymongo import ASCENDING, DESCENDING, ReadPreference, version_tuple as pymongo_version
 from django_mongodb_engine.base import DatabaseWrapper
 from models import *
 
@@ -204,20 +204,26 @@ class DatabaseOptionTests(TestCase):
         class foodict(dict):
             pass
 
-        tz_aware = True
-        document_class = foodict
-
         with self.custom_database_wrapper({
                 'OPTIONS': {
+                    'READ_PREFERENCE': ReadPreference.SECONDARY,
                     'TZ_AWARE': True,
                     'DOCUMENT_CLASS': foodict,
-                }}) as connection:
+                }}) as db:
 
-            codec_options = connection.connection.codec_options
+            connection = db.connection
 
-            self.assertEqual(codec_options.tz_aware, tz_aware)
-            self.assertEqual(codec_options.document_class, document_class)
+            if pymongo_version[0] >= 3:
+                tz_aware = connection.codec_options.tz_aware
+                document_class = connection.codec_options.document_class
+            else:
+                tz_aware = connection.tz_aware
+                document_class = connection.document_class
 
+            self.assertEqual(ReadPreference.SECONDARY, connection.read_preference)
+
+            self.assertEqual(True, tz_aware)
+            self.assertEqual(foodict, document_class)
 
 
     def test_operation_flags(self):
@@ -254,11 +260,7 @@ class DatabaseOptionTests(TestCase):
         test_setup({}, save={}, update={'multi': True}, remove={})
         test_setup({}, save={}, update={'multi': True}, remove={})
         test_setup({'delete': {}, 'update': {}}, save={}, update={'multi': True}, remove={})
-        test_setup({ 'insert': {'fsync': True}, 'delete': {'fsync': True}},
-
-            save={},
-            update={'multi': True},
-            remove={'fsync': True})
+        test_setup({ 'insert': {'fsync': True}, 'delete': {'fsync': True}}, save={}, update={'multi': True}, remove={'fsync': True})
 
 
     def test_unique_safe(self):

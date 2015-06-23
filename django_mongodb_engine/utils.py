@@ -70,7 +70,6 @@ class CollectionDebugWrapper(object):
         logger.debug(msg, extra={'duration': duration})
 
     def find(self, *args, **kwargs):
-
         return DebugCursor(self, self.collection, *args, **kwargs)
 
     def logging_wrapper(method):
