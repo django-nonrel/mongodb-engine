@@ -21,9 +21,9 @@ matrix:
     - env: DJANGO_VERSION=1.4
 
 install:
-  - pip install git+http://github.com/django-nonrel/django@nonrel-$DJANGO_VERSION
-  - pip install git+http://github.com/django-nonrel/django-dbindexer@master
-  - pip install git+http://github.com/django-nonrel/djangotoolbox@master
+  - pip install https://github.com/django-nonrel/django/tarball/nonrel-$DJANGO_VERSION
+  - pip install https://github.com/django-nonrel/django-dbindexer/tarball/master
+  - pip install https://github.com/django-nonrel/djangotoolbox/tarball/master
   - python setup.py install
 
 script: cd tests && python runtests.py
