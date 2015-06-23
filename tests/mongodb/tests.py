@@ -249,17 +249,13 @@ class DatabaseOptionTests(TestCase):
             for name in method_kwargs:
                 self.assertEqual(method_kwargs[name], Collection._method_kwargs[name])
 
+            self.assertEqual(*update_count)
 
         test_setup({}, save={}, update={'multi': True}, remove={})
-        test_setup({},
-            save={},
-            update={'multi': True},
-            remove={})
-        test_setup({'delete': {}, 'update': {}},
-            save={},
-            update={'multi': True},
-            remove={})
-        test_setup({'insert': {'fsync': True}, 'delete': {'fsync': True}},
+        test_setup({}, save={}, update={'multi': True}, remove={})
+        test_setup({'delete': {}, 'update': {}}, save={}, update={'multi': True}, remove={})
+        test_setup({ 'insert': {'fsync': True}, 'delete': {'fsync': True}},
+
             save={},
             update={'multi': True},
             remove={'fsync': True})

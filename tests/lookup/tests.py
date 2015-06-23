@@ -24,6 +24,10 @@ class LookupTests(TestCase):
         Tag.objects.all().delete()
 
         # Create a few Authors.
+        Author.objects.all().delete()
+        Article.objects.all().delete()
+        Tag.objects.all().delete()
+
         self.au1 = Author(name='Author 1')
         self.au1.save()
         self.au2 = Author(name='Author 2')

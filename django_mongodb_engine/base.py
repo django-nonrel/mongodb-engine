@@ -38,6 +38,7 @@ from .utils import CollectionDebugWrapper
 class DatabaseFeatures(NonrelDatabaseFeatures):
     supports_microsecond_precision = False
     supports_long_model_names = False
+    distinguishes_insert_from_update = True
 
 
 class DatabaseOperations(NonrelDatabaseOperations):
@@ -72,6 +73,8 @@ class DatabaseOperations(NonrelDatabaseOperations):
             options = collection.options()
 
             if not options.get('capped', False):
+
+                # TODO:Not backwards compatible
                 collection.delete_many({})
 
         return []

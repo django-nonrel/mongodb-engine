@@ -12,3 +12,7 @@ dist/
 .tox
 
 MANIFEST
+
+
+.env
+.idea

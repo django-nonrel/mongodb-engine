@@ -2,11 +2,11 @@ DATABASES = {
     'default': {
         'ENGINE': 'django_mongodb_engine',
         'NAME': 'test',
-        'OPTIONS': {'OPERATIONS': {}},
+        'OPTIONS': {'OPERATIONS': {}}
     },
     'other': {
         'ENGINE': 'django_mongodb_engine',
-        'NAME': 'test2',
+        'NAME': 'test2'
     },
 }
 
