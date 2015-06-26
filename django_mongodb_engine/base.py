@@ -76,7 +76,7 @@ class DatabaseOperations(NonrelDatabaseOperations):
             if not options.get('capped', False):
 
                 # TODO:Not backwards compatible
-                collection.delete_many({})
+                collection.remove({})
 
         return []
 
@@ -253,9 +253,6 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
                 warnings.warn("slave_okay has been deprecated. "
                               "Please use read_preference instead.")
 
-
-
-
         conn_options = dict(
             host=host,
             port=int(port),
@@ -264,8 +261,13 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
         )
         conn_options.update(options)
 
+        if replicaset:
+            connection_class = MongoReplicaSetClient
+        else:
+            connection_class = MongoClient
+
         try:
-            self.connection = MongoClient(**conn_options)
+            self.connection = connection_class(**conn_options)
             self.database = self.connection[db_name]
         except TypeError:
             exc_info = sys.exc_info()
