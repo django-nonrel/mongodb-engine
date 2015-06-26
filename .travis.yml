@@ -14,16 +14,18 @@ python:
 env:
   - DJANGO_VERSION=1.4
   - DJANGO_VERSION=1.5
+  - DJANGO_VERSION=1.6
   - DJANGO_VERSION=1.6-beta
+  - DJANGO_VERSION=1.7
 
 matrix:
   allow_failures:
     - env: DJANGO_VERSION=1.4
 
 install:
-  - pip install https://github.com/django-nonrel/django/tarball/nonrel-$DJANGO_VERSION
-  - pip install https://github.com/django-nonrel/django-dbindexer/tarball/master
-  - pip install https://github.com/django-nonrel/djangotoolbox/tarball/master
+  - pip install git+http://github.com/django-nonrel/django@nonrel-$DJANGO_VERSION
+  - pip install git+http://github.com/django-nonrel/django-dbindexer@master
+  - pip install git+http://github.com/django-nonrel/djangotoolbox@master
   - python setup.py install
 
 script: cd tests && python runtests.py
