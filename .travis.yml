@@ -15,8 +15,8 @@ env:
   - DJANGO_VERSION=1.4
   - DJANGO_VERSION=1.5
   - DJANGO_VERSION=1.6
-  - DJANGO_VERSION=1.6-beta
   - DJANGO_VERSION=1.7
+
 
 matrix:
   allow_failures:
