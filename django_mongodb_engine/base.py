@@ -38,7 +38,8 @@ from .utils import CollectionDebugWrapper
 class DatabaseFeatures(NonrelDatabaseFeatures):
     supports_microsecond_precision = False
     supports_long_model_names = False
-    #distinguishes_insert_from_update = True
+
+    can_rollback_ddl = True
 
 
 class DatabaseOperations(NonrelDatabaseOperations):
