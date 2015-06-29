@@ -74,8 +74,6 @@ class DatabaseOperations(NonrelDatabaseOperations):
             options = collection.options()
 
             if not options.get('capped', False):
-
-                # TODO:Not backwards compatible
                 collection.remove({})
 
         return []

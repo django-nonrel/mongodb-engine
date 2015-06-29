@@ -6,7 +6,6 @@ from django.contrib.sites.models import Site
 from django.db import connection
 from django.db.utils import DatabaseError, IntegrityError
 from django.db.models import Q
-from encodings.big5 import codec
 from gridfs import GridOut
 from pymongo import ASCENDING, DESCENDING, ReadPreference, version_tuple as pymongo_version
 from django_mongodb_engine.base import DatabaseWrapper

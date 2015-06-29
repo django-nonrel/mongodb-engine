@@ -18,7 +18,7 @@ setup(name='django-mongodb-engine',
     description=DESCRIPTION,
     long_description=LONG_DESCRIPTION,
 
-    install_requires=['pymongo>=3.0', 'djangotoolbox>=1.6.0'],
+    install_requires=['pymongo>=2.8', 'djangotoolbox>=1.6.0'],
 
     packages=find_packages(exclude=['tests', 'tests.*']),
     zip_safe=False,
