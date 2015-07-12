@@ -1,6 +1,4 @@
-
 pymongo>=2.8
-
-https://github.com/django-nonrel/djangotoolbox/tarball/master
-https://github.com/django-nonrel/django/tarball/nonrel-1.5
-https://github.com/django-nonrel/django-dbindexer/tarball/master
+djangotoolbox>=1.6.0
+django-dbindexer>=1.6.0
+https://github.com/django-nonrel/django/tarball/nonrel-1.6

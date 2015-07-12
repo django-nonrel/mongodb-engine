@@ -3,6 +3,11 @@ Changelog
 
 .. currentmodule:: djangotoolbox.fields
 
+Version 0.6 (Jul 12, 2015)
+-----------------
+* Add support for PyMongo 3 (Thanks @markunsworth & @ajdavis)
+
+
 Version 0.5.2 (Jun 19, 2015)
 -----------------
 * Add support for Replica Sets (Thanks @r4fek)
