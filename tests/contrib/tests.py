@@ -121,7 +121,6 @@ class MapReduceTests(TestCase):
 class RawQueryTests(TestCase):
 
     def setUp(self):
-        MapReduceModel.objects.all().delete()
 
         for i in xrange(10):
             MapReduceModel.objects.create(n=i, m=i * 2)
@@ -157,6 +156,10 @@ class RawQueryTests(TestCase):
 
 # TODO: Line breaks.
 class FullTextTest(TestCase):
+
+    def setUp(self):
+        Post.objects.all().delete()
+
 
     def test_simple_fulltext(self):
         blog = Post(content="simple, full text.... search? test")
