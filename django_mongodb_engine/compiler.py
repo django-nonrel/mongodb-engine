@@ -387,10 +387,13 @@ class SQLInsertCompiler(NonrelInsertCompiler, SQLCompiler):
         collection = self.get_collection()
         options = self.connection.operation_flags.get('save', {})
 
-        if return_id:
-            return collection.save(doc, **options)
+	if len(docs) > 1:
+            collection.insert(docs, **options)
         else:
-            collection.save(doc, **options)
+            if return_id:
+                return collection.save(doc, **options)
+            else:
+                collection.save(doc, **options)
 
 
 # TODO: Define a common nonrel API for updates and add it to the nonrel
@@ -440,6 +443,10 @@ class SQLUpdateCompiler(NonrelUpdateCompiler, SQLCompiler):
         info = collection.update(criteria, update_spec, multi=multi, **options)
         if info is not None:
             return info.get('n')
+        update_flags = self.connection.operation_flags['update']
+        if 'safe' in update_flags and update_flags['safe']:
+            return None
+        return 1
 
 
 class SQLDeleteCompiler(NonrelDeleteCompiler, SQLCompiler):
