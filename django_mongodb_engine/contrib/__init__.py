@@ -1,11 +1,24 @@
 import sys
+import re
+import copy
+import django
 
 from django.db import models, connections
 from django.db.models.query import QuerySet
 from django.db.models.sql.query import Query as SQLQuery
+from django.db.models.query_utils import Q
+from django_mongodb_engine.compiler import OPERATORS_MAP, NEGATED_OPERATORS_MAP
+from djangotoolbox.fields import AbstractIterableField
+
+if django.VERSION >= (1, 5):
+    from django.db.models.constants import LOOKUP_SEP
+else:
+    from django.db.models.sql.constants import LOOKUP_SEP
 
 
 ON_PYPY = hasattr(sys, 'pypy_version_info')
+ALL_OPERATORS = dict(list(OPERATORS_MAP.items() + NEGATED_OPERATORS_MAP.items())).keys()
+MONGO_DOT_FIELDS = ('DictField', 'ListField', 'SetField', 'EmbeddedModelField')
 
 
 def _compiler_for_queryset(qs, which='SQLCompiler'):
@@ -84,6 +97,113 @@ class MapReduceResult(object):
 
 
 class MongoDBQuerySet(QuerySet):
+
+    def _filter_or_exclude(self, negate, *args, **kwargs):
+        if args or kwargs:
+            assert self.query.can_filter(), \
+                'Cannot filter a query once a slice has been taken.'
+
+        clone = self._clone()
+        clone._process_arg_filters(args, kwargs)
+        if negate:
+            clone.query.add_q(~Q(*args, **kwargs))
+        else:
+            clone.query.add_q(Q(*args, **kwargs))
+        return clone
+
+    def _get_mongo_field_names(self):
+        if not hasattr(self, '_mongo_field_names'):
+            self._mongo_field_names = []
+            for name in self.model._meta.get_all_field_names():
+                field = self.model._meta.get_field_by_name(name)[0]
+                if '.' not in name and field.get_internal_type() in MONGO_DOT_FIELDS:
+                    self._mongo_field_names.append(name)
+
+        return self._mongo_field_names
+
+    def _process_arg_filters(self, args, kwargs):
+        for key, val in kwargs.items():
+            del kwargs[key]
+            key = self._maybe_add_dot_field(key)
+            kwargs[key] = val
+
+        for a in args:
+            if isinstance(a, Q):
+                self._process_q_filters(a)
+
+    def _process_q_filters(self, q):
+        for c in range(len(q.children)):
+            child = q.children[c]
+            if isinstance(child, Q):
+                self._process_q_filters(child)
+            elif isinstance(child, tuple):
+                key, val = child
+                key = self._maybe_add_dot_field(key)
+                q.children[c] = (key, val)
+
+    def _maybe_add_dot_field(self, name):
+        if LOOKUP_SEP in name and name.split(LOOKUP_SEP)[0] in self._get_mongo_field_names():
+            for op in ALL_OPERATORS:
+                if name.endswith(LOOKUP_SEP + op):
+                    name = re.sub(LOOKUP_SEP + op + '$', '#' + op, name)
+                    break
+            name = name.replace(LOOKUP_SEP, '.').replace('#', LOOKUP_SEP)
+
+        parts1 = name.split(LOOKUP_SEP)
+        if '.' in parts1[0] and parts1[0] not in self.model._meta.get_all_field_names():
+            parts2 = parts1[0].split('.')
+            parts3 = []
+            parts4 = []
+            model = self.model
+
+            while len(parts2) > 0:
+                part = parts2.pop(0)
+                field = model._meta.get_field_by_name(part)[0]
+                field_type = field.get_internal_type()
+                column = field.db_column
+                if column:
+                    part = column
+                parts3.append(part)
+                if field_type == 'ListField':
+                    list_type = field.item_field.get_internal_type()
+                    if list_type == 'EmbeddedModelField':
+                        field = field.item_field
+                        field_type = list_type
+                if field_type == 'EmbeddedModelField':
+                    model = field.embedded_model()
+                else:
+                    while len(parts2) > 0:
+                        part = parts2.pop(0)
+                        if field_type in MONGO_DOT_FIELDS:
+                            parts3.append(part)
+                        else:
+                            parts4.append(part)
+
+            db_column = '.'.join(parts3)
+
+            if field_type in MONGO_DOT_FIELDS:
+                field = AbstractIterableField(
+                    db_column=db_column,
+                    blank=True,
+                    null=True,
+                    editable=False,
+                )
+            else:
+                field = copy.deepcopy(field)
+                field.name = None
+                field.db_column = db_column
+                field.blank = True
+                field.null = True
+                field.editable = False
+                if hasattr(field, '_related_fields'):
+                    delattr(field, '_related_fields')
+
+            parts5 = parts1[0].split('.')[0:len(parts3)]
+            name = '.'.join(parts5)
+            self.model.add_to_class(name, field)
+            name = LOOKUP_SEP.join([name] + parts4 + parts1[1:])
+
+        return name
 
     def map_reduce(self, *args, **kwargs):
         """
