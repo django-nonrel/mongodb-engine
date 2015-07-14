@@ -3,9 +3,9 @@ Settings
 
 .. TODO fix highlighting
 
-Connection Settings
+Client Settings
 -------------------
-Additional flags may be passed to :class:`pymongo.Connection` using the
+Additional flags may be passed to :class:`pymongo.MongoClient` using the
 ``OPTIONS`` dictionary::
 
    DATABASES = {
@@ -25,17 +25,17 @@ Additional flags may be passed to :class:`pymongo.Connection` using the
 
 All of these settings directly mirror PyMongo settings.  In fact, all Django
 MongoDB Engine does is lower-casing the names before passing the flags to
-:class:`~pymongo.Connection`.  For a list of possible options head over to the
-`PyMongo documentation on connection options`_.
+:class:`~pymongo.MongoClient`.  For a list of possible options head over to the
+`PyMongo documentation on client options`_.
 
 .. _operations-setting:
 
-Safe Operations (``getLastError``)
-----------------------------------
+Acknowledged Operations
+-----------------------
 Use the ``OPERATIONS`` dict to specify extra flags passed to
 :meth:`Collection.save <pymongo.collection.Collection.save>`,
 :meth:`~pymongo.collection.Collection.update` or
-:meth:`~pymongo.collection.Collection.remove` (and thus to ``getLastError``):
+:meth:`~pymongo.collection.Collection.remove` (and thus included in the write concern):
 
 .. code-block:: python
 
@@ -44,11 +44,7 @@ Use the ``OPERATIONS`` dict to specify extra flags passed to
        ...
    }
 
-Since any options to ``getLastError`` imply ``safe=True``,
-this configuration passes ``safe=True, w=3`` as keyword arguments to each of
-:meth:`~pymongo.collection.Collection.save`,
-:meth:`~pymongo.collection.Collection.update` and
-:meth:`~pymongo.collection.Collection.remove`.
+
 
 Get a more fine-grained setup by introducing another layer to this dict:
 
@@ -56,9 +52,9 @@ Get a more fine-grained setup by introducing another layer to this dict:
 
    'OPTIONS' : {
        'OPERATIONS' : {
-           'save' : {'safe' : True},
+           'save' : {'w' : 3},
            'update' : {},
-           'delete' : {'fsync' : True}
+           'delete' : {'j' : True}
        },
        ...
    }
@@ -70,10 +66,10 @@ Get a more fine-grained setup by introducing another layer to this dict:
    "`insert vs. update`" into `save`.
 
 
-A full list of ``getLastError`` flags may be found in the
-`MongoDB documentation <http://www.mongodb.org/display/DOCS/getLastError+Command>`_.
+A full list of write concern flags may be found in the
+`MongoDB documentation <http://docs.mongodb.org/manual/core/write-concern/>`_.
 
 .. _Similar to Django's built-in backends: 
    http://docs.djangoproject.com/en/dev/ref/settings/#std:setting-OPTIONS
-.. _PyMongo documentation on connection options: 
-   http://api.mongodb.org/python/current/api/pymongo/connection.html
+.. _PyMongo documentation on client options:
+   http://api.mongodb.org/python/current/api/pymongo/mongo_client.html

@@ -12,18 +12,28 @@ python:
   - 2.7
 
 env:
-  - DJANGO_VERSION=1.4
-  - DJANGO_VERSION=1.5
-  - DJANGO_VERSION=1.6
+  - DJANGO_VERSION=1.4 PYMONGO_VERSION=2.8.1
+  - DJANGO_VERSION=1.4 PYMONGO_VERSION=3.0.2
+  - DJANGO_VERSION=1.5 PYMONGO_VERSION=2.8.1
+  - DJANGO_VERSION=1.5 PYMONGO_VERSION=3.0.2
+  - DJANGO_VERSION=1.6 PYMONGO_VERSION=2.8.1
+  - DJANGO_VERSION=1.6 PYMONGO_VERSION=3.0.2
+  - DJANGO_VERSION=1.7 PYMONGO_VERSION=2.8.1
+  - DJANGO_VERSION=1.7 PYMONGO_VERSION=3.0.2
+
 
 matrix:
   allow_failures:
-    - env: DJANGO_VERSION=1.4
+    - env: DJANGO_VERSION=1.4 PYMONGO_VERSION=2.8.1
+    - env: DJANGO_VERSION=1.4 PYMONGO_VERSION=3.0.2
+    - env: DJANGO_VERSION=1.7 PYMONGO_VERSION=2.8.1
+    - env: DJANGO_VERSION=1.7 PYMONGO_VERSION=3.0.2
 
 install:
   - pip install git+http://github.com/django-nonrel/django@nonrel-$DJANGO_VERSION
   - pip install git+http://github.com/django-nonrel/django-dbindexer@master
   - pip install git+http://github.com/django-nonrel/djangotoolbox@master
+  - pip install pymongo==$PYMONGO_VERSION --upgrade
   - python setup.py install
 
 script: cd tests && python runtests.py
