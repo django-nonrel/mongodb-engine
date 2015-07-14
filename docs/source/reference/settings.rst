@@ -14,7 +14,10 @@ Additional flags may be passed to :class:`pymongo.MongoClient` using the
            'NAME' : 'my_database',
            ...
            'OPTIONS' : {
-               'socketTimeoutMS' : 500,
+               'slave_okay' : True,
+               'tz_aware' : True,
+               'network_timeout' : 42,
+               'authSource': 'authentication_database_name'
                ...
            }
        }
