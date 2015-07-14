@@ -266,10 +266,8 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
             exc_info = sys.exc_info()
             raise ImproperlyConfigured, exc_info[1], exc_info[2]
 
-        auth_source = options.get('authsource')
-
         if user and password:
-            if not self.database.authenticate(user, password, source=auth_source):
+            if not self.database.authenticate(user, password, source=options.get('authsource')):
                 raise ImproperlyConfigured("Invalid username or password.")
 
         self.connected = True

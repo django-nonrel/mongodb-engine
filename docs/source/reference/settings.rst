@@ -17,6 +17,7 @@ Additional flags may be passed to :class:`pymongo.Connection` using the
                'slave_okay' : True,
                'tz_aware' : True,
                'network_timeout' : 42,
+               'authSource': 'authentication_database_name'
                ...
            }
        }
