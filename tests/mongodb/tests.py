@@ -248,32 +248,25 @@ class DatabaseOptionTests(TestCase):
                 self.assertEqual(method_kwargs[name],
                                  Collection._method_kwargs[name])
 
-            if Collection._method_kwargs['update'].get('safe'):
-                self.assertEqual(*update_count)
+
+            self.assertEqual(*update_count)
 
         test_setup({}, save={}, update={'multi': True}, remove={})
-        test_setup({
-            'safe': True},
-            save={'safe': True},
-            update={'safe': True, 'multi': True},
-            remove={'safe': True})
-        test_setup({
-            'delete': {'safe': True}, 'update': {}},
+        test_setup({},
             save={},
             update={'multi': True},
-            remove={'safe': True})
+            remove={})
+        test_setup({
+            'delete': {}, 'update': {}},
+            save={},
+            update={'multi': True},
+            remove={})
         test_setup({
             'insert': {'fsync': True}, 'delete': {'fsync': True}},
             save={},
             update={'multi': True},
             remove={'fsync': True})
 
-    def test_unique(self):
-        with self.custom_database_wrapper({'OPTIONS': {}}):
-            Post.objects.create(title='a', content='x')
-            Post.objects.create(title='a', content='y')
-            self.assertEqual(Post.objects.count(), 1)
-            self.assertEqual(Post.objects.get().content, 'x')
 
     def test_unique_safe(self):
         Post.objects.create(title='a')
