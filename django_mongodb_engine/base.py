@@ -191,7 +191,7 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
         ''' number of times to retry the connection on failure '''
         self.conn_retries = kwargs.pop('conn_retries', 10)
         ''' time to sleep between retries '''
-        self.conn_sleep_interval = kwargs.pop('conn_sleep_interval', 2)
+        self.conn_sleep_interval = kwargs.pop('conn_sleep_interval', 5)
         del self.connection
 
     def get_collection(self, name, **kwargs):
@@ -250,12 +250,14 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
                           
                 self.connected = True
                 connection_created.send(sender=self.__class__, connection=self)
-                ''' execute a quick sample query so that the failure will happen noticed on EoE 
-                    that auth succeeds on switchover but command fails '''
+                ''' execute a quick sample query so that the failure will happen 
+                    on the command that is run after the switchover, auth succeeds
+                    on secondary but commands cannot be run. This command will
+                    throw an exception and hence we will attempt to reconnect again '''
                 self.database['system.users'].find_one()
                 break
             except Exception as e:
-                print 'MongoConnectionFailure ', str(e)
+                print 'MongoConnectionFailure to database %s %s' % (db_name,str(e))
                 print traceback.format_exc()
 
                 ''' Make sure we set connected to False just in case we failed on the send '''
