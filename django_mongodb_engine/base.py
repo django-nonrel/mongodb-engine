@@ -254,7 +254,7 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
                     on the command that is run after the switchover, auth succeeds
                     on secondary but commands cannot be run. This command will
                     throw an exception and hence we will attempt to reconnect again '''
-                self.database['system.users'].find_one()
+                self.database['system.indexes'].find_one()
                 break
             except Exception as e:
                 print 'MongoConnectionFailure to database %s %s' % (db_name,str(e))
