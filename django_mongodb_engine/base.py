@@ -189,7 +189,7 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
         ''' this dictates if we want to close connection at the end of each request or cache it (old behavior) '''
         self.close_connection = kwargs.pop('close_connection', True)
         ''' number of times to retry the connection on failure '''
-        self.conn_retries = kwargs.pop('conn_retries', 10)
+        self.conn_retries = kwargs.pop('conn_retries', 1)
         ''' time to sleep between retries '''
         self.conn_sleep_interval = kwargs.pop('conn_sleep_interval', 5)
         del self.connection
