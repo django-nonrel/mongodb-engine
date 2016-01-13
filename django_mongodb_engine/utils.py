@@ -2,7 +2,10 @@ import re
 import time
 
 from django.conf import settings
-from django.db.backends.utils import logger
+try:
+    from django.db.backends.utils import logger
+except ImportError:
+    from django.db.backends.util import logger
 
 from pymongo import ASCENDING
 from pymongo.cursor import Cursor
