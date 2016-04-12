@@ -377,7 +377,7 @@ class SQLInsertCompiler(NonrelInsertCompiler, SQLCompiler):
                 doc['_id'] = doc.pop(self.query.get_meta().pk.column)
             except KeyError:
                 pass
-            if doc.get('_id', NOT_PROVIDED) is None:
+            if doc.get('_id',NOT_PROVIDED) is None:
                 if len(doc) == 1:
                     # insert with empty model
                     doc.clear()
@@ -386,11 +386,25 @@ class SQLInsertCompiler(NonrelInsertCompiler, SQLCompiler):
 
         collection = self.get_collection()
         options = self.connection.operation_flags.get('save', {})
-
+        # Solution to fix save is deprecated.
+        # if id is in the doc, the data needs to be updated else data needs to be inserted
+        try:
+            doc['_id']
+            is_update = True
+            update_spec = {'$set':doc}
+        except KeyError:
+            is_update = False
         if return_id:
-            return collection.save(doc, **options)
+            if is_update:
+                return collection.update_one({'_id':doc['_id']},update_spec,True)
+            else:
+                return collection.insert_one(doc)
         else:
-            collection.save(doc, **options)
+            if is_update:
+                #return collection.save(doc, **options)
+                collection.update_one({'_id':doc['_id']},update_spec,True)
+            else:
+                collection.insert_one(doc)
 
 
 # TODO: Define a common nonrel API for updates and add it to the nonrel
@@ -399,7 +413,6 @@ class SQLUpdateCompiler(NonrelUpdateCompiler, SQLCompiler):
     query_class = MongoQuery
 
     def update(self, values):
-        multi = True
         spec = {}
         for field, value in values:
             if field.primary_key:
@@ -426,7 +439,7 @@ class SQLUpdateCompiler(NonrelUpdateCompiler, SQLCompiler):
             if field.unique:
                 multi = False
 
-        return self.execute_update(spec, multi)
+        return self.execute_update(spec)
 
     @safe_call
     def execute_update(self, update_spec, multi=True, **kwargs):
@@ -437,9 +450,8 @@ class SQLUpdateCompiler(NonrelUpdateCompiler, SQLCompiler):
             return 0
         options = self.connection.operation_flags.get('update', {})
         options = dict(options, **kwargs)
-        info = collection.update(criteria, update_spec, multi=multi, **options)
-        if info is not None:
-            return info.get('n')
+        info = collection.update_many(criteria, update_spec, **options)
+        return info
 
 
 class SQLDeleteCompiler(NonrelDeleteCompiler, SQLCompiler):
