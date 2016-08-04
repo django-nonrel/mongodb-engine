@@ -228,7 +228,8 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
         user = pop('USER')
         password = pop('PASSWORD')
         options = pop('OPTIONS', {})
-
+        options_removed = pop('OPTIONS_REMOVED', [])
+        
         self.operation_flags = options.pop('OPERATIONS', {})
         if not any(k in ['save', 'delete', 'update']
                    for k in self.operation_flags):
@@ -258,6 +259,8 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
             tz_aware=False
         )
         conn_options.update(options)
+        for k in options_removed:
+            conn_options.pop(k, None)
 
         if replicaset:
             connection_class = MongoReplicaSetClient
