@@ -292,4 +292,4 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
         pass
 
     def close(self):
-        pass
+        self.connection.close()
