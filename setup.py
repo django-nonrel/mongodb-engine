@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages
+from distutils.core import setup
 
 import django_mongodb_engine as distmeta
 
@@ -16,6 +16,13 @@ CLASSIFIERS = [
     'Operating System :: OS Independent',
 ]
 
+packages = [
+    'django_mongodb_engine',
+    'django_mongodb_engine.management',
+    'django_mongodb_engine.management.commands',
+    'django_mongodb_engine.contrib',
+    'django_mongodb_engine.contrib.search'
+]
 
 setup(
     name='django-mongodb-engine',
@@ -26,7 +33,7 @@ setup(
     license='2-clause BSD',
     description="MongoDB backend for Django",
     install_requires=['pymongo', 'djangotoolbox'],
-    packages=find_packages(exclude=['ez_setup', 'tests', 'tests.*']),
+    packages=packages,
     include_package_data=True,
     classifiers=CLASSIFIERS,
     test_suite='tests',
