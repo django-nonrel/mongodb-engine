@@ -36,8 +36,8 @@ class DatabaseCreation(NonrelDatabaseCreation):
 
         def ensure_index(*args, **kwargs):
             if ensure_index.first_index:
-                print "Installing indices for %s.%s model." % \
-                      (meta.app_label, meta.object_name)
+                print( "Installing indices for %s.%s model." % \
+                      (meta.app_label, meta.object_name))
                 ensure_index.first_index = False
             return collection.ensure_index(*args, **kwargs)
         ensure_index.first_index = True
@@ -208,8 +208,8 @@ class DatabaseCreation(NonrelDatabaseCreation):
 
     def destroy_test_db(self, old_database_name, verbosity=1):
         if verbosity >= 1:
-            print "Destroying test database for alias '%s'..." % \
-                  self.connection.alias
+            print("Destroying test database for alias '%s'..." % \
+                  self.connection.alias)
         test_database_name = self.connection.settings_dict['NAME']
         self._drop_database(test_database_name)
         self.connection.settings_dict['NAME'] = old_database_name
