@@ -269,7 +269,7 @@ class DatabaseWrapper(NonrelDatabaseWrapper):
             self.database = self.connection[db_name]
         except TypeError:
             exc_info = sys.exc_info()
-            raise ImproperlyConfigured, exc_info[1], exc_info[2]
+            raise ImproperlyConfigured(exc_info[1], exc_info[2])
 
         if user and password:
             if not self.database.authenticate(user, password):
