@@ -96,5 +96,5 @@ as the are required to be strings on MongoDB.) ::
    {u'bob' : 3, u'alice' : 42}
 
 DictFields are useful mainly for storing objects of varying shape, i.e. objects
-whose structure is unknow at coding time.  If all your objects have the same
+whose structure is unknown at coding time.  If all your objects have the same
 structure, you should consider using :doc:`embedded-models`.

@@ -398,7 +398,7 @@ class UpdateTests(TestCase):
         self.assertEqual(Person.objects.get(name='john').age, 39)
 
     def test_update_with_F_and_db_column(self):
-        # This test is simmilar to test_update_with_F but tests
+        # This test is similar to test_update_with_F but tests
         # the update with a column that has a db_column set.
         john = Person.objects.create(name='john', surname='nhoj',
                                      another_age=42)

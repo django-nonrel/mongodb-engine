@@ -29,7 +29,7 @@ class TokenizedField(models.Field):
             value = ''.join(value)
 
         # When 'exact' is used we'll perform an exact_phrase query
-        # using the $all operator otherwhise we'll just tokenized
+        # using the $all operator otherwise we'll just tokenized
         # the value. Djangotoolbox will do the remaining checks.
         if lookup_type == 'exact':
             return {'$all': self._tokenizer.tokenize(value)}

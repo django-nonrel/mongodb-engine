@@ -114,7 +114,7 @@ class GridFSField(models.Field):
 
     def _on_pre_delete(self, sender, instance, using, signal, **kwargs):
         """
-        Deletes the files associated with this isntance.
+        Deletes the files associated with this instance.
 
         If versioning is enabled all versions will be deleted.
         """

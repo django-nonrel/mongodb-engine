@@ -126,7 +126,7 @@ class DatabaseOperations(NonrelDatabaseOperations):
                            "valid ObjectId string."
                 raise DatabaseError(msg)
 
-        # PyMongo can only process datatimes?
+        # PyMongo can only process datetimes?
         elif db_type == 'date':
             return datetime.datetime(value.year, value.month, value.day)
         elif db_type == 'time':

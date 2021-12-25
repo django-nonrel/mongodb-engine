@@ -275,7 +275,7 @@ class QueryTestCase(TestCase):
         alice_profile = UserProfile.objects.using('default').get(flavor='chocolate')
         bob_profile = UserProfile.objects.using('other').get(flavor='crunchy frog')
 
-        # Retrive related object by descriptor. Related objects should be database-baound
+        # Retrive related object by descriptor. Related objects should be database-bound
         self.assertEqual(alice_profile.user.username, 'alice')
         self.assertEqual(bob_profile.user.username, 'bob')
 
@@ -466,7 +466,7 @@ class RouterTestCase(TestCase):
         self.assertEqual(Book.objects.db_manager('default').all().db, 'default')
 
     def test_syncdb_selection(self):
-        "Synchronization behaviour is predicatable"
+        "Synchronization behaviour is predictable"
 
         self.assertTrue(router.allow_syncdb('default', User))
         self.assertTrue(router.allow_syncdb('default', Book))
